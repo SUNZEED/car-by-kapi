@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคิดค่าปรับ Some Town</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #ffcc00;
+            --primary-hover: #e6b800;
+            --danger: #ff4d4d;
+            --panel-bg: rgba(26, 28, 35, 0.95);
+            --card-bg: #23252b;
+            --card-hover: #2c2f36;
+            --text-main: #e0e0e0;
+            --text-muted: #8b949e;
+            --border-color: #333842;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: linear-gradient(135deg, #fce49c 0%, #74cfff 100%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            margin: 0;
+            padding: 2vh 2vw;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        
+        .container {
+            background-color: var(--panel-bg);
+            padding: 25px 35px;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 1400px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255, 204, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .header-section {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+        h2 { color: var(--primary); margin: 0; font-size: 2.2em; font-weight: 600; text-shadow: 0 2px 10px rgba(255, 204, 0, 0.2); }
+
+        .two-column-layout { display: flex; gap: 25px; align-items: stretch; }
+        .left-column { flex: 1.4; display: flex; flex-direction: column; gap: 20px; }
+        .right-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+        h3 { color: var(--primary); font-size: 1.2em; font-weight: 500; margin: 0 0 12px 0; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        
+        .section { background: linear-gradient(145deg, #1e2026, #16181d); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); box-sizing: border-box; }
+        
+        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        
+        .charge-item {
+            display: flex; align-items: center; background-color: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s ease; cursor: pointer;
+        }
+        .charge-item:hover { background-color: var(--card-hover); transform: translateY(-2px); border-color: #444; }
+        .charge-item:has(input[type="checkbox"]:checked) { border-color: var(--primary); background-color: rgba(255, 204, 0, 0.05); }
+
+        .charge-item > div { flex-grow: 1; }
+        .charge-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; accent-color: var(--primary); }
+        .charge-item input[type="number"] { width: 50px; margin-left: 10px; padding: 5px; background: #111; color: var(--primary); border: 1px solid #444; border-radius: 6px; text-align: center; font-family: 'Prompt'; }
+        
+        .options-group { display: flex; gap: 12px; flex-wrap: wrap; }
+        .option-label { display: flex; align-items: center; cursor: pointer; background: #2a1c1c; padding: 10px 15px; border-radius: 8px; border: 1px solid #5a2a2a; transition: all 0.2s; font-size: 1em; }
+        .option-label.blue { background: #162635; border: 1px solid #234361; }
+        .option-label.gold { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--primary); color: var(--primary); font-weight: bold;}
+        .option-label input { margin-right: 8px; transform: scale(1.2); accent-color: var(--primary); }
+        
+        .summary-box { 
+            background: linear-gradient(135deg, #1c232d, #11161d); padding: 25px; border-radius: 12px; border: 1px solid #294052; border-left: 4px solid var(--primary); flex-grow: 1; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .summary-text { font-size: 1.25em; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
+        .total-highlight { color: var(--danger); font-weight: 600; font-size: 1.5em; text-shadow: 0 2px 10px rgba(255, 77, 77, 0.3); }
+
+        .btn-copy-small { padding: 5px 10px; background: rgba(255, 204, 0, 0.15); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 0.65em; }
+        .btn-copy-small:hover { background: var(--primary); color: #111; }
+        
+        .copy-section { display: flex; gap: 12px; margin-top: 10px;}
+        input[type="text"].copy-box { flex: 1; padding: 12px; background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 8px; font-size: 1.05em; font-family: 'Prompt'; }
+        
+        button { padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: #111; font-weight: 600; font-size: 1.05em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        button:hover { transform: scale(1.05); }
+        .btn-reset { background: linear-gradient(135deg, #ff4d4d, #cc0000); color: white; }
+        
+        .fine-note { font-size: 0.8em; color: var(--text-muted); display: block; margin-top: 2px; }
+
+        @media (max-width: 1024px) { .two-column-layout { flex-direction: column; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header-section">
+        <h2>🚓 ระบบคิดค่าปรับ Some Town</h2>
+    </div>
+
+    <div class="two-column-layout">
+        <div class="left-column">
+            <!-- งานดำ -->
+            <div class="section">
+                <h3>☢️ หมวดสิ่งผิดกฎหมาย / งานดำ</h3>
+                <div class="grid-container">
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="จกพลาด" data-fine="1000" data-time="5"> <div>จกพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปล้นพลาด" data-fine="1000" data-time="5"> <div>ปล้นพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปูน" data-fine="2000" data-time="5"> <div>ปูน <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ลวด" data-fine="2000" data-time="5"> <div>ลวด <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟ" data-fine="1000" data-time="1"> <div>ผงหลอดไฟ <span class="fine-note">1,000 | 1 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟแปรรูป" data-fine="2500" data-time="5"> <div>ผงหลอดไฟแปรรูป <span class="fine-note">2,500 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เงินแดง" data-fine="0" data-time="0"> <div>เงินแดง <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายหลักฐาน" data-fine="10000" data-time="10"> <div>ทำลายหลักฐาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                </div>
+            </div>
+
+            <!-- พื้นที่หลบหนี -->
+            <div class="section">
+                <h3>🗺️ หมวดพื้นที่หลบหนี</h3>
+                <div class="grid-container">
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="พื้นที่สุ่มเสี่ยง" data-fine="5000" data-time="5"> <div>พื้นที่สุ่มเสี่ยง <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หลบหนีพื้นที่เข้าถึงยาก" data-fine="8000" data-time="10"> <div>เข้าถึงยาก <span class="fine-note">8,000 | 10 นาที</span></div></label>
+                    
+                    <label class="charge-item"><input type="checkbox" class="charge-cb group-town" data-name="หลบหนีในเมือง" data-fine="2000" data-time="5" onclick="handleGroup(this, 'group-town')"> <div>ในเมือง <span class="fine-note">2,000 | 5 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb group-town" data-name="หลบหนีนอกเมือง" data-fine="5000" data-time="5" onclick="handleGroup(this, 'group-town')"> <div>นอกเมือง <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                    
+                    <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีเมืองบน" data-fine="15000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>เมืองบน <span class="fine-note">15,000 | 10 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีสนามบิน" data-fine="10000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>สนามบิน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีทะเลทราย" data-fine="12000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>ทะเลทราย <span class="fine-note">12,000 | 10 นาที</span></div></label>
+                    <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีทางน้ำ" data-fine="20000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>ทางน้ำ <span class="fine-note">20,000 | 10 นาที</span></div></label>
+                </div>
+            </div>
+        </div>
+
+        <div class="right-column">
+            <div class="section" style="height: auto;">
+                <h3>🚗 โทษแต่งรถ</h3>
+                <div class="options-group">
+                    <label class="option-label"><input type="checkbox" id="wheelDark" onchange="calculate()"> ล้อโทนมืด (x2)</label>
+                    <label class="option-label"><input type="checkbox" id="paintDark" onchange="calculate()"> สีรถโทนมืด (x2)</label>
+                </div>
+            </div>
+
+            <!-- ระบบประกันตัวใหม่ -->
+            <div class="section" style="height: auto;">
+                <h3>🤝 เลือกประเภทประกันตัว (ไม่ติ๊กคือไม่ประกัน)</h3>
+                <div class="options-group">
+                    <label class="option-label blue"><input type="checkbox" class="bail-cb" value="2000" onclick="handleBail(this)"> ประกันเอง (2000/นาที)</label>
+                    <label class="option-label blue"><input type="checkbox" class="bail-cb" value="1000" onclick="handleBail(this)"> ญาติประกัน (1000/นาที)</label>
+                </div>
+            </div>
+
+            <div class="summary-box">
+                <div class="summary-text" style="color:var(--text-muted); font-size: 1.1em;">ตัวคูณปัจจุบัน: <span id="multiplierDisplay" style="color:#fff;">x1</span></div>
+                <hr style="border-color:#333; width: 100%; margin: 15px 0;">
+                <div class="summary-text">ยอดปรับสุทธิ: 
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="finalFine" class="total-highlight">0</span>
+                        <button class="btn-copy-small" onclick="copyValue('finalFine', this)">📋</button>
+                    </div>
+                </div>
+                <div class="summary-text">เวลาจำคุกสุทธิ: 
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span id="finalTime" class="total-highlight" style="color:var(--primary);">0 นาที</span>
+                        <button class="btn-copy-small" onclick="copyValue('finalTime', this)">📋</button>
+                    </div>
+                </div>
+                
+                <div style="margin-top: auto; padding-top: 25px;">
+                    <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; gap: 10px;">
+                            <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="accomplice" onchange="calculate()"> 👥 สมรู้ร่วมคิด</label>
+                            <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="reviseCase" onchange="calculate()"> 📝 แก้คดี</label>
+                        </div>
+                    </div>
+                    <div class="copy-section" style="margin-top: 0; padding-top: 0;">
+                        <input type="text" id="copyText" class="copy-box" readonly placeholder="ข้อหาจะแสดงที่นี่...">
+                        <button onclick="copyToClipboard()">📋 คัดลอกข้อหา</button>
+                        <button onclick="resetAll()" class="btn-reset">🗑️ ล้างค่า</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // จัดการการเลือกแบบกลุ่มเดียว (พื้นที่หลบหนี)
+    function handleGroup(clickedCb, className) {
+        if (clickedCb.checked) {
+            document.querySelectorAll('.' + className).forEach(cb => {
+                if (cb !== clickedCb) cb.checked = false;
+            });
+        }
+        calculate();
+    }
+
+    // จัดการระบบประกันตัว (เลือกได้อย่างเดียว และยกเลิกได้)
+    function handleBail(clickedCb) {
+        if (clickedCb.checked) {
+            document.querySelectorAll('.bail-cb').forEach(cb => {
+                if (cb !== clickedCb) cb.checked = false;
+            });
+        }
+        calculate();
+    }
+
+    document.querySelectorAll('.charge-cb, .qty').forEach(el => {
+        el.addEventListener('change', calculate);
+        el.addEventListener('input', calculate);
+    });
+
+    function calculate() {
+        let totalBaseFine = 0, totalBaseTime = 0, chargeNames = [];
+        let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟ", "ผงหลอดไฟแปรรูป"];
+
+        document.querySelectorAll('.charge-cb:checked').forEach(cb => {
+            let name = cb.getAttribute('data-name'), fine = parseInt(cb.getAttribute('data-fine')), time = parseInt(cb.getAttribute('data-time'));
+            let qtyInput = cb.closest('label').querySelector('.qty'), qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
+
+            if (name === "เงินแดง") {
+                let sets = Math.round(qty / 10);
+                totalBaseFine += sets * 1000; totalBaseTime += sets * 1;
+                if (sets > 0) chargeNames.push(`เงินแดง ${qty}`);
+            } else if (hasQtyList.includes(name)) {
+                totalBaseFine += (fine * qty); totalBaseTime += (time * qty);
+                chargeNames.push(`${name} ${qty}`);
+            } else {
+                totalBaseFine += fine; totalBaseTime += time;
+                chargeNames.push(name);
+            }
+        });
+
+        let mult = 1, wDark = document.getElementById('wheelDark').checked, pDark = document.getElementById('paintDark').checked;
+        if (wDark && pDark) mult = 4; else if (wDark || pDark) mult = 2;
+        if (wDark) chargeNames.push("ล้อโทนมืด"); if (pDark) chargeNames.push("สีรถโทนมืด");
+        document.getElementById('multiplierDisplay').innerText = `x${mult}`;
+
+        let finalFine = totalBaseFine * mult, finalTime = totalBaseTime; 
+        
+        // เช็คสถานะประกันตัวจาก Checkbox
+        let bailCb = document.querySelector('.bail-cb:checked');
+        let bailRate = bailCb ? parseInt(bailCb.value) : 0;
+
+        if (bailRate > 0 && finalTime > 5) {
+            finalFine += (finalTime - 5) * bailRate;
+            finalTime = 5; 
+            chargeNames.push("ประกัน");
+        }
+
+        document.getElementById('finalFine').innerText = finalFine.toLocaleString();
+        document.getElementById('finalTime').innerText = finalTime.toLocaleString() + ' นาที';
+        
+        let copyString = chargeNames.join(' + ');
+        let prefixes = [];
+        if (document.getElementById('accomplice').checked) prefixes.push("สมรู้ร่วมคิด");
+        if (document.getElementById('reviseCase').checked) prefixes.push("แก้คดี");
+        if (prefixes.length > 0) copyString = prefixes.join(' ') + " " + copyString;
+        document.getElementById('copyText').value = copyString;
+    }
+
+    function copyToClipboard() {
+        let copyText = document.getElementById("copyText");
+        if(copyText.value === "") return;
+        copyText.select(); navigator.clipboard.writeText(copyText.value);
+        let btn = document.querySelector('button[onclick="copyToClipboard()"]');
+        let old = btn.innerHTML; btn.innerHTML = "✅ สำเร็จ!"; btn.style.background = "#4caf50";
+        setTimeout(() => { btn.innerHTML = old; btn.style.background = ""; }, 1000);
+    }
+
+    function copyValue(id, btn) {
+        let val = document.getElementById(id).innerText.replace(/,/g, '').replace(' นาที', '');
+        if (val === "0") return; navigator.clipboard.writeText(val);
+        let old = btn.innerHTML; btn.innerHTML = "✔️"; btn.style.background = "#4caf50";
+        setTimeout(() => { btn.innerHTML = old; btn.style.background = ""; }, 800);
+    }
+
+    function resetAll() {
+        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        document.querySelectorAll('input[type="number"]').forEach(num => {
+            let name = num.closest('label').querySelector('.charge-cb').getAttribute('data-name');
+            num.value = (name === "เงินแดง") ? 10 : 1;
+        });
+        calculate();
+    }
+</script>
+</body>
+</html>
