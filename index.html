@@ -95,7 +95,7 @@
         .btn-copy-small:hover { background: var(--primary); color: #111; }
         
         .copy-section { display: flex; gap: 12px; margin-top: 10px;}
-        input[type="text"].copy-box { flex: 1; padding: 12px; background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 8px; font-size: 1.05em; font-family: 'Prompt'; }
+        textarea.copy-box { flex: 1; padding: 12px; background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 8px; font-size: 1.05em; font-family: 'Prompt'; resize: none; min-height: 50px; line-height: 1.4; }
         
         button { padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: #111; font-weight: 600; font-size: 1.05em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
         button:hover { transform: scale(1.05); }
@@ -145,16 +145,16 @@
                 <div class="section">
                     <h3>🗺️ หมวดพื้นที่หลบหนี</h3>
                     <div class="grid-container">
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="พื้นที่สุ่มเสี่ยง" data-fine="5000" data-time="5"> <div>พื้นที่สุ่มเสี่ยง <span class="fine-note">5,000 | 5 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หลบหนีพื้นที่เข้าถึงยาก" data-fine="8000" data-time="10"> <div>เข้าถึงยาก <span class="fine-note">8,000 | 10 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" class="charge-cb location-cb" data-name="พื้นที่สุ่มเสี่ยง" data-fine="5000" data-time="5"> <div>พื้นที่สุ่มเสี่ยง <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_hardToReach" class="charge-cb location-cb" data-name="หลบหนีพื้นที่เข้าถึงยาก" data-fine="8000" data-time="10"> <div>เข้าถึงยาก <span class="fine-note">8,000 | 10 นาที</span></div></label>
                         
-                        <label class="charge-item"><input type="checkbox" class="charge-cb group-town" data-name="หลบหนีในเมือง" data-fine="2000" data-time="5" onclick="handleGroup(this, 'group-town')"> <div>ในเมือง <span class="fine-note">2,000 | 5 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb group-town" data-name="หลบหนีนอกเมือง" data-fine="5000" data-time="5" onclick="handleGroup(this, 'group-town')"> <div>นอกเมือง <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_inCity" class="charge-cb location-cb group-town" data-name="หลบหนีในเมือง" data-fine="2000" data-time="5"> <div>ในเมือง <span class="fine-note">2,000 | 5 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_outCity" class="charge-cb location-cb group-town" data-name="หลบหนีนอกเมือง" data-fine="5000" data-time="5"> <div>นอกเมือง <span class="fine-note">5,000 | 5 นาที</span></div></label>
                         
-                        <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีเมืองบน" data-fine="15000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>เมืองบน <span class="fine-note">15,000 | 10 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีสนามบิน" data-fine="10000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>สนามบิน <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีทะเลทราย" data-fine="12000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>ทะเลทราย <span class="fine-note">12,000 | 10 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb group-special" data-name="หลบหนีทางน้ำ" data-fine="20000" data-time="10" onclick="handleGroup(this, 'group-special')"> <div>ทางน้ำ <span class="fine-note">20,000 | 10 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_upperCity" class="charge-cb location-cb group-special" data-name="หลบหนีเมืองบน" data-fine="15000" data-time="10"> <div>เมืองบน <span class="fine-note">15,000 | 10 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_airport" class="charge-cb location-cb group-special" data-name="หลบหนีสนามบิน" data-fine="10000" data-time="10"> <div>สนามบิน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_desert" class="charge-cb location-cb group-special" data-name="หลบหนีทะเลทราย" data-fine="12000" data-time="10"> <div>ทะเลทราย <span class="fine-note">12,000 | 10 นาที</span></div></label>
+                        <label class="charge-item"><input type="checkbox" id="cb_water" class="charge-cb location-cb group-special" data-name="หลบหนีทางน้ำ" data-fine="20000" data-time="10"> <div>ทางน้ำ <span class="fine-note">20,000 | 10 นาที</span></div></label>
                     </div>
                 </div>
             </div>
@@ -165,6 +165,7 @@
                     <div class="options-group">
                         <label class="option-label"><input type="checkbox" id="wheelDark" onchange="calculate()"> ล้อโทนมืด (x2)</label>
                         <label class="option-label"><input type="checkbox" id="paintDark" onchange="calculate()"> สีรถโทนมืด (x2)</label>
+                        <label class="option-label" style="background: rgba(255, 77, 77, 0.1); border-color: var(--danger);"><input type="checkbox" id="tradeCar" onchange="calculate()"> เทรดรถ (x5)</label>
                     </div>
                 </div>
 
@@ -200,9 +201,11 @@
                             </div>
                         </div>
                         <div class="copy-section" style="margin-top: 0; padding-top: 0;">
-                            <input type="text" id="copyText" class="copy-box" readonly placeholder="ข้อหาจะแสดงที่นี่...">
-                            <button onclick="copyToClipboard()" style="font-size: 0.95em;">📋 คัดลอกข้อหา</button>
-                            <button onclick="resetAll()" class="btn-reset" style="font-size: 0.95em;">🗑️ ล้างค่า</button>
+                            <textarea id="copyText" class="copy-box" readonly placeholder="ข้อหาจะแสดงที่นี่..."></textarea>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <button onclick="copyToClipboard()" style="font-size: 0.95em; height: 100%;">📋 คัดลอกข้อหา</button>
+                                <button onclick="resetAll()" class="btn-reset" style="font-size: 0.95em;">🗑️ ล้างค่า</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -248,14 +251,46 @@
         btn.classList.add('active');
     }
 
-    // จัดการการเลือกแบบกลุ่มเดียว (พื้นที่หลบหนี)
-    function handleGroup(clickedCb, className) {
-        if (clickedCb.checked) {
-            document.querySelectorAll('.' + className).forEach(cb => {
-                if (cb !== clickedCb) cb.checked = false;
-            });
+    // ตัวแปรสำหรับกฎพื้นที่หลบหนี
+    const cbInCity = document.getElementById('cb_inCity');
+    const cbOutCity = document.getElementById('cb_outCity');
+    const cbWater = document.getElementById('cb_water');
+    const cbHardToReach = document.getElementById('cb_hardToReach');
+    const cbAirport = document.getElementById('cb_airport');
+
+    // ฟังก์ชันจัดการความขัดแย้งของพื้นที่หลบหนี
+    function enforceEscapeRules(e) {
+        const target = e.target;
+        if (!target.classList.contains('location-cb')) return; // ทำงานเฉพาะตอนติ๊กพื้นที่
+
+        if (target.checked) {
+            // กฎ: หนีทางน้ำ ใส่ในเมืองนอกเมืองไม่ได้
+            if (target === cbWater) {
+                if (cbInCity) cbInCity.checked = false;
+                if (cbOutCity) cbOutCity.checked = false;
+            }
+            // กฎ: ในเมือง นอกเมือง ใส่หนีทางน้ำ หรือ สนามบิน ไม่ได้
+            if (target === cbInCity || target === cbOutCity) {
+                if (cbWater) cbWater.checked = false;
+                if (cbAirport) cbAirport.checked = false;
+            }
+            // กฎ: เข้าถึงยาก ใส่ในเมืองไม่ได้
+            if (target === cbHardToReach) {
+                if (cbInCity) cbInCity.checked = false;
+            }
+            if (target === cbInCity) {
+                if (cbHardToReach) cbHardToReach.checked = false;
+                if (cbOutCity) cbOutCity.checked = false; // ในเมือง/นอกเมือง ติ๊กพร้อมกันไม่ได้
+            }
+            if (target === cbOutCity) {
+                if (cbInCity) cbInCity.checked = false; // ในเมือง/นอกเมือง ติ๊กพร้อมกันไม่ได้
+            }
+            // กฎ: สนามบิน ใส่ในเมือง นอกเมือง ไม่ได้
+            if (target === cbAirport) {
+                if (cbInCity) cbInCity.checked = false;
+                if (cbOutCity) cbOutCity.checked = false;
+            }
         }
-        calculate();
     }
 
     // จัดการระบบประกันตัว (เลือกได้อย่างเดียว และยกเลิกได้)
@@ -268,35 +303,79 @@
         calculate();
     }
 
-    document.querySelectorAll('.charge-cb, .qty').forEach(el => {
-        el.addEventListener('change', calculate);
+    document.querySelectorAll('.charge-cb').forEach(el => {
+        el.addEventListener('change', (e) => {
+            enforceEscapeRules(e);
+            calculate();
+        });
+    });
+    
+    document.querySelectorAll('.qty').forEach(el => {
         el.addEventListener('input', calculate);
     });
 
     function calculate() {
         let totalBaseFine = 0, totalBaseTime = 0, chargeNames = [];
+        let hardToReachName = ""; // เก็บชื่อเข้าถึงยากไว้แทรกทีหลังสุด
         let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟ", "ผงหลอดไฟแปรรูป"];
 
         document.querySelectorAll('.charge-cb:checked').forEach(cb => {
             let name = cb.getAttribute('data-name'), fine = parseInt(cb.getAttribute('data-fine')), time = parseInt(cb.getAttribute('data-time'));
             let qtyInput = cb.closest('label').querySelector('.qty'), qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
 
+            let chargeString = "";
             if (name === "เงินแดง") {
                 let sets = Math.round(qty / 10);
                 totalBaseFine += sets * 1000; totalBaseTime += sets * 1;
-                if (sets > 0) chargeNames.push(`เงินแดง ${qty}`);
+                if (sets > 0) chargeString = `เงินแดง ${qty}`;
             } else if (hasQtyList.includes(name)) {
                 totalBaseFine += (fine * qty); totalBaseTime += (time * qty);
-                chargeNames.push(`${name} ${qty}`);
+                chargeString = `${name} ${qty}`;
             } else {
                 totalBaseFine += fine; totalBaseTime += time;
-                chargeNames.push(name);
+                chargeString = name;
+            }
+
+            if (chargeString !== "") {
+                if (name === "หลบหนีพื้นที่เข้าถึงยาก") {
+                    hardToReachName = chargeString; // เก็บไว้ไปต่อท้าย
+                } else {
+                    chargeNames.push(chargeString);
+                }
             }
         });
 
-        let mult = 1, wDark = document.getElementById('wheelDark').checked, pDark = document.getElementById('paintDark').checked;
-        if (wDark && pDark) mult = 4; else if (wDark || pDark) mult = 2;
-        if (wDark) chargeNames.push("ล้อโทนมืด"); if (pDark) chargeNames.push("สีรถโทนมืด");
+        // นำ "เข้าถึงยาก" มาต่อท้ายหมวดสถานที่หลบหนี
+        if (hardToReachName !== "") {
+            chargeNames.push(hardToReachName);
+        }
+
+        // คำนวณตัวคูณ (รถ)
+        let mult = 1;
+        let wDark = document.getElementById('wheelDark').checked;
+        let pDark = document.getElementById('paintDark').checked;
+        let tCar = document.getElementById('tradeCar').checked;
+
+        if (tCar) {
+            if (wDark && pDark) {
+                mult = 9; // เทรดรถ + ล้อดำ + สีรถดำ = x9
+            } else if (wDark || pDark) {
+                mult = 7; // เทรดรถ(5) + ล้อหรือสีดำ(2) = x7
+            } else {
+                mult = 5; // เทรดรถอย่างเดียว = x5
+            }
+        } else {
+            if (wDark && pDark) {
+                mult = 4; // ล้อดำ + สีรถดำ = x4
+            } else if (wDark || pDark) {
+                mult = 2; // ล้อหรือสีดำอย่างเดียว = x2
+            }
+        }
+
+        if (tCar) chargeNames.push("เทรดรถ");
+        if (wDark) chargeNames.push("ล้อโทนมืด"); 
+        if (pDark) chargeNames.push("สีรถโทนมืด");
+        
         document.getElementById('multiplierDisplay').innerText = `x${mult}`;
 
         let finalFineBase = totalBaseFine * mult;
