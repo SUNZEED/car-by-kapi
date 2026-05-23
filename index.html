@@ -135,7 +135,7 @@
                         <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปล้นพลาด" data-fine="1000" data-time="5"> <div>ปล้นพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
                         <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปูน" data-fine="2000" data-time="5"> <div>ปูน <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
                         <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ลวด" data-fine="2000" data-time="5"> <div>ลวด <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟ" data-fine="1000" data-time="1"> <div>ผงหลอดไฟ <span class="fine-note">1,000 | 1 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟ" data-fine="0" data-time="0"> <div>ผงหลอดไฟ <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
                         <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟแปรรูป" data-fine="2500" data-time="5"> <div>ผงหลอดไฟแปรรูป <span class="fine-note">2,500 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
                         <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เงินแดง" data-fine="0" data-time="0"> <div>เงินแดง <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
                         <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายหลักฐาน" data-fine="10000" data-time="10"> <div>ทำลายหลักฐาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
@@ -317,17 +317,17 @@
     function calculate() {
         let totalBaseFine = 0, totalBaseTime = 0, chargeNames = [];
         let hardToReachName = ""; // เก็บชื่อเข้าถึงยากไว้แทรกทีหลังสุด
-        let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟ", "ผงหลอดไฟแปรรูป"];
+        let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟแปรรูป"];
 
         document.querySelectorAll('.charge-cb:checked').forEach(cb => {
             let name = cb.getAttribute('data-name'), fine = parseInt(cb.getAttribute('data-fine')), time = parseInt(cb.getAttribute('data-time'));
             let qtyInput = cb.closest('label').querySelector('.qty'), qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
 
             let chargeString = "";
-            if (name === "เงินแดง") {
+            if (name === "เงินแดง" || name === "ผงหลอดไฟ") {
                 let sets = Math.round(qty / 10);
                 totalBaseFine += sets * 1000; totalBaseTime += sets * 1;
-                if (sets > 0) chargeString = `เงินแดง ${qty}`;
+                if (sets > 0) chargeString = `${name} ${qty}`;
             } else if (hasQtyList.includes(name)) {
                 totalBaseFine += (fine * qty); totalBaseTime += (time * qty);
                 chargeString = `${name} ${qty}`;
@@ -511,7 +511,7 @@
         document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
         document.querySelectorAll('input[type="number"]').forEach(num => {
             let name = num.closest('label').querySelector('.charge-cb').getAttribute('data-name');
-            num.value = (name === "เงินแดง") ? 10 : 1;
+            num.value = (name === "เงินแดง" || name === "ผงหลอดไฟ") ? 10 : 1;
         });
         calculate();
     }
