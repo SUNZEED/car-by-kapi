@@ -173,6 +173,7 @@
                             <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่สาธารณะ" data-fine="10000" data-time="10"> <div>วิวาทสาธารณะ <span class="fine-note">10,000 | 10 นาที</span></div></label>
                             <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทแบบกลุ่ม" data-fine="15000" data-time="15"> <div>วิวาทแบบกลุ่ม <span class="fine-note">15,000 | 15 นาที</span></div></label>
                             <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ยักยอกทรัพย์ ฉ้อโกง" data-fine="45000" data-time="45"> <div>ยักยอกทรัพย์/ฉ้อโกง <span class="fine-note">45,000 | 45 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หมิ่นประมาท" data-fine="10000" data-time="10"> <div>หมิ่นประมาท <span class="fine-note">10,000 | 10 นาที</span></div></label>
                             <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ควักอาวุธในพื้นที่เซฟโซน" data-fine="10000" data-time="10" data-no-bail="true"> <div>ควักอาวุธเซฟโซน <span class="fine-note no-bail-badge">10,000 | 10 นาที (ไม่ประกัน)</span></div></label>
                             <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่หน่วยงาน" data-fine="15000" data-time="15"> <div>วิวาทพื้นที่หน่วยงาน <span class="fine-note">15,000 | 15 นาที</span></div></label>
                             <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ก่อกวน สร้างความเดือดร้อนผู้อื่น" data-fine="15000" data-time="10"> <div>ก่อกวนผู้อื่น <span class="fine-note">15,000 | 10 นาที</span></div></label>
@@ -204,7 +205,7 @@
             </div>
 
             <div class="right-column">
-                <div class="section" id="carModSection" style="height: auto;">
+                <div class="section" id="car-mod-section" style="height: auto;">
                     <h3>🚗 โทษแต่งรถ</h3>
                     <div class="options-group">
                         <label class="option-label"><input type="checkbox" id="wheelDark" onchange="calculate()"> ล้อโทนมืด (x2)</label>
@@ -302,16 +303,10 @@
             document.querySelectorAll('.calc-content').forEach(c => c.classList.remove('active'));
             document.getElementById(innerTabId).classList.add('active');
 
-            // ตรวจสอบ: ถ้าเป็นหมวดจับเหตุซึ่งหน้า ให้ซ่อนกล่องรถและล้างค่าการติ๊กรถ
-            let carModSection = document.getElementById('carModSection');
-            if (innerTabId === 'tab_flagrante') {
-                carModSection.style.display = 'none';
-                document.getElementById('wheelDark').checked = false;
-                document.getElementById('paintDark').checked = false;
-                document.getElementById('tradeCar').checked = false;
-                calculate(); // คำนวณใหม่โดยไม่ใช้ตัวคูณรถ
-            } else {
-                carModSection.style.display = 'block';
+            // ซ่อนกล่องตัวคูณรถเมื่ออยู่หน้า "จับเหตุซึ่งหน้า"
+            let carModSec = document.getElementById('car-mod-section');
+            if (carModSec) {
+                carModSec.style.display = (innerTabId === 'tab_flagrante') ? 'none' : 'block';
             }
         }
     }
@@ -374,32 +369,55 @@
     });
 
     function calculate() {
-        let totalBaseFine = 0, totalBaseTime = 0, chargeNames = [];
+        // แยกตัวแปรเก็บยอดเงินที่ใช้ตัวคูณ (งานดำ) และไม่ใช้ตัวคูณ (จับเหตุซึ่งหน้า)
+        let fineWithMult = 0; 
+        let fineNoMult = 0;
+        let totalBaseTime = 0; 
+        let chargeNames = [];
         let hardToReachName = ""; 
         let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟแปรรูป"];
-        let hasNoBail = false; // ตัวแปรเช็คการห้ามประกันตัว
+        let hasNoBail = false; 
 
-        // รวบรวมเฉพาะข้อหาที่ติ๊กไว้
         document.querySelectorAll('.charge-cb:checked').forEach(cb => {
             if (cb.getAttribute('data-no-bail') === "true") {
                 hasNoBail = true;
             }
 
-            let name = cb.getAttribute('data-name'), fine = parseInt(cb.getAttribute('data-fine')), time = parseInt(cb.getAttribute('data-time'));
-            let qtyInput = cb.closest('label').querySelector('.qty'), qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
+            let name = cb.getAttribute('data-name');
+            let fine = parseInt(cb.getAttribute('data-fine'));
+            let time = parseInt(cb.getAttribute('data-time'));
+            let qtyInput = cb.closest('label').querySelector('.qty');
+            let qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
+            
+            // เช็คว่าข้อหานี้มาจากแท็บไหน
+            let isFlagrante = cb.closest('#tab_flagrante') !== null;
 
             let chargeString = "";
+            let itemFine = 0;
+            let itemTime = 0;
+
             if (name === "เงินแดง" || name === "ผงหลอดไฟ") {
                 let sets = Math.round(qty / 10);
-                totalBaseFine += sets * 1000; totalBaseTime += sets * 1;
+                itemFine = sets * 1000;
+                itemTime = sets * 1;
                 if (sets > 0) chargeString = `${name} ${qty}`;
             } else if (hasQtyList.includes(name)) {
-                totalBaseFine += (fine * qty); totalBaseTime += (time * qty);
+                itemFine = fine * qty;
+                itemTime = time * qty;
                 chargeString = `${name} ${qty}`;
             } else {
-                totalBaseFine += fine; totalBaseTime += time;
+                itemFine = fine;
+                itemTime = time;
                 chargeString = name;
             }
+
+            // แยกยอดบวกตามหมวดหมู่
+            if (isFlagrante) {
+                fineNoMult += itemFine; // จับเหตุซึ่งหน้า ไม่โดนคูณ
+            } else {
+                fineWithMult += itemFine; // งานดำ โดนคูณ
+            }
+            totalBaseTime += itemTime;
 
             if (chargeString !== "") {
                 if (name === "หลบหนีพื้นที่เข้าถึงยาก") {
@@ -427,7 +445,6 @@
             document.getElementById('no-bail-warning').style.display = 'none';
         }
 
-        // โทษแต่งรถ (ถ้าซ่อนอยู่ ตัวแปรจะไม่มีค่า checked จากการล้างค่าตอนสลับแท็บ)
         let mult = 1;
         let wDark = document.getElementById('wheelDark').checked;
         let pDark = document.getElementById('paintDark').checked;
@@ -442,13 +459,19 @@
             else if (wDark || pDark) { mult = 2; }
         }
 
-        if (tCar) chargeNames.push("เทรดรถ");
-        if (wDark) chargeNames.push("ล้อโทนมืด"); 
-        if (pDark) chargeNames.push("สีรถโทนมืด");
+        // หากไม่มีข้อหาในหมวดงานดำเลย ให้บังคับตัวคูณเป็น 1 และไม่เพิ่มข้อหาแต่งรถลงไปในคดี
+        if (fineWithMult === 0) {
+            mult = 1;
+        } else {
+            if (tCar) chargeNames.push("เทรดรถ");
+            if (wDark) chargeNames.push("ล้อโทนมืด"); 
+            if (pDark) chargeNames.push("สีรถโทนมืด");
+        }
         
         document.getElementById('multiplierDisplay').innerText = `x${mult}`;
 
-        let finalFineBase = totalBaseFine * mult;
+        // คำนวณยอดปรับสุทธิ (คูณแค่งานดำ แล้วมาบวกกับจับเหตุซึ่งหน้า)
+        let finalFineBase = (fineWithMult * mult) + fineNoMult;
         let finalTimeBase = totalBaseTime; 
         
         let prefixes = [];
@@ -481,18 +504,21 @@
         // อัปเดตหน้า 2 (สรุปข้อความ 2 กล่อง + Twitter)
         // -----------------------------
 
+        // กล่องซ้าย (ไม่ประกัน)
         let noBailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
         if (chargeNames.length > 0) {
             noBailText = `ข้อหา: ${baseChargeString}\nค่าปรับ: ${finalFineBase.toLocaleString()}\nเวลา: ${finalTimeBase.toLocaleString()} นาที`;
         }
         document.getElementById('textNoBail').value = noBailText;
 
+        // กล่องขวา (ประกัน) และ Twitter
         let bailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
         let twitterLine = "";
         let btnCopyBail = document.getElementById('btnCopyBail');
 
         if (chargeNames.length > 0) {
             if (hasNoBail) {
+                // กรณีติดคดีที่ไม่ให้ประกันตัว
                 bailText = "❌ คดีนี้ไม่สามารถประกันตัวได้\n(มีข้อหาที่ไม่อนุญาตให้ประกัน)";
                 twitterLine = `ค่าปรับ ${finalFineBase.toLocaleString()}`;
                 btnCopyBail.style.opacity = '0.5';
