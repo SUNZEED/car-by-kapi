@@ -57,6 +57,8 @@
         /* การจัดการหน้า (Pages) */
         .page { display: none; animation: fadeIn 0.3s ease; }
         .page.active { display: block; }
+        .calc-content { display: none; animation: fadeIn 0.3s ease; }
+        .calc-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         .two-column-layout { display: flex; gap: 25px; align-items: stretch; }
@@ -102,6 +104,7 @@
         .btn-reset { background: linear-gradient(135deg, #ff4d4d, #cc0000); color: white; }
         
         .fine-note { font-size: 0.8em; color: var(--text-muted); display: block; margin-top: 2px; }
+        .no-bail-badge { color: var(--danger); font-size: 0.85em; font-weight: 500; }
 
         /* สไตล์หน้า 2 และแท็บด้านล่าง */
         .text-area-box { width: 100%; height: 180px; background: #0b0d10; color: #4CAF50; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: 'Prompt'; font-size: 1.1em; resize: none; box-sizing: border-box; line-height: 1.6; }
@@ -110,7 +113,7 @@
         .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
         .tab-btn.active { background: var(--primary); color: #111; font-weight: bold; transform: scale(1); }
 
-        /* สไตล์สำหรับกล่อง Twitter (ปรับขนาดตัวอักษรให้พอดีกับข้อความที่ยาวขึ้น) */
+        /* สไตล์สำหรับกล่อง Twitter */
         .twitter-box { background: linear-gradient(135deg, #15202b, #192734); border-left: 4px solid var(--twitter-color); align-items: center; margin-top: 25px; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
         .twitter-input { width: 100%; max-width: 800px; padding: 15px; text-align: center; font-size: 1.25em; font-weight: bold; background: #0b0d10; color: var(--twitter-color); border: 1px solid var(--twitter-color); border-radius: 8px; font-family: 'Prompt'; }
         .btn-twitter { margin-top: 15px; width: 100%; max-width: 300px; background: linear-gradient(135deg, var(--twitter-color), #0d8bd9); color: white; border: none; }
@@ -125,38 +128,80 @@
         <h2>🚓 ระบบคิดค่าปรับ Some Town</h2>
     </div>
 
-    <div id="page1" class="page active">
+    <div id="calc_wrapper" class="page active">
         <div class="two-column-layout">
             <div class="left-column">
-                <div class="section">
-                    <h3>☢️ หมวดสิ่งผิดกฎหมาย / งานดำ</h3>
-                    <div class="grid-container">
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="จกพลาด" data-fine="1000" data-time="5"> <div>จกพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปล้นพลาด" data-fine="1000" data-time="5"> <div>ปล้นพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปูน" data-fine="2000" data-time="5"> <div>ปูน <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ลวด" data-fine="2000" data-time="5"> <div>ลวด <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟ" data-fine="0" data-time="0"> <div>ผงหลอดไฟ <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟแปรรูป" data-fine="2500" data-time="5"> <div>ผงหลอดไฟแปรรูป <span class="fine-note">2,500 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เงินแดง" data-fine="0" data-time="0"> <div>เงินแดง <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
-                        <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายหลักฐาน" data-fine="10000" data-time="10"> <div>ทำลายหลักฐาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                
+                <div id="tab_black" class="calc-content active">
+                    <div class="section">
+                        <h3>☢️ หมวดสิ่งผิดกฎหมาย / งานดำ</h3>
+                        <div class="grid-container">
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="จกพลาด" data-fine="1000" data-time="5"> <div>จกพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปล้นพลาด" data-fine="1000" data-time="5"> <div>ปล้นพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปูน" data-fine="2000" data-time="5"> <div>ปูน <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ลวด" data-fine="2000" data-time="5"> <div>ลวด <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟ" data-fine="0" data-time="0"> <div>ผงหลอดไฟ <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟแปรรูป" data-fine="2500" data-time="5"> <div>ผงหลอดไฟแปรรูป <span class="fine-note">2,500 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เงินแดง" data-fine="0" data-time="0"> <div>เงินแดง <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายหลักฐาน" data-fine="10000" data-time="10"> <div>ทำลายหลักฐาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>🗺️ หมวดพื้นที่หลบหนี</h3>
+                        <div class="grid-container">
+                            <label class="charge-item"><input type="checkbox" class="charge-cb location-cb" data-name="พื้นที่สุ่มเสี่ยง" data-fine="5000" data-time="5"> <div>พื้นที่สุ่มเสี่ยง <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" id="cb_hardToReach" class="charge-cb location-cb" data-name="หลบหนีพื้นที่เข้าถึงยาก" data-fine="8000" data-time="10"> <div>เข้าถึงยาก <span class="fine-note">8,000 | 10 นาที</span></div></label>
+                            
+                            <label class="charge-item"><input type="checkbox" id="cb_inCity" class="charge-cb location-cb group-town" data-name="หลบหนีในเมือง" data-fine="2000" data-time="5"> <div>ในเมือง <span class="fine-note">2,000 | 5 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" id="cb_outCity" class="charge-cb location-cb group-town" data-name="หลบหนีนอกเมือง" data-fine="5000" data-time="5"> <div>นอกเมือง <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                            
+                            <label class="charge-item"><input type="checkbox" id="cb_upperCity" class="charge-cb location-cb group-special" data-name="หลบหนีเมืองบน" data-fine="15000" data-time="10"> <div>เมืองบน <span class="fine-note">15,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" id="cb_airport" class="charge-cb location-cb group-special" data-name="หลบหนีสนามบิน" data-fine="10000" data-time="10"> <div>สนามบิน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" id="cb_desert" class="charge-cb location-cb group-special" data-name="หลบหนีทะเลทราย" data-fine="12000" data-time="10"> <div>ทะเลทราย <span class="fine-note">12,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" id="cb_water" class="charge-cb location-cb group-special" data-name="หลบหนีทางน้ำ" data-fine="20000" data-time="10"> <div>ทางน้ำ <span class="fine-note">20,000 | 10 นาที</span></div></label>
+                        </div>
                     </div>
                 </div>
 
-                <div class="section">
-                    <h3>🗺️ หมวดพื้นที่หลบหนี</h3>
-                    <div class="grid-container">
-                        <label class="charge-item"><input type="checkbox" class="charge-cb location-cb" data-name="พื้นที่สุ่มเสี่ยง" data-fine="5000" data-time="5"> <div>พื้นที่สุ่มเสี่ยง <span class="fine-note">5,000 | 5 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" id="cb_hardToReach" class="charge-cb location-cb" data-name="หลบหนีพื้นที่เข้าถึงยาก" data-fine="8000" data-time="10"> <div>เข้าถึงยาก <span class="fine-note">8,000 | 10 นาที</span></div></label>
-                        
-                        <label class="charge-item"><input type="checkbox" id="cb_inCity" class="charge-cb location-cb group-town" data-name="หลบหนีในเมือง" data-fine="2000" data-time="5"> <div>ในเมือง <span class="fine-note">2,000 | 5 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" id="cb_outCity" class="charge-cb location-cb group-town" data-name="หลบหนีนอกเมือง" data-fine="5000" data-time="5"> <div>นอกเมือง <span class="fine-note">5,000 | 5 นาที</span></div></label>
-                        
-                        <label class="charge-item"><input type="checkbox" id="cb_upperCity" class="charge-cb location-cb group-special" data-name="หลบหนีเมืองบน" data-fine="15000" data-time="10"> <div>เมืองบน <span class="fine-note">15,000 | 10 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" id="cb_airport" class="charge-cb location-cb group-special" data-name="หลบหนีสนามบิน" data-fine="10000" data-time="10"> <div>สนามบิน <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" id="cb_desert" class="charge-cb location-cb group-special" data-name="หลบหนีทะเลทราย" data-fine="12000" data-time="10"> <div>ทะเลทราย <span class="fine-note">12,000 | 10 นาที</span></div></label>
-                        <label class="charge-item"><input type="checkbox" id="cb_water" class="charge-cb location-cb group-special" data-name="หลบหนีทางน้ำ" data-fine="20000" data-time="10"> <div>ทางน้ำ <span class="fine-note">20,000 | 10 นาที</span></div></label>
+                <div id="tab_flagrante" class="calc-content">
+                    <div class="section">
+                        <h3>🚨 หมวดการก่อเหตุฯ</h3>
+                        <div class="grid-container">
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำร้ายร่างกายประชาชน" data-fine="15000" data-time="15"> <div>ทำร้ายประชาชน <span class="fine-note">15,000 | 15 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำร้ายร่างกาย/วิวาท/เจตนาฆ่าในเซฟโซน" data-fine="60000" data-time="60" data-no-bail="true"> <div>ทำร้าย/ฆ่าในเซฟโซน <span class="fine-note no-bail-badge">60,000 | 60 นาที (ไม่ประกัน)</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่สาธารณะ" data-fine="10000" data-time="10"> <div>วิวาทสาธารณะ <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทแบบกลุ่ม" data-fine="15000" data-time="15"> <div>วิวาทแบบกลุ่ม <span class="fine-note">15,000 | 15 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ยักยอกทรัพย์ ฉ้อโกง" data-fine="45000" data-time="45"> <div>ยักยอกทรัพย์/ฉ้อโกง <span class="fine-note">45,000 | 45 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หมิ่นประมาท ด่าทอ ส่อเสียด" data-fine="10000" data-time="10"> <div>หมิ่นประมาท/ด่าทอ <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ควักอาวุธในพื้นที่เซฟโซน" data-fine="10000" data-time="10" data-no-bail="true"> <div>ควักอาวุธเซฟโซน <span class="fine-note no-bail-badge">10,000 | 10 นาที (ไม่ประกัน)</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่หน่วยงาน" data-fine="15000" data-time="15"> <div>วิวาทพื้นที่หน่วยงาน <span class="fine-note">15,000 | 15 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ก่อกวน สร้างความเดือดร้อนผู้อื่น" data-fine="15000" data-time="10"> <div>ก่อกวนผู้อื่น <span class="fine-note">15,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ขโมยรถประชาชน" data-fine="15000" data-time="15"> <div>ขโมยรถประชาชน <span class="fine-note">15,000 | 15 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="แจ้งความเท็จ/ให้ความเท็จ" data-fine="10000" data-time="10"> <div>แจ้งความเท็จ <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="บุกรุกบ้าน" data-fine="5000" data-time="5"> <div>บุกรุกบ้าน <span class="fine-note">5,000 | 5 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="บุกรุกพื้นที่หน่วยงาน" data-fine="10000" data-time="10"> <div>บุกรุกพื้นที่หน่วยงาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="กักขังหน่วงเหนี่ยว" data-fine="30000" data-time="30"> <div>กักขังหน่วงเหนี่ยว <span class="fine-note">30,000 | 30 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="พยายามฆ่า/เจตนาฆ่าผู้อื่น" data-fine="25000" data-time="25" data-no-bail="true"> <div>เจตนาฆ่าผู้อื่น <span class="fine-note no-bail-badge">25,000 | 25 นาที (ไม่ประกัน)</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายทรัพย์สิน" data-fine="25000" data-time="25"> <div>ทำลายทรัพย์สิน <span class="fine-note">25,000 | 25 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เจตนาเข้าคุก" data-fine="30000" data-time="30"> <div>เจตนาเข้าคุก <span class="fine-note">30,000 | 30 นาที</span></div></label>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <h3>👮 หมวดเกี่ยวกับหน่วยงาน (ไม่มีการประกันตัวทุกกรณี)</h3>
+                        <div class="grid-container">
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หมิ่นประมาทหน่วยงาน" data-fine="40000" data-time="40" data-no-bail="true"> <div>หมิ่นประมาทหน่วยงาน <span class="fine-note no-bail-badge">40,000 | 40 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ขโมยรถหน่วยงาน" data-fine="50000" data-time="50" data-no-bail="true"> <div>ขโมยรถหน่วยงาน <span class="fine-note no-bail-badge">50,000 | 50 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำร้ายร่างกายหน่วยงาน" data-fine="50000" data-time="60" data-no-bail="true"> <div>ทำร้ายร่างกายหน่วยงาน <span class="fine-note no-bail-badge">50,000 | 60 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="แอบอ้างเป็นหน่วยงาน" data-fine="100000" data-time="60" data-no-bail="true"> <div>แอบอ้างเป็นหน่วยงาน <span class="fine-note no-bail-badge">100,000 | 60 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ไม่ให้ความร่วมมือกับเจ้าหน้าที่" data-fine="15000" data-time="20" data-no-bail="true"> <div>ไม่ให้ความร่วมมือ <span class="fine-note no-bail-badge">15,000 | 20 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ก่อกวนเจ้าหน้าที่" data-fine="30000" data-time="30" data-no-bail="true"> <div>ก่อกวนเจ้าหน้าที่ <span class="fine-note no-bail-badge">30,000 | 30 นาที</span></div></label>
+                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายทรัพย์สินหน่วยงาน" data-fine="45000" data-time="45" data-no-bail="true"> <div>ทำลายทรัพย์สินหน่วยงาน <span class="fine-note no-bail-badge">45,000 | 45 นาที</span></div></label>
+                        </div>
                     </div>
                 </div>
+
             </div>
 
             <div class="right-column">
@@ -170,10 +215,13 @@
                 </div>
 
                 <div class="section" style="height: auto;">
-                    <h3>🤝 เลือกประเภทประกันตัว (ไม่ติ๊กคือไม่ประกัน)</h3>
-                    <div class="options-group">
-                        <label class="option-label blue"><input type="checkbox" class="bail-cb" value="2000" onclick="handleBail(this)"> ประกันเอง (2000/นาที)</label>
-                        <label class="option-label blue"><input type="checkbox" class="bail-cb" value="1000" onclick="handleBail(this)"> ญาติประกัน (1000/นาที)</label>
+                    <h3>🤝 เลือกประเภทประกันตัว</h3>
+                    <div class="options-group" id="bail-options-container">
+                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="2000" onclick="handleBail(this)"> ประกันเอง (2000/นาที)</label>
+                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="1000" onclick="handleBail(this)"> ญาติประกัน (1000/นาที)</label>
+                    </div>
+                    <div id="no-bail-warning" style="display:none; color: var(--danger); margin-top: 10px; font-size: 0.9em; font-weight: bold;">
+                        ⚠️ คดีนี้มีข้อหาที่ไม่สามารถประกันตัวได้
                     </div>
                 </div>
 
@@ -213,7 +261,7 @@
         </div>
     </div>
 
-    <div id="page2" class="page">
+    <div id="page_summary" class="page">
         <div class="two-column-layout">
             <div class="summary-box" style="justify-content: flex-start;">
                 <h3 style="color: #ff4d4d; justify-content: center; border-bottom: none; margin-bottom: 20px;">❌ แบบไม่ประกันตัว</h3>
@@ -224,11 +272,10 @@
             <div class="summary-box" style="justify-content: flex-start;">
                 <h3 style="color: #4CAF50; justify-content: center; border-bottom: none; margin-bottom: 20px;">✅ แบบประกันตัว</h3>
                 <textarea id="textBail" class="text-area-box" readonly></textarea>
-                <button onclick="copyTextArea('textBail', this)" style="margin-top: 15px; width: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">📋 คัดลอก (ประกันตัว)</button>
+                <button onclick="copyTextArea('textBail', this)" id="btnCopyBail" style="margin-top: 15px; width: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">📋 คัดลอก (ประกันตัว)</button>
             </div>
         </div>
         
-        <!-- กล่องสำหรับลง Twitter -->
         <div class="twitter-box">
             <h3 style="color: var(--twitter-color); justify-content: center; border-bottom: none; margin-bottom: 15px; font-size: 1.4em;">🐦 ยอดปรับสำหรับลงทวิตเตอร์</h3>
             <input type="text" id="textTwitter" class="twitter-input" readonly placeholder="ยอดรวมจะแสดงที่นี่...">
@@ -237,18 +284,25 @@
     </div>
 
     <div class="tab-container">
-        <button class="tab-btn active" onclick="switchTab('page1', this)">📊 หน้าคำนวณ</button>
-        <button class="tab-btn" onclick="switchTab('page2', this)">📝 หน้าสรุปข้อความ</button>
+        <button class="tab-btn active" onclick="switchMainTab('calc_wrapper', 'tab_black', this)">📊 งานดำ / หลบหนี</button>
+        <button class="tab-btn" onclick="switchMainTab('calc_wrapper', 'tab_flagrante', this)">🚨 จับเหตุซึ่งหน้า</button>
+        <button class="tab-btn" onclick="switchMainTab('page_summary', null, this)">📝 หน้าสรุปข้อความ</button>
     </div>
 </div>
 
 <script>
-    // สลับหน้าแท็บ (Excel Style)
-    function switchTab(pageId, btn) {
+    // สลับหน้าหลักและแท็บย่อย
+    function switchMainTab(wrapperId, innerTabId, btn) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(pageId).classList.add('active');
+        
+        document.getElementById(wrapperId).classList.add('active');
         btn.classList.add('active');
+
+        if (innerTabId) {
+            document.querySelectorAll('.calc-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(innerTabId).classList.add('active');
+        }
     }
 
     // ตัวแปรสำหรับกฎพื้นที่หลบหนี
@@ -258,34 +312,29 @@
     const cbHardToReach = document.getElementById('cb_hardToReach');
     const cbAirport = document.getElementById('cb_airport');
 
-    // ฟังก์ชันจัดการความขัดแย้งของพื้นที่หลบหนี
     function enforceEscapeRules(e) {
         const target = e.target;
-        if (!target.classList.contains('location-cb')) return; // ทำงานเฉพาะตอนติ๊กพื้นที่
+        if (!target.classList.contains('location-cb')) return;
 
         if (target.checked) {
-            // กฎ: หนีทางน้ำ ใส่ในเมืองนอกเมืองไม่ได้
             if (target === cbWater) {
                 if (cbInCity) cbInCity.checked = false;
                 if (cbOutCity) cbOutCity.checked = false;
             }
-            // กฎ: ในเมือง นอกเมือง ใส่หนีทางน้ำ หรือ สนามบิน ไม่ได้
             if (target === cbInCity || target === cbOutCity) {
                 if (cbWater) cbWater.checked = false;
                 if (cbAirport) cbAirport.checked = false;
             }
-            // กฎ: เข้าถึงยาก ใส่ในเมืองไม่ได้
             if (target === cbHardToReach) {
                 if (cbInCity) cbInCity.checked = false;
             }
             if (target === cbInCity) {
                 if (cbHardToReach) cbHardToReach.checked = false;
-                if (cbOutCity) cbOutCity.checked = false; // ในเมือง/นอกเมือง ติ๊กพร้อมกันไม่ได้
+                if (cbOutCity) cbOutCity.checked = false;
             }
             if (target === cbOutCity) {
-                if (cbInCity) cbInCity.checked = false; // ในเมือง/นอกเมือง ติ๊กพร้อมกันไม่ได้
+                if (cbInCity) cbInCity.checked = false;
             }
-            // กฎ: สนามบิน ใส่ในเมือง นอกเมือง ไม่ได้
             if (target === cbAirport) {
                 if (cbInCity) cbInCity.checked = false;
                 if (cbOutCity) cbOutCity.checked = false;
@@ -293,7 +342,6 @@
         }
     }
 
-    // จัดการระบบประกันตัว (เลือกได้อย่างเดียว และยกเลิกได้)
     function handleBail(clickedCb) {
         if (clickedCb.checked) {
             document.querySelectorAll('.bail-cb').forEach(cb => {
@@ -316,10 +364,16 @@
 
     function calculate() {
         let totalBaseFine = 0, totalBaseTime = 0, chargeNames = [];
-        let hardToReachName = ""; // เก็บชื่อเข้าถึงยากไว้แทรกทีหลังสุด
+        let hardToReachName = ""; 
         let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟแปรรูป"];
+        let hasNoBail = false; // ตัวแปรเช็คการห้ามประกันตัว
 
         document.querySelectorAll('.charge-cb:checked').forEach(cb => {
+            // ตรวจสอบสถานะการห้ามประกันตัว
+            if (cb.getAttribute('data-no-bail') === "true") {
+                hasNoBail = true;
+            }
+
             let name = cb.getAttribute('data-name'), fine = parseInt(cb.getAttribute('data-fine')), time = parseInt(cb.getAttribute('data-time'));
             let qtyInput = cb.closest('label').querySelector('.qty'), qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
 
@@ -338,38 +392,42 @@
 
             if (chargeString !== "") {
                 if (name === "หลบหนีพื้นที่เข้าถึงยาก") {
-                    hardToReachName = chargeString; // เก็บไว้ไปต่อท้าย
+                    hardToReachName = chargeString;
                 } else {
                     chargeNames.push(chargeString);
                 }
             }
         });
 
-        // นำ "เข้าถึงยาก" มาต่อท้ายหมวดสถานที่หลบหนี
         if (hardToReachName !== "") {
             chargeNames.push(hardToReachName);
         }
 
-        // คำนวณตัวคูณ (รถ)
+        // จัดการ UI กรณีที่ห้ามประกันตัว
+        let bailOptions = document.querySelectorAll('.bail-cb');
+        let bailLabels = document.querySelectorAll('.bail-label');
+        if (hasNoBail) {
+            bailOptions.forEach(cb => { cb.checked = false; cb.disabled = true; });
+            bailLabels.forEach(lbl => { lbl.style.opacity = '0.4'; lbl.style.cursor = 'not-allowed'; });
+            document.getElementById('no-bail-warning').style.display = 'block';
+        } else {
+            bailOptions.forEach(cb => { cb.disabled = false; });
+            bailLabels.forEach(lbl => { lbl.style.opacity = '1'; lbl.style.cursor = 'pointer'; });
+            document.getElementById('no-bail-warning').style.display = 'none';
+        }
+
         let mult = 1;
         let wDark = document.getElementById('wheelDark').checked;
         let pDark = document.getElementById('paintDark').checked;
         let tCar = document.getElementById('tradeCar').checked;
 
         if (tCar) {
-            if (wDark && pDark) {
-                mult = 9; // เทรดรถ + ล้อดำ + สีรถดำ = x9
-            } else if (wDark || pDark) {
-                mult = 7; // เทรดรถ(5) + ล้อหรือสีดำ(2) = x7
-            } else {
-                mult = 5; // เทรดรถอย่างเดียว = x5
-            }
+            if (wDark && pDark) { mult = 9; } 
+            else if (wDark || pDark) { mult = 7; } 
+            else { mult = 5; }
         } else {
-            if (wDark && pDark) {
-                mult = 4; // ล้อดำ + สีรถดำ = x4
-            } else if (wDark || pDark) {
-                mult = 2; // ล้อหรือสีดำอย่างเดียว = x2
-            }
+            if (wDark && pDark) { mult = 4; } 
+            else if (wDark || pDark) { mult = 2; }
         }
 
         if (tCar) chargeNames.push("เทรดรถ");
@@ -381,7 +439,6 @@
         let finalFineBase = totalBaseFine * mult;
         let finalTimeBase = totalBaseTime; 
         
-        // จัดการ Prefix (สมรู้ร่วมคิด / แก้คดี)
         let prefixes = [];
         if (document.getElementById('accomplice').checked) prefixes.push("สมรู้ร่วมคิด");
         if (document.getElementById('reviseCase').checked) prefixes.push("แก้คดี");
@@ -392,7 +449,7 @@
         // อัปเดตหน้า 1 (เครื่องคิดเลข)
         // -----------------------------
         let bailCb = document.querySelector('.bail-cb:checked');
-        let bailRate = bailCb ? parseInt(bailCb.value) : 0;
+        let bailRate = (bailCb && !hasNoBail) ? parseInt(bailCb.value) : 0;
         
         let displayFine = finalFineBase;
         let displayTime = finalTimeBase;
@@ -412,55 +469,65 @@
         // อัปเดตหน้า 2 (สรุปข้อความ 2 กล่อง + Twitter)
         // -----------------------------
 
-        // 1. กล่องซ้าย (ไม่ประกัน)
+        // กล่องซ้าย (ไม่ประกัน)
         let noBailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
         if (chargeNames.length > 0) {
             noBailText = `ข้อหา: ${baseChargeString}\nค่าปรับ: ${finalFineBase.toLocaleString()}\nเวลา: ${finalTimeBase.toLocaleString()} นาที`;
         }
         document.getElementById('textNoBail').value = noBailText;
 
-        // 2. กล่องขวา (ประกัน)
-        let previewBailRate = bailRate > 0 ? bailRate : 2000; 
+        // กล่องขวา (ประกัน) และ Twitter
         let bailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
         let twitterLine = "";
+        let btnCopyBail = document.getElementById('btnCopyBail');
 
         if (chargeNames.length > 0) {
-            let bTime = finalTimeBase;
-            let bFine = finalFineBase;
-            let bChargeStr = baseChargeString;
-            let bailCost = 0;
+            if (hasNoBail) {
+                // กรณีติดคดีที่ไม่ให้ประกันตัว
+                bailText = "❌ คดีนี้ไม่สามารถประกันตัวได้\n(มีข้อหาที่ไม่อนุญาตให้ประกัน)";
+                twitterLine = `ค่าปรับ ${finalFineBase.toLocaleString()}`;
+                btnCopyBail.style.opacity = '0.5';
+                btnCopyBail.style.pointerEvents = 'none';
+            } else {
+                let previewBailRate = bailRate > 0 ? bailRate : 2000; 
+                let bTime = finalTimeBase;
+                let bFine = finalFineBase;
+                let bChargeStr = baseChargeString;
+                let bailCost = 0;
 
-            if (bTime > 5) {
-                bailCost = (bTime - 5) * previewBailRate;
-                bTime = 5;
-                bChargeStr += " + ประกัน";
+                if (bTime > 5) {
+                    bailCost = (bTime - 5) * previewBailRate;
+                    bTime = 5;
+                    bChargeStr += " + ประกัน";
+                }
+                
+                let totalBailFine = bFine + bailCost;
+                let fineDisplayLine = bailCost > 0 
+                    ? `${bFine.toLocaleString()} + ${bailCost.toLocaleString()} = ${totalBailFine.toLocaleString()}` 
+                    : `${totalBailFine.toLocaleString()}`;
+
+                let twitterDisplayLine = bailCost > 0
+                    ? `ค่าปรับ ${bFine.toLocaleString()} + ค่าประกัน ${bailCost.toLocaleString()} = รวม ${totalBailFine.toLocaleString()}`
+                    : `ค่าปรับ ${bFine.toLocaleString()}`;
+
+                bailText = `ข้อหา: ${bChargeStr}\nค่าปรับ: ${fineDisplayLine}\nเวลา: ${bTime.toLocaleString()} นาที`;
+                twitterLine = twitterDisplayLine;
+                
+                btnCopyBail.style.opacity = '1';
+                btnCopyBail.style.pointerEvents = 'auto';
             }
-            
-            let totalBailFine = bFine + bailCost;
-            
-            // รูปแบบสำหรับกล่องด้านบน
-            let fineDisplayLine = bailCost > 0 
-                ? `${bFine.toLocaleString()} + ${bailCost.toLocaleString()} = ${totalBailFine.toLocaleString()}` 
-                : `${totalBailFine.toLocaleString()}`;
-
-            // รูปแบบสำหรับกล่อง Twitter (มีคำว่า ค่าปรับ, ค่าประกัน, รวม)
-            let twitterDisplayLine = bailCost > 0
-                ? `ค่าปรับ ${bFine.toLocaleString()} + ค่าประกัน ${bailCost.toLocaleString()} = รวม ${totalBailFine.toLocaleString()}`
-                : `ค่าปรับ ${bFine.toLocaleString()}`;
-
-            bailText = `ข้อหา: ${bChargeStr}\nค่าปรับ: ${fineDisplayLine}\nเวลา: ${bTime.toLocaleString()} นาที`;
-            
-            // ส่งไปแสดงผลในกล่อง
-            twitterLine = twitterDisplayLine;
+        } else {
+            btnCopyBail.style.opacity = '1';
+            btnCopyBail.style.pointerEvents = 'auto';
         }
+        
         document.getElementById('textBail').value = bailText;
         document.getElementById('textTwitter').value = twitterLine;
     }
 
-    // ฟังก์ชันคัดลอกสำหรับหน้า 2 โดยตัดคำว่า ข้อหา:, ค่าปรับ:, และ เวลา: ออก
     function copyTextArea(elementId, btn) {
         let copyText = document.getElementById(elementId);
-        if(!copyText.value || copyText.value.includes("ข้อหา: -")) return;
+        if(!copyText.value || copyText.value.includes("ข้อหา: -") || copyText.value.includes("❌")) return;
         
         let textToCopy = copyText.value
             .replace(/^ข้อหา:\s*/gm, '')
@@ -476,7 +543,6 @@
         setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = oldBg; }, 1000);
     }
 
-    // ฟังก์ชันคัดลอกข้อความกล่องทวิตเตอร์
     function copySimpleText(elementId, btn) {
         let copyText = document.getElementById(elementId);
         if(!copyText.value || copyText.value === "") return;
@@ -490,7 +556,6 @@
         setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = oldBg; }, 1000);
     }
 
-    // ฟังก์ชันคัดลอกของหน้า 1
     function copyToClipboard() {
         let copyText = document.getElementById("copyText");
         if(copyText.value === "") return;
@@ -516,7 +581,6 @@
         calculate();
     }
 
-    // สั่งรันคำนวณ 1 รอบตอนเปิดเว็บเพื่อเซ็ตค่าเริ่มต้นให้กล่องหน้า 2
     window.onload = calculate;
 </script>
 </body>
