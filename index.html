@@ -52,15 +52,15 @@
             border-bottom: 2px solid var(--border-color);
             padding-bottom: 15px;
         }
-        
         h2 { color: var(--primary); margin: 0; font-size: 2.2em; font-weight: 600; text-shadow: 0 2px 10px rgba(255, 204, 0, 0.2); }
 
-        /* Pages & Animations */
-        .page, .calc-content { display: none; animation: fadeIn 0.3s ease; }
-        .page.active, .calc-content.active { display: block; }
+        /* การจัดการหน้า (Pages) */
+        .page { display: none; animation: fadeIn 0.3s ease; }
+        .page.active { display: block; }
+        .calc-content { display: none; animation: fadeIn 0.3s ease; }
+        .calc-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Layouts */
         .two-column-layout { display: flex; gap: 25px; align-items: stretch; }
         .left-column { flex: 1.4; display: flex; flex-direction: column; gap: 20px; }
         .right-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
@@ -71,33 +71,33 @@
         
         .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         
-        /* Charge Items */
-        .charge-item { display: flex; align-items: center; background-color: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s ease; cursor: pointer; }
+        .charge-item {
+            display: flex; align-items: center; background-color: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s ease; cursor: pointer;
+        }
         .charge-item:hover { background-color: var(--card-hover); transform: translateY(-2px); border-color: #444; }
         .charge-item:has(input[type="checkbox"]:checked) { border-color: var(--primary); background-color: rgba(255, 204, 0, 0.05); }
+
         .charge-item > div { flex-grow: 1; }
         .charge-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; accent-color: var(--primary); }
         .charge-item input[type="number"] { width: 50px; margin-left: 10px; padding: 5px; background: #111; color: var(--primary); border: 1px solid #444; border-radius: 6px; text-align: center; font-family: 'Prompt'; }
         
-        /* Options & Labels */
         .options-group { display: flex; gap: 12px; flex-wrap: wrap; }
         .option-label { display: flex; align-items: center; cursor: pointer; background: #2a1c1c; padding: 10px 15px; border-radius: 8px; border: 1px solid #5a2a2a; transition: all 0.2s; font-size: 1em; }
         .option-label.blue { background: #162635; border: 1px solid #234361; }
         .option-label.gold { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--primary); color: var(--primary); font-weight: bold;}
         .option-label input { margin-right: 8px; transform: scale(1.2); accent-color: var(--primary); }
         
-        /* Summary Box */
-        .summary-box { background: linear-gradient(135deg, #1c232d, #11161d); padding: 25px; border-radius: 12px; border: 1px solid #294052; border-left: 4px solid var(--primary); flex-grow: 1; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3); }
+        .summary-box { 
+            background: linear-gradient(135deg, #1c232d, #11161d); padding: 25px; border-radius: 12px; border: 1px solid #294052; border-left: 4px solid var(--primary); flex-grow: 1; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
         .summary-text { font-size: 1.25em; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
         .total-highlight { color: var(--danger); font-weight: 600; font-size: 1.5em; text-shadow: 0 2px 10px rgba(255, 77, 77, 0.3); }
 
-        /* Buttons & Inputs */
         .btn-copy-small { padding: 5px 10px; background: rgba(255, 204, 0, 0.15); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 0.65em; }
         .btn-copy-small:hover { background: var(--primary); color: #111; }
+        
         .copy-section { display: flex; gap: 12px; margin-top: 10px;}
-        textarea.copy-box, .text-area-box { font-family: 'Prompt'; border-radius: 8px; resize: none; box-sizing: border-box; }
-        textarea.copy-box { flex: 1; padding: 12px; background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); font-size: 1.05em; min-height: 50px; line-height: 1.4; }
-        .text-area-box { width: 100%; height: 180px; background: #0b0d10; color: #4CAF50; border: 1px solid #333; padding: 15px; font-size: 1.1em; line-height: 1.6; }
+        textarea.copy-box { flex: 1; padding: 12px; background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 8px; font-size: 1.05em; font-family: 'Prompt'; resize: none; min-height: 50px; line-height: 1.4; }
         
         button { padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: #111; font-weight: 600; font-size: 1.05em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
         button:hover { transform: scale(1.05); }
@@ -106,13 +106,14 @@
         .fine-note { font-size: 0.8em; color: var(--text-muted); display: block; margin-top: 2px; }
         .no-bail-badge { color: var(--danger); font-size: 0.85em; font-weight: 500; }
 
-        /* Tabs */
+        /* สไตล์หน้า 2 และแท็บด้านล่าง */
+        .text-area-box { width: 100%; height: 180px; background: #0b0d10; color: #4CAF50; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: 'Prompt'; font-size: 1.1em; resize: none; box-sizing: border-box; line-height: 1.6; }
         .tab-container { display: flex; gap: 5px; margin-top: 20px; border-top: 2px solid var(--border-color); padding-top: 10px; }
         .tab-btn { background: transparent; color: var(--text-muted); border: none; padding: 10px 20px; font-size: 1em; cursor: pointer; border-radius: 8px 8px 0 0; transition: 0.3s; }
         .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
-        .tab-btn.active { background: var(--primary); color: #111; font-weight: bold; }
+        .tab-btn.active { background: var(--primary); color: #111; font-weight: bold; transform: scale(1); }
 
-        /* Twitter Box */
+        /* สไตล์สำหรับกล่อง Twitter */
         .twitter-box { background: linear-gradient(135deg, #15202b, #192734); border-left: 4px solid var(--twitter-color); align-items: center; margin-top: 25px; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
         .twitter-input { width: 100%; max-width: 800px; padding: 15px; text-align: center; font-size: 1.25em; font-weight: bold; background: #0b0d10; color: var(--twitter-color); border: 1px solid var(--twitter-color); border-radius: 8px; font-family: 'Prompt'; }
         .btn-twitter { margin-top: 15px; width: 100%; max-width: 300px; background: linear-gradient(135deg, var(--twitter-color), #0d8bd9); color: white; border: none; }
@@ -122,7 +123,7 @@
 </head>
 <body>
 
-<div class="container" id="main-container">
+<div class="container">
     <div class="header-section">
         <h2>🚓 ระบบคิดค่าปรับ Some Town</h2>
     </div>
@@ -207,17 +208,17 @@
                 <div class="section" id="car-mod-section" style="height: auto;">
                     <h3>🚗 โทษแต่งรถ</h3>
                     <div class="options-group">
-                        <label class="option-label"><input type="checkbox" id="wheelDark" class="calc-trigger"> ล้อโทนมืด (x2)</label>
-                        <label class="option-label"><input type="checkbox" id="paintDark" class="calc-trigger"> สีรถโทนมืด (x2)</label>
-                        <label class="option-label" style="background: rgba(255, 77, 77, 0.1); border-color: var(--danger);"><input type="checkbox" id="tradeCar" class="calc-trigger"> เทรดรถ (x5)</label>
+                        <label class="option-label"><input type="checkbox" id="wheelDark" onchange="calculate()"> ล้อโทนมืด (x2)</label>
+                        <label class="option-label"><input type="checkbox" id="paintDark" onchange="calculate()"> สีรถโทนมืด (x2)</label>
+                        <label class="option-label" style="background: rgba(255, 77, 77, 0.1); border-color: var(--danger);"><input type="checkbox" id="tradeCar" onchange="calculate()"> เทรดรถ (x5)</label>
                     </div>
                 </div>
 
                 <div class="section" style="height: auto;">
                     <h3>🤝 เลือกประเภทประกันตัว</h3>
                     <div class="options-group" id="bail-options-container">
-                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="2000"> ประกันเอง (2000/นาที)</label>
-                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="1000"> ญาติประกัน (1000/นาที)</label>
+                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="2000" onclick="handleBail(this)"> ประกันเอง (2000/นาที)</label>
+                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="1000" onclick="handleBail(this)"> ญาติประกัน (1000/นาที)</label>
                     </div>
                     <div id="no-bail-warning" style="display:none; color: var(--danger); margin-top: 10px; font-size: 0.9em; font-weight: bold;">
                         ⚠️ คดีนี้มีข้อหาที่ไม่สามารถประกันตัวได้
@@ -243,14 +244,14 @@
                     <div style="margin-top: auto; padding-top: 25px;">
                         <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px;">
                             <div style="display: flex; gap: 10px;">
-                                <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="accomplice" class="calc-trigger"> 👥 สมรู้ร่วมคิด</label>
-                                <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="reviseCase" class="calc-trigger"> 📝 แก้คดี</label>
+                                <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="accomplice" onchange="calculate()"> 👥 สมรู้ร่วมคิด</label>
+                                <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="reviseCase" onchange="calculate()"> 📝 แก้คดี</label>
                             </div>
                         </div>
                         <div class="copy-section" style="margin-top: 0; padding-top: 0;">
                             <textarea id="copyText" class="copy-box" readonly placeholder="ข้อหาจะแสดงที่นี่..."></textarea>
                             <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <button onclick="copyToClipboard('copyText')" style="font-size: 0.95em; height: 100%;">📋 คัดลอกข้อหา</button>
+                                <button onclick="copyToClipboard()" style="font-size: 0.95em; height: 100%;">📋 คัดลอกข้อหา</button>
                                 <button onclick="resetAll()" class="btn-reset" style="font-size: 0.95em;">🗑️ ล้างค่า</button>
                             </div>
                         </div>
@@ -290,86 +291,59 @@
 </div>
 
 <script>
-    // --- Caching DOM Elements (Optimize 2) ---
-    const DOM = {
-        multiplierDisplay: document.getElementById('multiplierDisplay'),
-        finalFine: document.getElementById('finalFine'),
-        finalTime: document.getElementById('finalTime'),
-        copyText: document.getElementById('copyText'),
-        textNoBail: document.getElementById('textNoBail'),
-        textBail: document.getElementById('textBail'),
-        textTwitter: document.getElementById('textTwitter'),
-        btnCopyBail: document.getElementById('btnCopyBail'),
-        noBailWarning: document.getElementById('no-bail-warning'),
-        carModSec: document.getElementById('car-mod-section'),
-        
-        // Inputs
-        wheelDark: document.getElementById('wheelDark'),
-        paintDark: document.getElementById('paintDark'),
-        tradeCar: document.getElementById('tradeCar'),
-        accomplice: document.getElementById('accomplice'),
-        reviseCase: document.getElementById('reviseCase'),
-        
-        // Escape Rules Elements
-        cbInCity: document.getElementById('cb_inCity'),
-        cbOutCity: document.getElementById('cb_outCity'),
-        cbWater: document.getElementById('cb_water'),
-        cbHardToReach: document.getElementById('cb_hardToReach'),
-        cbAirport: document.getElementById('cb_airport')
-    };
-
-    // --- Tab Switch Logic ---
+    // สลับหน้าหลักและแท็บย่อย
     function switchMainTab(wrapperId, innerTabId, btn) {
-        document.querySelectorAll('.page, .tab-btn').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        
         document.getElementById(wrapperId).classList.add('active');
         btn.classList.add('active');
 
         if (innerTabId) {
             document.querySelectorAll('.calc-content').forEach(c => c.classList.remove('active'));
             document.getElementById(innerTabId).classList.add('active');
-            
-            // Toggle Car Mod Section
-            if (DOM.carModSec) DOM.carModSec.style.display = (innerTabId === 'tab_flagrante') ? 'none' : 'block';
+
+            // ซ่อนกล่องตัวคูณรถเมื่ออยู่หน้า "จับเหตุซึ่งหน้า"
+            let carModSec = document.getElementById('car-mod-section');
+            if (carModSec) {
+                carModSec.style.display = (innerTabId === 'tab_flagrante') ? 'none' : 'block';
+            }
         }
     }
 
-    // --- Core Logic & Event Delegation (Optimize 1) ---
-    document.getElementById('main-container').addEventListener('change', (e) => {
+    // ตัวแปรสำหรับกฎพื้นที่หลบหนี
+    const cbInCity = document.getElementById('cb_inCity');
+    const cbOutCity = document.getElementById('cb_outCity');
+    const cbUpperCity = document.getElementById('cb_upperCity');
+    const cbAirport = document.getElementById('cb_airport');
+    const cbDesert = document.getElementById('cb_desert');
+    const cbWater = document.getElementById('cb_water');
+    const cbHardToReach = document.getElementById('cb_hardToReach');
+
+    function enforceEscapeRules(e) {
         const target = e.target;
-        
-        // Handle Event Delegation
-        if (target.classList.contains('location-cb')) enforceEscapeRules(target);
-        if (target.classList.contains('bail-cb')) handleBail(target);
-        
-        // Trigger calculate for relevant inputs
-        if (target.type === 'checkbox' || target.classList.contains('calc-trigger') || target.classList.contains('charge-cb')) {
-            calculate();
-        }
-    });
+        if (!target.classList.contains('location-cb')) return;
 
-    document.getElementById('main-container').addEventListener('input', (e) => {
-        if (e.target.classList.contains('qty')) calculate();
-    });
+        // พื้นที่หลบหนีหลัก 6 แห่งที่เลือกได้แค่อันเดียว
+        const mainEscapes = [
+            cbInCity, cbOutCity, cbUpperCity, cbAirport, cbDesert, cbWater
+        ];
 
-    function enforceEscapeRules(target) {
-        if (!target.checked) return;
+        if (target.checked) {
+            // 1. ถ้าสิ่งที่ติ๊กเป็น 1 ใน 6 พื้นที่หลัก ให้เอาอันอื่นที่เคยติ๊กออก
+            if (mainEscapes.includes(target)) {
+                mainEscapes.forEach(cb => {
+                    if (cb && cb !== target) cb.checked = false;
+                });
+            }
 
-        const { cbWater, cbInCity, cbOutCity, cbHardToReach, cbAirport } = DOM;
-
-        if (target === cbWater) {
-            if (cbInCity) cbInCity.checked = false;
-            if (cbOutCity) cbOutCity.checked = false;
-        } else if (target === cbInCity || target === cbOutCity) {
-            if (cbWater) cbWater.checked = false;
-            if (cbAirport) cbAirport.checked = false;
-            if (target === cbInCity && cbHardToReach) cbHardToReach.checked = false;
-            if (target === cbInCity && cbOutCity) cbOutCity.checked = false;
-            if (target === cbOutCity && cbInCity) cbInCity.checked = false;
-        } else if (target === cbHardToReach && cbInCity) {
-            cbInCity.checked = false;
-        } else if (target === cbAirport) {
-            if (cbInCity) cbInCity.checked = false;
-            if (cbOutCity) cbOutCity.checked = false;
+            // 2. กฎเพิ่มเติม: ในเมือง กับ เข้าถึงยาก ติ๊กพร้อมกันไม่ได้
+            if (target === cbInCity) {
+                if (cbHardToReach) cbHardToReach.checked = false;
+            }
+            if (target === cbHardToReach) {
+                if (cbInCity) cbInCity.checked = false;
+            }
         }
     }
 
@@ -379,28 +353,47 @@
                 if (cb !== clickedCb) cb.checked = false;
             });
         }
+        calculate();
     }
 
-    // --- Main Calculation (Optimize 3) ---
-    function calculate() {
-        let fineWithMult = 0, fineNoMult = 0, totalBaseTime = 0;
-        let chargeNames = [], hardToReachName = "";
-        let hasNoBail = false;
-        const hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟแปรรูป"];
+    document.querySelectorAll('.charge-cb').forEach(el => {
+        el.addEventListener('change', (e) => {
+            enforceEscapeRules(e);
+            calculate();
+        });
+    });
+    
+    document.querySelectorAll('.qty').forEach(el => {
+        el.addEventListener('input', calculate);
+    });
 
-        // Loop only through checked items
+    function calculate() {
+        // แยกตัวแปรเก็บยอดเงินที่ใช้ตัวคูณ (งานดำ) และไม่ใช้ตัวคูณ (จับเหตุซึ่งหน้า)
+        let fineWithMult = 0; 
+        let fineNoMult = 0;
+        let totalBaseTime = 0; 
+        let chargeNames = [];
+        let hardToReachName = ""; 
+        let hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟแปรรูป"];
+        let hasNoBail = false; 
+
         document.querySelectorAll('.charge-cb:checked').forEach(cb => {
-            let isNoBail = cb.getAttribute('data-no-bail') === "true";
-            if (isNoBail) hasNoBail = true;
+            if (cb.getAttribute('data-no-bail') === "true") {
+                hasNoBail = true;
+            }
 
             let name = cb.getAttribute('data-name');
             let fine = parseInt(cb.getAttribute('data-fine'));
             let time = parseInt(cb.getAttribute('data-time'));
-            
             let qtyInput = cb.closest('label').querySelector('.qty');
             let qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
+            
+            // เช็คว่าข้อหานี้มาจากแท็บไหน
             let isFlagrante = cb.closest('#tab_flagrante') !== null;
-            let itemFine = 0, itemTime = 0, chargeString = "";
+
+            let chargeString = "";
+            let itemFine = 0;
+            let itemTime = 0;
 
             if (name === "เงินแดง" || name === "ผงหลอดไฟ") {
                 let sets = Math.round(qty / 10);
@@ -417,44 +410,55 @@
                 chargeString = name;
             }
 
-            if (isFlagrante) fineNoMult += itemFine;
-            else fineWithMult += itemFine;
-            
+            // แยกยอดบวกตามหมวดหมู่
+            if (isFlagrante) {
+                fineNoMult += itemFine; // จับเหตุซึ่งหน้า ไม่โดนคูณ
+            } else {
+                fineWithMult += itemFine; // งานดำ โดนคูณ
+            }
             totalBaseTime += itemTime;
 
-            if (chargeString) {
-                if (name === "หลบหนีพื้นที่เข้าถึงยาก") hardToReachName = chargeString;
-                else chargeNames.push(chargeString);
+            if (chargeString !== "") {
+                if (name === "หลบหนีพื้นที่เข้าถึงยาก") {
+                    hardToReachName = chargeString;
+                } else {
+                    chargeNames.push(chargeString);
+                }
             }
         });
 
-        if (hardToReachName) chargeNames.push(hardToReachName);
+        if (hardToReachName !== "") {
+            chargeNames.push(hardToReachName);
+        }
 
-        // UI update for Bail Options
+        // จัดการ UI กรณีที่ห้ามประกันตัว
         let bailOptions = document.querySelectorAll('.bail-cb');
         let bailLabels = document.querySelectorAll('.bail-label');
         if (hasNoBail) {
             bailOptions.forEach(cb => { cb.checked = false; cb.disabled = true; });
             bailLabels.forEach(lbl => { lbl.style.opacity = '0.4'; lbl.style.cursor = 'not-allowed'; });
-            DOM.noBailWarning.style.display = 'block';
+            document.getElementById('no-bail-warning').style.display = 'block';
         } else {
-            bailOptions.forEach(cb => cb.disabled = false);
+            bailOptions.forEach(cb => { cb.disabled = false; });
             bailLabels.forEach(lbl => { lbl.style.opacity = '1'; lbl.style.cursor = 'pointer'; });
-            DOM.noBailWarning.style.display = 'none';
+            document.getElementById('no-bail-warning').style.display = 'none';
         }
 
-        // Multiplier Logic
         let mult = 1;
-        let wDark = DOM.wheelDark.checked;
-        let pDark = DOM.paintDark.checked;
-        let tCar = DOM.tradeCar.checked;
+        let wDark = document.getElementById('wheelDark').checked;
+        let pDark = document.getElementById('paintDark').checked;
+        let tCar = document.getElementById('tradeCar').checked;
 
         if (tCar) {
-            mult = (wDark && pDark) ? 9 : (wDark || pDark) ? 7 : 5;
+            if (wDark && pDark) { mult = 9; } 
+            else if (wDark || pDark) { mult = 7; } 
+            else { mult = 5; }
         } else {
-            mult = (wDark && pDark) ? 4 : (wDark || pDark) ? 2 : 1;
+            if (wDark && pDark) { mult = 4; } 
+            else if (wDark || pDark) { mult = 2; }
         }
 
+        // หากไม่มีข้อหาในหมวดงานดำเลย ให้บังคับตัวคูณเป็น 1 และไม่เพิ่มข้อหาแต่งรถลงไปในคดี
         if (fineWithMult === 0) {
             mult = 1;
         } else {
@@ -463,18 +467,21 @@
             if (pDark) chargeNames.push("สีรถโทนมืด");
         }
         
-        DOM.multiplierDisplay.innerText = `x${mult}`;
+        document.getElementById('multiplierDisplay').innerText = `x${mult}`;
 
-        // Base Calculations
+        // คำนวณยอดปรับสุทธิ (คูณแค่งานดำ แล้วมาบวกกับจับเหตุซึ่งหน้า)
         let finalFineBase = (fineWithMult * mult) + fineNoMult;
         let finalTimeBase = totalBaseTime; 
         
         let prefixes = [];
-        if (DOM.accomplice.checked) prefixes.push("สมรู้ร่วมคิด");
-        if (DOM.reviseCase.checked) prefixes.push("แก้คดี");
+        if (document.getElementById('accomplice').checked) prefixes.push("สมรู้ร่วมคิด");
+        if (document.getElementById('reviseCase').checked) prefixes.push("แก้คดี");
         let prefixStr = prefixes.length > 0 ? prefixes.join(' ') + " " : "";
         let baseChargeString = prefixStr + chargeNames.join(' + ');
 
+        // -----------------------------
+        // อัปเดตหน้า 1 (เครื่องคิดเลข)
+        // -----------------------------
         let bailCb = document.querySelector('.bail-cb:checked');
         let bailRate = (bailCb && !hasNoBail) ? parseInt(bailCb.value) : 0;
         
@@ -488,30 +495,39 @@
             displayChargeStr += displayChargeStr ? " + ประกัน" : "ประกัน";
         }
 
-        // --- Update Output Elements ---
-        DOM.finalFine.innerText = displayFine.toLocaleString();
-        DOM.finalTime.innerText = displayTime.toLocaleString() + ' นาที';
-        DOM.copyText.value = displayChargeStr;
+        document.getElementById('finalFine').innerText = displayFine.toLocaleString();
+        document.getElementById('finalTime').innerText = displayTime.toLocaleString() + ' นาที';
+        document.getElementById('copyText').value = displayChargeStr;
 
-        // No Bail Summary
-        let noBailText = chargeNames.length > 0 
-            ? `ข้อหา: ${baseChargeString}\nค่าปรับ: ${finalFineBase.toLocaleString()}\nเวลา: ${finalTimeBase.toLocaleString()} นาที`
-            : "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
-        DOM.textNoBail.value = noBailText;
+        // -----------------------------
+        // อัปเดตหน้า 2 (สรุปข้อความ 2 กล่อง + Twitter)
+        // -----------------------------
 
-        // Bail & Twitter Summary
+        // กล่องซ้าย (ไม่ประกัน)
+        let noBailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
+        if (chargeNames.length > 0) {
+            noBailText = `ข้อหา: ${baseChargeString}\nค่าปรับ: ${finalFineBase.toLocaleString()}\nเวลา: ${finalTimeBase.toLocaleString()} นาที`;
+        }
+        document.getElementById('textNoBail').value = noBailText;
+
+        // กล่องขวา (ประกัน) และ Twitter
         let bailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
         let twitterLine = "";
+        let btnCopyBail = document.getElementById('btnCopyBail');
 
         if (chargeNames.length > 0) {
             if (hasNoBail) {
+                // กรณีติดคดีที่ไม่ให้ประกันตัว
                 bailText = "❌ คดีนี้ไม่สามารถประกันตัวได้\n(มีข้อหาที่ไม่อนุญาตให้ประกัน)";
                 twitterLine = `ค่าปรับ ${finalFineBase.toLocaleString()}`;
-                DOM.btnCopyBail.style.opacity = '0.5';
-                DOM.btnCopyBail.style.pointerEvents = 'none';
+                btnCopyBail.style.opacity = '0.5';
+                btnCopyBail.style.pointerEvents = 'none';
             } else {
                 let previewBailRate = bailRate > 0 ? bailRate : 2000; 
-                let bTime = finalTimeBase, bFine = finalFineBase, bChargeStr = baseChargeString, bailCost = 0;
+                let bTime = finalTimeBase;
+                let bFine = finalFineBase;
+                let bChargeStr = baseChargeString;
+                let bailCost = 0;
 
                 if (bTime > 5) {
                     bailCost = (bTime - 5) * previewBailRate;
@@ -524,28 +540,23 @@
                     ? `${bFine.toLocaleString()} + ${bailCost.toLocaleString()} = ${totalBailFine.toLocaleString()}` 
                     : `${totalBailFine.toLocaleString()}`;
 
-                bailText = `ข้อหา: ${bChargeStr}\nค่าปรับ: ${fineDisplayLine}\nเวลา: ${bTime.toLocaleString()} นาที`;
-                twitterLine = bailCost > 0
+                let twitterDisplayLine = bailCost > 0
                     ? `ค่าปรับ ${bFine.toLocaleString()} + ค่าประกัน ${bailCost.toLocaleString()} = รวม ${totalBailFine.toLocaleString()}`
                     : `ค่าปรับ ${bFine.toLocaleString()}`;
+
+                bailText = `ข้อหา: ${bChargeStr}\nค่าปรับ: ${fineDisplayLine}\nเวลา: ${bTime.toLocaleString()} นาที`;
+                twitterLine = twitterDisplayLine;
                 
-                DOM.btnCopyBail.style.opacity = '1';
-                DOM.btnCopyBail.style.pointerEvents = 'auto';
+                btnCopyBail.style.opacity = '1';
+                btnCopyBail.style.pointerEvents = 'auto';
             }
         } else {
-            DOM.btnCopyBail.style.opacity = '1';
-            DOM.btnCopyBail.style.pointerEvents = 'auto';
+            btnCopyBail.style.opacity = '1';
+            btnCopyBail.style.pointerEvents = 'auto';
         }
         
-        DOM.textBail.value = bailText;
-        DOM.textTwitter.value = twitterLine;
-    }
-
-    // --- Helper Functions ---
-    function triggerCopyFeedback(btn, originalText) {
-        btn.innerHTML = "✅ สำเร็จ!"; 
-        btn.style.background = "#4caf50";
-        setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ""; }, 1000);
+        document.getElementById('textBail').value = bailText;
+        document.getElementById('textTwitter').value = twitterLine;
     }
 
     function copyTextArea(elementId, btn) {
@@ -558,31 +569,41 @@
             .replace(/^เวลา:\s*/gm, '');
 
         navigator.clipboard.writeText(textToCopy);
-        triggerCopyFeedback(btn, btn.innerHTML.replace("✅ สำเร็จ!", "").trim());
+        
+        let oldHtml = btn.innerHTML;
+        let oldBg = btn.style.background;
+        btn.innerHTML = "✅ คัดลอกสำเร็จ!"; 
+        btn.style.background = "#333";
+        setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = oldBg; }, 1000);
     }
 
     function copySimpleText(elementId, btn) {
         let copyText = document.getElementById(elementId);
-        if(!copyText.value) return;
+        if(!copyText.value || copyText.value === "") return;
         copyText.select(); 
         navigator.clipboard.writeText(copyText.value);
-        triggerCopyFeedback(btn, btn.innerHTML.replace("✅ สำเร็จ!", "").trim());
+        
+        let oldHtml = btn.innerHTML;
+        let oldBg = btn.style.background;
+        btn.innerHTML = "✅ สำเร็จ!"; 
+        btn.style.background = "#333";
+        setTimeout(() => { btn.innerHTML = oldHtml; btn.style.background = oldBg; }, 1000);
     }
 
-    function copyToClipboard(elementId) {
-        let copyText = document.getElementById(elementId);
-        if(!copyText.value) return;
-        copyText.select(); 
-        navigator.clipboard.writeText(copyText.value);
-        let btn = document.querySelector(`button[onclick="copyToClipboard('${elementId}')"]`);
-        triggerCopyFeedback(btn, "📋 คัดลอกข้อหา");
+    function copyToClipboard() {
+        let copyText = document.getElementById("copyText");
+        if(copyText.value === "") return;
+        copyText.select(); navigator.clipboard.writeText(copyText.value);
+        let btn = document.querySelector('button[onclick="copyToClipboard()"]');
+        let old = btn.innerHTML; btn.innerHTML = "✅ สำเร็จ!"; btn.style.background = "#4caf50";
+        setTimeout(() => { btn.innerHTML = old; btn.style.background = ""; }, 1000);
     }
 
     function copyValue(id, btn) {
         let val = document.getElementById(id).innerText.replace(/,/g, '').replace(' นาที', '');
-        if (val === "0") return; 
-        navigator.clipboard.writeText(val);
-        triggerCopyFeedback(btn, "📋");
+        if (val === "0") return; navigator.clipboard.writeText(val);
+        let old = btn.innerHTML; btn.innerHTML = "✔️"; btn.style.background = "#4caf50";
+        setTimeout(() => { btn.innerHTML = old; btn.style.background = ""; }, 800);
     }
 
     function resetAll() {
@@ -594,7 +615,6 @@
         calculate();
     }
 
-    // Init
     window.onload = calculate;
 </script>
 </body>
