@@ -97,22 +97,22 @@
         .btn-copy-small:hover { background: var(--primary); color: #111; }
         
         .copy-section { display: flex; gap: 12px; margin-top: 10px;}
-        
-        /* ปรับขนาดตัวอักษรกล่องนี้ให้ใหญ่ขึ้นและชัดเจนขึ้น */
+        /* -------- ปรับแต่งขนาดกล่องข้อความตรงนี้ -------- */
         textarea.copy-box { 
             flex: 1; 
-            padding: 12px; 
-            background-color: rgba(0,0,0,0.3); 
-            border: 1px solid rgba(255, 204, 0, 0.4); 
+            padding: 15px; 
+            background-color: rgba(0,0,0,0.4); 
+            border: 1px solid rgba(255, 204, 0, 0.5); 
             color: var(--primary); 
             border-radius: 8px; 
-            font-size: 1.35em; /* ปรับจาก 1.05em เป็น 1.35em */
-            font-weight: 500; /* เพิ่มความหนาของตัวอักษร */
+            font-size: 1.3em; /* ใหญ่ขึ้น */
+            font-weight: 500; /* หนาขึ้นนิดหน่อย */
             font-family: 'Prompt'; 
             resize: none; 
-            min-height: 60px; 
+            min-height: 110px; /* กล่องสูงขึ้น */
             line-height: 1.5; 
         }
+        /* ------------------------------------------------ */
         
         button { padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: #111; font-weight: 600; font-size: 1.05em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
         button:hover { transform: scale(1.05); }
