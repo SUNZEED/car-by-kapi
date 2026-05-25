@@ -97,7 +97,22 @@
         .btn-copy-small:hover { background: var(--primary); color: #111; }
         
         .copy-section { display: flex; gap: 12px; margin-top: 10px;}
-        textarea.copy-box { flex: 1; padding: 12px; background-color: rgba(0,0,0,0.3); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 8px; font-size: 1.05em; font-family: 'Prompt'; resize: none; min-height: 50px; line-height: 1.4; }
+        
+        /* ปรับขนาดตัวอักษรกล่องนี้ให้ใหญ่ขึ้นและชัดเจนขึ้น */
+        textarea.copy-box { 
+            flex: 1; 
+            padding: 12px; 
+            background-color: rgba(0,0,0,0.3); 
+            border: 1px solid rgba(255, 204, 0, 0.4); 
+            color: var(--primary); 
+            border-radius: 8px; 
+            font-size: 1.35em; /* ปรับจาก 1.05em เป็น 1.35em */
+            font-weight: 500; /* เพิ่มความหนาของตัวอักษร */
+            font-family: 'Prompt'; 
+            resize: none; 
+            min-height: 60px; 
+            line-height: 1.5; 
+        }
         
         button { padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: #111; font-weight: 600; font-size: 1.05em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
         button:hover { transform: scale(1.05); }
