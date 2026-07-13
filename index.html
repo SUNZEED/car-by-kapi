@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Summer City | ปล่อยเช่ารถ</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <!-- นำเข้าไลบรารีแคปจอ และ AI อ่านตัวหนังสือ -->
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <style>
@@ -197,13 +196,15 @@
             <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
             <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
             
-            <!-- ปุ่ม OCR รับภาพสัญญา -->
-            <label class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); cursor: pointer; margin-left: auto;">
-                📸 อัปโหลดรูปสัญญา (Auto-fill)
-                <input type="file" id="ocrInput" accept="image/*" style="display: none;" onchange="processOCR(event)">
-            </label>
-
-            <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()">📸 แคปรูปรถที่เหลือ</button>
+            <div style="margin-left: auto; display: flex; gap: 10px;">
+                <!-- ปุ่มสแกนสัญญา ปรับให้เหลือแค่อิโมจิตามที่ขอ -->
+                <label class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); cursor: pointer; padding: 12px 18px; margin: 0; font-size: 16px;" title="AI อ่านรูปสัญญาอัตโนมัติ">
+                    📄✨
+                    <input type="file" id="ocrInput" accept="image/*" style="display: none;" onchange="processOCR(event)">
+                </label>
+                <!-- ปุ่มแคปหน้าจอ -->
+                <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()" style="margin: 0;">📸 แคปรูปรถที่เหลือ</button>
+            </div>
         </div>
         
         <!-- สถานะการประมวลผล OCR -->
@@ -224,9 +225,8 @@
         <div id="adminContent" style="display: none;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <!-- ปุ่ม Export / Import Data -->
                     <button class="btn btn-add" style="background: #27ae60; box-shadow: none;" onclick="exportCars()">📤 Export ข้อมูลรถ</button>
-                    <label class="btn btn-edit" style="background: #2980b9; border: none; cursor: pointer;">
+                    <label class="btn btn-edit" style="background: #2980b9; border: none; cursor: pointer; margin-left: 5px;">
                         📥 Import ข้อมูลรถ
                         <input type="file" accept=".json" style="display:none;" onchange="importCars(event)">
                     </label>
@@ -485,7 +485,7 @@
             try {
                 const imported = JSON.parse(e.target.result);
                 if(Array.isArray(imported)) {
-                    cars = imported; // เขียนทับหรือสามารถปรับเป็น concat ได้
+                    cars = imported;
                     saveDataLocally();
                     renderManageCars();
                     renderCars();
@@ -496,7 +496,7 @@
             }
         };
         reader.readAsText(file);
-        event.target.value = ''; // เคลียร์ค่า input
+        event.target.value = ''; 
     }
 
     // --- ระบบจัดการหมวดหมู่ ---
@@ -560,20 +560,16 @@
         statusEl.style.color = "var(--summer-orange)";
 
         try {
-            // ใช้ภาษาอังกฤษเป็นหลักในการหาทะเบียน และภาษาไทยในการหาเวลา
             const worker = await Tesseract.createWorker('tha+eng');
             const ret = await worker.recognize(file);
-            const text = ret.data.text.replace(/\n/g, ' '); // จับข้อความทั้งหมดมาต่อกัน
+            const text = ret.data.text.replace(/\n/g, ' '); 
             await worker.terminate();
 
             console.log("OCR Scanned Text:", text);
 
-            // 1. หาป้ายทะเบียนที่ตรงกันในระบบ
             let matchedCar = null;
-            // เรียงรถจากทะเบียนยาวไปสั้น ป้องกันการอ่านทะเบียนสั้นซ้อนทะเบียนยาว
             let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
             for(let car of sortedCars) {
-                // เทียบตัวอักษรแบบตัดช่องว่าง
                 const cleanText = text.replace(/\s+/g, '').toUpperCase();
                 const cleanPlate = car.plate.replace(/\s+/g, '').toUpperCase();
                 
@@ -590,7 +586,6 @@
                 return;
             }
 
-            // ถ้ารถคันนี้ถูกเช่าอยู่แล้ว ให้ข้าม (ป้องกันการทำรายการซ้ำ)
             if (matchedCar.status === 'busy') {
                 statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
                 statusEl.style.color = "#ff4757";
@@ -598,9 +593,7 @@
                 return;
             }
 
-            // 2. หาเวลาที่เหลือ (ชั่วโมง / นาที / วินาที)
             let hours = 0, mins = 0;
-            // มองหาตัวเลขที่อยู่หน้าคำว่า ชั่วโมง (หรือ ชัวโมง, ซัวโมง ที่ OCR อาจจะอ่านเพี้ยน)
             const hMatch = text.match(/(\d+)\s*[ชซ]/);
             const mMatch = text.match(/(\d+)\s*[นม]/);
 
@@ -612,19 +605,15 @@
                 autoEndTime.setHours(autoEndTime.getHours() + hours);
                 autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
             } else {
-                // ถ้า AI อ่านเวลาไม่ออก ให้ default เป็น 24 ชั่วโมง
                 autoEndTime.setDate(autoEndTime.getDate() + 1);
             }
 
             statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
             statusEl.style.color = "var(--summer-green)";
 
-            // เปิด Modal และ Auto-fill ข้อมูล
             openRentModal(matchedCar.id, autoEndTime);
 
-            // เคลียร์ input เพื่อให้อัปโหลดรูปเดิมซ้ำได้
             event.target.value = '';
-
             setTimeout(() => { statusEl.innerText = ""; }, 5000);
 
         } catch (err) {
@@ -751,7 +740,6 @@
         }
     }, 1000); 
 
-    // รับค่า autoEndTime เผื่อมาจาก OCR
     function openRentModal(id, autoEndTime = null) {
         const car = cars.find(c => c.id === id);
         document.getElementById('rentCarId').value = car.id;
@@ -761,13 +749,9 @@
         if (car.ownerType === 'kapi') { document.getElementById('rentSplitType').value = 'kapi'; }
         else { document.getElementById('rentSplitType').value = 'split'; }
 
-        // ถ้ามีเวลาส่งมาจาก OCR ให้ตั้งค่าเวลาอัตโนมัติ
         if(autoEndTime) {
-            // ปรับ format ให้ตรงกับ datetime-local ของ HTML
             autoEndTime.setMinutes(autoEndTime.getMinutes() - autoEndTime.getTimezoneOffset());
             document.getElementById('rentEndTime').value = autoEndTime.toISOString().slice(0, 16);
-            
-            // โฟกัสไปที่ช่องใส่เงินเลยเพื่อความรวดเร็ว
             setTimeout(() => { document.getElementById('rentPrice').focus(); }, 100);
         } else {
             document.getElementById('rentEndTime').value = "";
@@ -832,7 +816,6 @@
         }
     }
 
-    // --- ระบบแก้ไขรถ ---
     function openEditModal(id) {
         const car = cars.find(c => c.id === id);
         document.getElementById('editCarId').value = car.id;
@@ -1040,30 +1023,27 @@
         document.getElementById('dashTitle2').innerText = `ส่วนที่ 2: สรุปรวมตลอดกาล` + titleSuffix;
     }
 
-    // --- แก้บั๊กกล่องถ่ายรูปจอดำ ---
-    // สร้างคอนเทนเนอร์บนจอจริงๆ แต่ตั้ง position ให้อยู่ข้างหลังและมองไม่เห็น เพื่อให้ Browser โหลดรูปให้ครบก่อน
+    // --- แก้บั๊กกล่องถ่ายรูปจอดำ โดยใช้วิธีสร้างกล่องชั่วคราวแล้วลบออก ---
     function captureAvailableCars() {
         const availableCars = cars.filter(c => c.status === 'available');
         if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
 
         const captureBtn = document.getElementById('captureBtn');
         const originalBtnText = captureBtn.innerText;
-        captureBtn.innerText = "⏳ กำลังดึงรูปภาพ (โปรดรอ)...";
+        captureBtn.innerText = "⏳ รอแป๊บ...";
         captureBtn.style.pointerEvents = "none";
 
-        // สร้างกล่องสำหรับแคป
         const target = document.createElement('div');
-        target.style.position = "fixed";
+        // เลื่อนกล่องออกไปนอกจอแทนการใช้ visibility hidden เพื่อให้ Browser เรนเดอร์ภาพได้สมบูรณ์
+        target.style.position = "absolute";
+        target.style.left = "-9999px";
         target.style.top = "0";
-        target.style.left = "0";
         target.style.width = "1000px";
-        target.style.background = "#0B0B0E";
+        target.style.backgroundColor = "#0B0B0E";
         target.style.padding = "40px";
         target.style.display = "grid";
         target.style.gridTemplateColumns = "repeat(3, 1fr)";
         target.style.gap = "20px";
-        target.style.zIndex = "-9999"; 
-        target.style.visibility = "hidden"; // ซ่อนไว้แต่ยังมีตัวตนบน DOM ให้โหลดรูปลงได้
         document.body.appendChild(target);
 
         let htmlContent = "";
@@ -1071,7 +1051,7 @@
             const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
             htmlContent += `
                 <div style="background: #16161C; border-radius: 12px; overflow: hidden; border: 1px solid #262630;">
-                    <img src="${imgUrl}" crossorigin="anonymous" style="width: 100%; height: 200px; object-fit: cover;">
+                    <img src="${imgUrl}" crossorigin="anonymous" style="width: 100%; height: 200px; object-fit: cover; display: block;">
                     <div style="padding: 15px; font-size: 20px; font-weight: 800; color: #fff; text-align: center; font-family: 'Kanit', sans-serif;">
                         ${car.name} ${car.isTurbo ? '🚀' : ''}
                     </div>
@@ -1080,42 +1060,42 @@
         });
         target.innerHTML = htmlContent;
 
-        // บังคับให้รอรูปทุกใบโหลดเสร็จ
+        // รอจนกว่ารูปภาพทั้งหมดโหลดเข้า DOM เสร็จ 100%
         const images = Array.from(target.querySelectorAll('img'));
         const imagePromises = images.map(img => {
             return new Promise(resolve => {
                 if (img.complete) return resolve();
                 img.onload = resolve;
-                img.onerror = resolve; // ถ้ารูปเสียก็ให้ผ่านไป จะได้ไม่ค้าง
+                img.onerror = resolve; 
             });
         });
 
         Promise.all(imagePromises).then(() => {
-            captureBtn.innerText = "📸 กำลังประมวลผลไฟล์ภาพ...";
+            captureBtn.innerText = "📸 กำลังเซฟ...";
             
-            // รอจังหวะให้ Browser วาดลงหน้าจอ 0.5 วินาที ก่อนแคปจริง
+            // รออีก 0.8 วินาทีให้ชัวร์ว่า Browser ระบายสีบนภาพครบ
             setTimeout(() => {
                 html2canvas(target, { 
                     backgroundColor: '#0B0B0E', 
                     useCORS: true,
-                    scale: 2 // เพิ่มความคมชัด
+                    scale: 2 // ช่วยให้ภาพชัดขึ้น
                 }).then(canvas => {
                     const link = document.createElement('a');
                     link.download = `Available_Cars_${Date.now()}.png`;
                     link.href = canvas.toDataURL("image/png");
                     link.click();
                     
-                    document.body.removeChild(target); // ลบกล่องทิ้งหลังเสร็จ
+                    target.remove();
                     captureBtn.innerText = originalBtnText;
                     captureBtn.style.pointerEvents = "auto";
                 }).catch(err => {
                     console.error(err);
-                    alert("เกิดข้อผิดพลาด! รูปบางรูปอาจไม่รองรับการแคปจอ (ติด CORS)");
-                    document.body.removeChild(target);
+                    alert("แคปภาพไม่สำเร็จ (อาจติดปัญหาดึงรูปรถจากบางเว็บ)");
+                    target.remove();
                     captureBtn.innerText = originalBtnText;
                     captureBtn.style.pointerEvents = "auto";
                 });
-            }, 500);
+            }, 800);
         });
     }
 
