@@ -3,641 +3,957 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคิดค่าปรับ Some Town</title>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Summer City | ปล่อยเช่ารถ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            --primary: #ffcc00;
-            --primary-hover: #e6b800;
-            --danger: #ff4d4d;
-            --panel-bg: rgba(26, 28, 35, 0.85);
-            --card-bg: #23252b;
-            --card-hover: #2c2f36;
-            --text-main: #e0e0e0;
-            --text-muted: #8b949e;
-            --border-color: #333842;
-            --twitter-color: #1DA1F2;
+            --summer-orange: #FF5E3A;
+            --summer-orange-glow: rgba(255, 94, 58, 0.4);
+            --summer-blue: #00D2FF;
+            --summer-blue-glow: rgba(0, 210, 255, 0.4);
+            --summer-green: #00E676;
+            --card-bg: #16161C; 
+            --bg-dark: #0B0B0E; 
+            --text-light: #EAEAEA;
+            --border-color: #262630;
         }
 
         body {
-            font-family: 'Prompt', sans-serif;
-            background: linear-gradient(135deg, #fce49c 0%, #74cfff 100%);
-            background-attachment: fixed;
-            color: var(--text-main);
-            margin: 0;
-            padding: 2vh 2vw;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
+            font-family: 'Kanit', sans-serif;
+            margin: 0; padding: 0;
+            background: var(--bg-dark);
             min-height: 100vh;
-            box-sizing: border-box;
-            position: relative; /* เพิ่มสำหรับจัดการเลเยอร์รูป */
-        }
-        
-        /* ------------------------------------------- */
-        /* เอฟเฟกต์รูปลอยไปลอยมานอกกรอบ */
-        /* ------------------------------------------- */
-        .floating-bg-img {
-            position: fixed;
-            bottom: 30px; /* ระยะห่างจากขอบล่าง */
-            right: 30px; /* ระยะห่างจากขอบขวา เปลี่ยนเป็น left: 30px; ได้ถ้าอยากให้อยู่ซ้าย */
-            width: 350px; /* ขนาดความกว้างรูป */
-            max-width: 30vw; 
-            border-radius: 16px;
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-            z-index: 0; /* ให้อยู่ด้านหลัง */
-            animation: floatUpDown 4s ease-in-out infinite; /* เรียกใช้ Animation */
-            pointer-events: none; /* ทำให้คลิกทะลุรูปได้ ไม่บังการทำงานเว็บ */
-            opacity: 0.9; /* ปรับความโปร่งใสเล็กน้อยให้ไม่แย่งความสนใจ */
+            color: var(--text-light);
+            background-image: radial-gradient(circle at 50% 0%, #1a1a24 0%, transparent 70%);
         }
 
-        @keyframes floatUpDown {
-            0% { transform: translateY(0px) rotate(0deg); }
-            50% { transform: translateY(-20px) rotate(2deg); } /* ลอยขึ้นและเอียงนิดๆ */
-            100% { transform: translateY(0px) rotate(0deg); }
+        header {
+            background: rgba(11, 11, 14, 0.85);
+            backdrop-filter: blur(12px);
+            padding: 15px 30px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid var(--border-color);
         }
-        /* ------------------------------------------- */
 
-        .container {
-            background-color: var(--panel-bg);
-            padding: 25px 35px 10px 35px;
-            border-radius: 20px;
-            width: 100%;
-            max-width: 1400px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.6);
-            border: 1px solid rgba(255, 204, 0, 0.2);
+        header h1 {
+            margin: 0; color: #fff; font-size: 24px; font-weight: 800;
+            display: flex; align-items: center; gap: 10px;
+            text-shadow: 0 0 15px var(--summer-orange-glow);
+            letter-spacing: 1px; cursor: pointer; user-select: none;
+        }
+        header h1:hover { text-shadow: 0 0 25px var(--summer-orange); }
+
+        .tab-menu { display: flex; gap: 12px; }
+        .tab-btn {
+            background: transparent; color: #888; border: 1px solid transparent;
+            padding: 8px 20px; border-radius: 8px; font-family: 'Kanit'; 
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+        .tab-btn.active {
+            background: rgba(255, 94, 58, 0.1); border-color: var(--summer-orange); 
+            color: var(--summer-orange); box-shadow: 0 0 15px var(--summer-orange-glow) inset;
+        }
+
+        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .controls {
+            display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;
+            background: rgba(22, 22, 28, 0.7); padding: 20px; border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid var(--border-color); align-items: center;
             backdrop-filter: blur(10px);
-            display: flex;
-            flex-direction: column;
-            z-index: 10; /* ให้กรอบดำอยู่เหนือรูปลอย */
         }
-        
-        .header-section {
-            text-align: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 15px;
+        .controls input[type="text"], .controls input[type="password"], .controls input[type="number"], .controls select {
+            padding: 12px 18px; border-radius: 8px; border: 1px solid #333; 
+            font-family: 'Kanit'; flex: 1; min-width: 150px; background: #0F0F13; color: #fff;
+            transition: all 0.3s ease;
         }
-        h2 { color: var(--primary); margin: 0; font-size: 2.2em; font-weight: 600; text-shadow: 0 2px 10px rgba(255, 204, 0, 0.2); }
-
-        /* การจัดการหน้า (Pages) */
-        .page { display: none; animation: fadeIn 0.3s ease; }
-        .page.active { display: block; }
-        .calc-content { display: none; animation: fadeIn 0.3s ease; }
-        .calc-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        .two-column-layout { display: flex; gap: 25px; align-items: stretch; }
-        .left-column { flex: 1.4; display: flex; flex-direction: column; gap: 20px; }
-        .right-column { flex: 1; display: flex; flex-direction: column; gap: 20px; }
-
-        h3 { color: var(--primary); font-size: 1.2em; font-weight: 500; margin: 0 0 12px 0; border-bottom: 1px dashed var(--border-color); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
-        
-        .section { background: linear-gradient(145deg, #1e2026, #16181d); padding: 20px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); box-sizing: border-box; }
-        
-        .grid-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        
-        .charge-item {
-            display: flex; align-items: center; background-color: var(--card-bg); padding: 10px 15px; border-radius: 8px; border: 2px solid transparent; transition: all 0.2s ease; cursor: pointer;
+        .controls input:focus, .controls select:focus {
+            border-color: var(--summer-orange); outline: none; box-shadow: 0 0 10px var(--summer-orange-glow);
         }
-        .charge-item:hover { background-color: var(--card-hover); transform: translateY(-2px); border-color: #444; }
-        .charge-item:has(input[type="checkbox"]:checked) { border-color: var(--primary); background-color: rgba(255, 204, 0, 0.05); }
 
-        .charge-item > div { flex-grow: 1; }
-        .charge-item input[type="checkbox"] { margin-right: 12px; transform: scale(1.3); cursor: pointer; accent-color: var(--primary); }
-        .charge-item input[type="number"] { width: 50px; margin-left: 10px; padding: 5px; background: #111; color: var(--primary); border: 1px solid #444; border-radius: 6px; text-align: center; font-family: 'Prompt'; }
-        
-        .options-group { display: flex; gap: 12px; flex-wrap: wrap; }
-        .option-label { display: flex; align-items: center; cursor: pointer; background: #2a1c1c; padding: 10px 15px; border-radius: 8px; border: 1px solid #5a2a2a; transition: all 0.2s; font-size: 1em; }
-        .option-label.blue { background: #162635; border: 1px solid #234361; }
-        .option-label.gold { background: rgba(255, 204, 0, 0.1); border: 1px solid var(--primary); color: var(--primary); font-weight: bold;}
-        .option-label input { margin-right: 8px; transform: scale(1.2); accent-color: var(--primary); }
-        
-        .summary-box { 
-            background: linear-gradient(135deg, #1c232d, #11161d); padding: 25px; border-radius: 12px; border: 1px solid #294052; border-left: 4px solid var(--primary); flex-grow: 1; display: flex; flex-direction: column; justify-content: center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        .view-filters { display: flex; gap: 10px; margin-bottom: 20px; }
+        .view-btn {
+            background: #2A2A35; color: #aaa; border: 1px solid #444;
+            padding: 8px 16px; border-radius: 20px; font-family: 'Kanit'; cursor: pointer; font-size: 14px;
+            transition: 0.3s;
         }
-        .summary-text { font-size: 1.25em; margin: 10px 0; display: flex; justify-content: space-between; align-items: center; }
-        .total-highlight { color: var(--danger); font-weight: 600; font-size: 1.5em; text-shadow: 0 2px 10px rgba(255, 77, 77, 0.3); }
+        .view-btn.active { background: var(--summer-blue); color: #000; border-color: var(--summer-blue); font-weight: bold; }
 
-        .btn-copy-small { padding: 5px 10px; background: rgba(255, 204, 0, 0.15); border: 1px solid rgba(255, 204, 0, 0.4); color: var(--primary); border-radius: 6px; cursor: pointer; font-size: 0.65em; }
-        .btn-copy-small:hover { background: var(--primary); color: #111; }
-        
-        .copy-section { display: flex; gap: 12px; margin-top: 10px;}
-        textarea.copy-box { 
-            flex: 1; 
-            padding: 15px; 
-            background-color: rgba(0,0,0,0.4); 
-            border: 1px solid rgba(255, 204, 0, 0.5); 
-            color: var(--primary); 
-            border-radius: 8px; 
-            font-size: 1.3em; 
-            font-weight: 500; 
-            font-family: 'Prompt'; 
-            resize: none; 
-            min-height: 110px; 
-            line-height: 1.5; 
+        .btn {
+            border: none; padding: 12px 20px; border-radius: 8px; font-family: 'Kanit'; 
+            cursor: pointer; transition: all 0.3s ease; 
+            font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
         }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.15); }
+        .btn:active { transform: translateY(1px); }
+        .btn-add { background: linear-gradient(135deg, #00C9FF, #0082FF); color: white; box-shadow: 0 4px 15px var(--summer-blue-glow); }
+        .btn-rent { background: linear-gradient(135deg, #FF7E5F, #FF5E3A); color: #fff; box-shadow: 0 4px 15px var(--summer-orange-glow); } 
+        .btn-return { background: transparent; color: #FFB300; border: 2px solid #FFB300; box-sizing: border-box; border-radius: 8px; }
+        .btn-return:hover { background: rgba(255, 179, 0, 0.1); box-shadow: 0 0 15px rgba(255, 179, 0, 0.3); }
+        .btn-edit { background: #2A2A35; color: #fff; border: 1px solid #444; }
+        .btn-delete { background: linear-gradient(135deg, #ff4757, #c0392b); color: #fff; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); }
+
+        .car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .car-card {
+            background: var(--card-bg); border-radius: 12px; overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;
+            border: 1px solid var(--border-color); position: relative; transition: all 0.3s ease;
+        }
+        .car-card:hover { transform: translateY(-5px); border-color: #444; box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
+        .car-card.busy { border-color: #ff4757; opacity: 0.8; }
         
-        button { padding: 10px 20px; background: linear-gradient(135deg, var(--primary), var(--primary-hover)); border: none; color: #111; font-weight: 600; font-size: 1.05em; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
-        button:hover { transform: scale(1.05); }
-        .btn-reset { background: linear-gradient(135deg, #ff4d4d, #cc0000); color: white; }
+        .car-image-container { position: relative; width: 100%; height: 180px; background: #000; }
+        .car-image { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        .car-card.busy .car-image { filter: grayscale(100%) brightness(40%); }
+        .cross-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 80px; color: rgba(255, 71, 87, 0.8); text-shadow: 0 0 20px #000;
+            pointer-events: none;
+        }
+
+        .tags-container { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
+        .tag-turbo { background: #ff0055; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; box-shadow: 0 2px 10px rgba(255,0,85,0.5); }
+        .tag-owner { background: var(--summer-blue); color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
+        .tag-kapi { background: var(--summer-green); color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
+
+        .car-details { padding: 20px; flex-grow: 1; }
+        .car-title { font-size: 20px; margin: 0 0 12px 0; display: flex; align-items: center; justify-content: space-between; font-weight: 800; color: #fff; text-transform: uppercase;}
+        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; background: #262630; color: #aaa; letter-spacing: 0.5px; text-transform: uppercase;}
         
-        .fine-note { font-size: 0.8em; color: var(--text-muted); display: block; margin-top: 2px; }
-        .no-bail-badge { color: var(--danger); font-size: 0.85em; font-weight: 500; }
+        .rental-info { background: rgba(0, 0, 0, 0.4); padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; text-align: center; color: #ccc; border: 1px solid #333; }
+        .card-actions { display: flex; gap: 10px; padding: 15px 20px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border-color); }
 
-        /* สไตล์หน้า 2 และแท็บด้านล่าง */
-        .text-area-box { width: 100%; height: 180px; background: #0b0d10; color: #4CAF50; border: 1px solid #333; padding: 15px; border-radius: 8px; font-family: 'Prompt'; font-size: 1.1em; resize: none; box-sizing: border-box; line-height: 1.6; }
-        .tab-container { display: flex; gap: 5px; margin-top: 20px; border-top: 2px solid var(--border-color); padding-top: 10px; }
-        .tab-btn { background: transparent; color: var(--text-muted); border: none; padding: 10px 20px; font-size: 1em; cursor: pointer; border-radius: 8px 8px 0 0; transition: 0.3s; }
-        .tab-btn:hover { background: rgba(255, 255, 255, 0.05); color: #fff; }
-        .tab-btn.active { background: var(--primary); color: #111; font-weight: bold; transform: scale(1); }
+        .copy-btn { cursor: pointer; font-size: 14px; margin-left: 8px; opacity: 0.6; transition: 0.2s; }
+        .copy-btn:hover { opacity: 1; transform: scale(1.1); }
+        .link-btn { cursor: pointer; font-size: 14px; color: var(--summer-blue); text-decoration: none; margin-left: 10px; }
+        .link-btn:hover { text-decoration: underline; }
 
-        /* สไตล์สำหรับกล่อง Twitter */
-        .twitter-box { background: linear-gradient(135deg, #15202b, #192734); border-left: 4px solid var(--twitter-color); align-items: center; margin-top: 25px; padding: 20px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); display: flex; flex-direction: column; }
-        .twitter-input { width: 100%; max-width: 800px; padding: 15px; text-align: center; font-size: 1.25em; font-weight: bold; background: #0b0d10; color: var(--twitter-color); border: 1px solid var(--twitter-color); border-radius: 8px; font-family: 'Prompt'; }
-        .btn-twitter { margin-top: 15px; width: 100%; max-width: 300px; background: linear-gradient(135deg, var(--twitter-color), #0d8bd9); color: white; border: none; }
+        .dashboard-section {
+            background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px;
+            border: 1px solid var(--border-color); box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .dashboard-section h4 { margin-top: 0; color: var(--summer-orange); font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; font-weight: 800; }
+        table { width: 100%; background: transparent; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 15px; color: #d0d0d0;}
+        th { background: rgba(0,0,0,0.3); color: #888; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
+        .summary-row { background: rgba(255, 94, 58, 0.1); font-weight: bold; }
+        .summary-row td { color: #fff; border-top: 2px solid var(--summer-orange); }
 
-        @media (max-width: 1024px) { .two-column-layout { flex-direction: column; } }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
+        .modal-content { background: #121216; padding: 35px; border-radius: 16px; width: 90%; max-width: 450px; border: 1px solid var(--summer-orange); box-shadow: 0 0 40px var(--summer-orange-glow); color: white; animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto; }
+        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #aaa; font-size: 14px;}
+        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; font-family: 'Kanit'; background: #0A0A0C; color: white; font-size: 15px; transition: all 0.3s; }
+        .form-group input[type="checkbox"] { width: auto; transform: scale(1.5); margin-right: 10px; cursor: pointer; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px; }
+
+        .manage-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid var(--border-color); }
+        .manage-table th, .manage-table td { padding: 18px 20px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        .manage-table th { background: rgba(0,0,0,0.5); color: var(--summer-orange); font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; }
+
+        #screenshotTarget {
+            position: absolute; left: -9999px; top: -9999px;
+            width: 1000px; background: #0B0B0E; padding: 40px;
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
+        }
+        .ss-card { background: #16161C; border-radius: 12px; overflow: hidden; border: 1px solid #262630; }
+        .ss-image { width: 100%; height: 200px; object-fit: cover; }
+        .ss-title { padding: 15px; font-size: 20px; font-weight: 800; color: #fff; text-align: center; font-family: 'Kanit', sans-serif;}
+
+        /* สไตล์สำหรับป้ายหมวดหมู่ในหน้าตั้งค่า */
+        .cat-badge-edit {
+            display: inline-flex; align-items: center; gap: 8px; background: #222; 
+            padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #444;
+            font-weight: 600;
+        }
+        .cat-del-btn {
+            background: none; border: none; color: #ff4757; font-weight: bold; cursor: pointer; padding: 2px 6px; font-size: 16px;
+            transition: 0.2s;
+        }
+        .cat-del-btn:hover { color: #fff; background: #ff4757; border-radius: 50%; }
+
     </style>
 </head>
 <body>
 
-<img src="image_1c1af7.jpg" alt="PJH News Floating" class="floating-bg-img">
-
-<div class="container" id="main-container">
-    <div class="header-section">
-        <h2>🚓 ระบบคิดค่าปรับ Some Town</h2>
+<header>
+    <h1 onclick="switchPage('manage')" title="แอบเข้าหน้าจัดการ">🌴 SUMMER CITY <span style="font-size: 16px; font-weight: 400; color: #888; text-shadow: none;">| ปล่อยเช่ารถ</span></h1>
+    <div class="tab-menu">
+        <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
+        <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
+</header>
 
-    <div id="calc_wrapper" class="page active">
-        <div class="two-column-layout">
-            <div class="left-column">
-                
-                <div id="tab_black" class="calc-content active">
-                    <div class="section">
-                        <h3>☢️ หมวดสิ่งผิดกฎหมาย / งานดำ</h3>
-                        <div class="grid-container">
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="จกพลาด" data-fine="1000" data-time="5"> <div>จกพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปล้นพลาด" data-fine="1000" data-time="5"> <div>ปล้นพลาด <span class="fine-note">1,000 | 5 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ปูน" data-fine="2000" data-time="5"> <div>ปูน <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ลวด" data-fine="2000" data-time="5"> <div>ลวด <span class="fine-note">2,000 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟ" data-fine="0" data-time="0"> <div>ผงหลอดไฟ <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ผงหลอดไฟแปรรูป" data-fine="2500" data-time="5"> <div>ผงหลอดไฟแปรรูป <span class="fine-note">2,500 | 5 นาที</span></div> <input type="number" class="qty" value="1" min="1"></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เงินแดง" data-fine="0" data-time="0"> <div>เงินแดง <span class="fine-note">เศษ >= 5 ปัดขึ้น</span></div> <input type="number" class="qty" value="10" min="1"></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายหลักฐาน" data-fine="10000" data-time="10"> <div>ทำลายหลักฐาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <h3>🗺️ หมวดพื้นที่หลบหนี</h3>
-                        <div class="grid-container">
-                            <label class="charge-item"><input type="checkbox" class="charge-cb location-cb" data-name="พื้นที่สุ่มเสี่ยง" data-fine="5000" data-time="5"> <div>พื้นที่สุ่มเสี่ยง <span class="fine-note">5,000 | 5 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" id="cb_hardToReach" class="charge-cb location-cb" data-name="หลบหนีพื้นที่เข้าถึงยาก" data-fine="8000" data-time="10"> <div>เข้าถึงยาก <span class="fine-note">8,000 | 10 นาที</span></div></label>
-                            
-                            <label class="charge-item"><input type="checkbox" id="cb_inCity" class="charge-cb location-cb group-town" data-name="หลบหนีในเมือง" data-fine="2000" data-time="5"> <div>ในเมือง <span class="fine-note">2,000 | 5 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" id="cb_outCity" class="charge-cb location-cb group-town" data-name="หลบหนีนอกเมือง" data-fine="5000" data-time="5"> <div>นอกเมือง <span class="fine-note">5,000 | 5 นาที</span></div></label>
-                            
-                            <label class="charge-item"><input type="checkbox" id="cb_upperCity" class="charge-cb location-cb group-special" data-name="หลบหนีเมืองบน" data-fine="15000" data-time="10"> <div>เมืองบน <span class="fine-note">15,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" id="cb_airport" class="charge-cb location-cb group-special" data-name="หลบหนีสนามบิน" data-fine="10000" data-time="10"> <div>สนามบิน <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" id="cb_desert" class="charge-cb location-cb group-special" data-name="หลบหนีทะเลทราย" data-fine="12000" data-time="10"> <div>ทะเลทราย <span class="fine-note">12,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" id="cb_water" class="charge-cb location-cb group-special" data-name="หลบหนีทางน้ำ" data-fine="20000" data-time="10"> <div>ทางน้ำ <span class="fine-note">20,000 | 10 นาที</span></div></label>
-                        </div>
-                    </div>
-                </div>
-
-                <div id="tab_flagrante" class="calc-content">
-                    <div class="section">
-                        <h3>🚨 หมวดการก่อเหตุฯ</h3>
-                        <div class="grid-container">
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำร้ายร่างกายประชาชน" data-fine="15000" data-time="15"> <div>ทำร้ายร่างกายประชาชน <span class="fine-note">15,000 | 15 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำร้ายร่างกายในพื้นที่เซฟโซน" data-fine="60000" data-time="60" data-no-bail="true"> <div>ทำร้ายร่างกายในพื้นที่เซฟโซน <span class="fine-note no-bail-badge">60,000 | 60 นาที (ไม่ประกัน)</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่สาธารณะ" data-fine="10000" data-time="10"> <div>ทะเลาะวิวาทในพื้นที่สาธารณะ <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่สาธารณะแบบกลุ่ม" data-fine="15000" data-time="15"> <div>ทะเลาะวิวาทในพื้นที่สาธารณะแบบกลุ่ม <span class="fine-note">15,000 | 15 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ยักยอกทรัพย์" data-fine="45000" data-time="45"> <div>ยักยอกทรัพย์ <span class="fine-note">45,000 | 45 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หมิ่นประมาท" data-fine="10000" data-time="10"> <div>หมิ่นประมาท <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ควักอาวุธในพื้นที่เซฟโซน" data-fine="10000" data-time="10" data-no-bail="true"> <div>ควักอาวุธในพื้นที่เซฟโซน <span class="fine-note no-bail-badge">10,000 | 10 นาที (ไม่ประกัน)</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทะเลาะวิวาทในพื้นที่หน่วยงาน" data-fine="15000" data-time="15"> <div>วิวาทพื้นที่หน่วยงาน <span class="fine-note">15,000 | 15 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ก่อกวน" data-fine="15000" data-time="10"> <div>ก่อกวน <span class="fine-note">15,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ขโมยรถประชาชน" data-fine="15000" data-time="15"> <div>ขโมยรถประชาชน <span class="fine-note">15,000 | 15 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="แจ้งความเท็จ/ให้ความเท็จ" data-fine="10000" data-time="10"> <div>แจ้งความเท็จ <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="บุกรุกบ้าน" data-fine="5000" data-time="5"> <div>บุกรุกบ้าน <span class="fine-note">5,000 | 5 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="บุกรุกพื้นที่หน่วยงาน" data-fine="10000" data-time="10"> <div>บุกรุกพื้นที่หน่วยงาน <span class="fine-note">10,000 | 10 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="กักขังหน่วงเหนี่ยว" data-fine="30000" data-time="30"> <div>กักขังหน่วงเหนี่ยว <span class="fine-note">30,000 | 30 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เจตนาฆ่า" data-fine="25000" data-time="25" data-no-bail="true"> <div>เจตนาฆ่า <span class="fine-note no-bail-badge">25,000 | 25 นาที (ไม่ประกัน)</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายทรัพย์สิน" data-fine="25000" data-time="25"> <div>ทำลายทรัพย์สิน <span class="fine-note">25,000 | 25 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="เจตนาเข้าคุก" data-fine="30000" data-time="30"> <div>เจตนาเข้าคุก <span class="fine-note">30,000 | 30 นาที</span></div></label>
-                        </div>
-                    </div>
-
-                    <div class="section">
-                        <h3>👮 หมวดเกี่ยวกับหน่วยงาน (ไม่มีการประกันตัวทุกกรณี)</h3>
-                        <div class="grid-container">
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="หมิ่นประมาทหน่วยงาน" data-fine="40000" data-time="40" data-no-bail="true"> <div>หมิ่นประมาทหน่วยงาน <span class="fine-note no-bail-badge">40,000 | 40 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ขโมยรถหน่วยงาน" data-fine="50000" data-time="50" data-no-bail="true"> <div>ขโมยรถหน่วยงาน <span class="fine-note no-bail-badge">50,000 | 50 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำร้ายร่างกายหน่วยงาน" data-fine="50000" data-time="60" data-no-bail="true"> <div>ทำร้ายร่างกายหน่วยงาน <span class="fine-note no-bail-badge">50,000 | 60 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="แอบอ้างเป็นหน่วยงาน" data-fine="100000" data-time="60" data-no-bail="true"> <div>แอบอ้างเป็นหน่วยงาน <span class="fine-note no-bail-badge">100,000 | 60 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ไม่ให้ความร่วมมือเจ้าหน้าที่" data-fine="15000" data-time="20" data-no-bail="true"> <div>ไม่ให้ความร่วมมือเจ้าหน้าที่ <span class="fine-note no-bail-badge">15,000 | 20 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ก่อกวนเจ้าหน้าที่" data-fine="30000" data-time="30" data-no-bail="true"> <div>ก่อกวนเจ้าหน้าที่ <span class="fine-note no-bail-badge">30,000 | 30 นาที</span></div></label>
-                            <label class="charge-item"><input type="checkbox" class="charge-cb" data-name="ทำลายทรัพย์สินหน่วยงาน" data-fine="45000" data-time="45" data-no-bail="true"> <div>ทำลายทรัพย์สินหน่วยงาน <span class="fine-note no-bail-badge">45,000 | 45 นาที</span></div></label>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="right-column">
-                <div class="section" id="car-mod-section" style="height: auto;">
-                    <h3>🚗 โทษแต่งรถ</h3>
-                    <div class="options-group">
-                        <label class="option-label"><input type="checkbox" id="wheelDark" class="calc-trigger"> ล้อโทนมืด (x2)</label>
-                        <label class="option-label"><input type="checkbox" id="paintDark" class="calc-trigger"> สีรถโทนมืด (x2)</label>
-                        <label class="option-label" style="background: rgba(255, 77, 77, 0.1); border-color: var(--danger);"><input type="checkbox" id="tradeCar" class="calc-trigger"> เทรดรถ (x5)</label>
-                    </div>
-                </div>
-
-                <div class="section" style="height: auto;">
-                    <h3>🤝 เลือกประเภทประกันตัว</h3>
-                    <div class="options-group" id="bail-options-container">
-                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="2000"> ประกันเอง (2000/นาที)</label>
-                        <label class="option-label blue bail-label"><input type="checkbox" class="bail-cb" value="1000"> ญาติประกัน (1000/นาที)</label>
-                    </div>
-                    <div id="no-bail-warning" style="display:none; color: var(--danger); margin-top: 10px; font-size: 0.9em; font-weight: bold;">
-                        ⚠️ คดีนี้มีข้อหาที่ไม่สามารถประกันตัวได้
-                    </div>
-                </div>
-
-                <div class="summary-box">
-                    <div class="summary-text" style="color:var(--text-muted); font-size: 1.1em;">ตัวคูณปัจจุบัน: <span id="multiplierDisplay" style="color:#fff;">x1</span></div>
-                    <hr style="border-color:#333; width: 100%; margin: 15px 0;">
-                    <div class="summary-text">ยอดปรับสุทธิ: 
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span id="finalFine" class="total-highlight">0</span>
-                            <button class="btn-copy-small" onclick="copyValue('finalFine', this)">📋</button>
-                        </div>
-                    </div>
-                    <div class="summary-text">เวลาจำคุกสุทธิ: 
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span id="finalTime" class="total-highlight" style="color:var(--primary);">0 นาที</span>
-                            <button class="btn-copy-small" onclick="copyValue('finalTime', this)">📋</button>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top: auto; padding-top: 25px;">
-                        <div style="margin-bottom: 15px; display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px;">
-                            <div style="display: flex; gap: 10px;">
-                                <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="accomplice" class="calc-trigger"> 👥 สมรู้ร่วมคิด</label>
-                                <label class="option-label gold" style="padding: 5px 15px; margin: 0; font-size: 0.9em;"><input type="checkbox" id="reviseCase" class="calc-trigger"> 📝 แก้คดี</label>
-                            </div>
-                        </div>
-                        <div class="copy-section" style="margin-top: 0; padding-top: 0;">
-                            <textarea id="copyText" class="copy-box" readonly placeholder="ข้อหาจะแสดงที่นี่..."></textarea>
-                            <div style="display: flex; flex-direction: column; gap: 8px;">
-                                <button onclick="copyToClipboard('copyText')" style="font-size: 0.95em; height: 100%;">📋 คัดลอกข้อหา</button>
-                                <button onclick="resetAll()" class="btn-reset" style="font-size: 0.95em;">🗑️ ล้างค่า</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="page_summary" class="page">
-        <div class="two-column-layout">
-            <div class="summary-box" style="justify-content: flex-start;">
-                <h3 style="color: #ff4d4d; justify-content: center; border-bottom: none; margin-bottom: 20px;">❌ แบบไม่ประกันตัว</h3>
-                <textarea id="textNoBail" class="text-area-box" readonly></textarea>
-                <button onclick="copyTextArea('textNoBail', this)" style="margin-top: 15px; width: 100%; background: linear-gradient(135deg, #4CAF50, #45a049); color: white;">📋 คัดลอก (ไม่ประกัน)</button>
-            </div>
-
-            <div class="summary-box" style="justify-content: flex-start;">
-                <h3 style="color: #4CAF50; justify-content: center; border-bottom: none; margin-bottom: 20px;">✅ แบบประกันตัว</h3>
-                <textarea id="textBail" class="text-area-box" readonly></textarea>
-                <button onclick="copyTextArea('textBail', this)" id="btnCopyBail" style="margin-top: 15px; width: 100%; background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">📋 คัดลอก (ประกันตัว)</button>
-            </div>
+<div class="container">
+    <!-- หน้า 1: ปล่อยเช่า -->
+    <div id="carsPage" class="page active">
+        <div class="controls">
+            <input type="text" id="searchInput" placeholder="🔍 ค้นหารถ, ทะเบียน..." oninput="renderCars()">
+            <select id="categoryFilter" onchange="renderCars()"></select>
         </div>
         
-        <div class="twitter-box">
-            <h3 style="color: var(--twitter-color); justify-content: center; border-bottom: none; margin-bottom: 15px; font-size: 1.4em;">🐦 ยอดปรับสำหรับลงทวิตเตอร์</h3>
-            <input type="text" id="textTwitter" class="twitter-input" readonly placeholder="ยอดรวมจะแสดงที่นี่...">
-            <button onclick="copySimpleText('textTwitter', this)" class="btn-twitter">📋 คัดลอกตัวเลข (สำหรับทวิต)</button>
+        <div class="view-filters">
+            <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
+            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
+            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
+            <button class="btn btn-add" style="margin-left: auto;" onclick="captureAvailableCars()">📸 แคปรูปรถที่เหลือ</button>
+        </div>
+
+        <div class="car-grid" id="carGrid"></div>
+    </div>
+
+    <!-- หน้า 2: จัดการหลังบ้าน -->
+    <div id="managePage" class="page">
+        <div id="loginScreen" style="background: rgba(22,22,28,0.8); padding: 50px 40px; border-radius: 16px; max-width: 400px; margin: 80px auto; text-align: center; border: 1px solid #333;">
+            <h2 style="color: var(--summer-orange);">🔒 SYSTEM LOGIN</h2>
+            <input type="text" id="adminUser" placeholder="Username" style="width:100%; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#000; color:#fff;">
+            <input type="password" id="adminPass" placeholder="Password" style="width:100%; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#000; color:#fff;">
+            <button class="btn btn-add" style="width:100%; padding: 15px;" onclick="checkLogin()">เข้าสู่ระบบ</button>
+        </div>
+
+        <div id="adminContent" style="display: none;">
+            <div style="display: flex; justify-content: flex-end; margin-bottom: 20px;">
+                <button class="btn btn-edit" style="background: transparent; color: #ff4757; border-color: #ff4757;" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
+            </div>
+
+            <!-- โซน 1: แอดรถ -->
+            <div class="controls">
+                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">+ เพิ่มรถใหม่เข้าระบบ</h3>
+                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap;">
+                    <input type="text" id="newCarName" placeholder="ชื่อรุ่นรถ (เช่น GTR R35)" style="flex:1;">
+                    <input type="text" id="newCarPlate" placeholder="ป้ายทะเบียน" style="flex:1;">
+                    <select id="newCarCategory" style="flex:1;"></select>
+                </div>
+                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center; margin-top:10px;">
+                    <input type="text" id="newCarImg" placeholder="URL รูปภาพรถ (Link)" style="flex:2;">
+                    
+                    <select id="newCarOwnerType" style="flex:1;">
+                        <option value="owner">รถของเจ้าของ</option>
+                        <option value="kapi">รถของกะปิ</option>
+                    </select>
+                    <input type="text" id="newCarOwnerName" placeholder="ชื่อเจ้าของรถ (เช่น พี่เอ)" style="flex:1;">
+
+                    <label style="color:#fff; display:flex; align-items:center; gap:5px; flex:1;">
+                        <input type="checkbox" id="newCarTurbo"> ติดเทอร์โบแล้ว
+                    </label>
+                    <button class="btn btn-add" style="flex: none;" onclick="addNewCar()">บันทึกเข้าระบบ</button>
+                </div>
+            </div>
+
+            <!-- โซน 2: หมวดหมู่ (นำกลับมา) -->
+            <div class="controls">
+                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">🏷️ จัดการหมวดหมู่รถ</h3>
+                <div style="display:flex; width:100%; gap:15px; align-items:center;">
+                    <input type="text" id="newCategoryInput" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่ (เช่น รถสปอร์ต, รถครอบครัว)">
+                    <button class="btn btn-add" style="flex: none; background: linear-gradient(135deg, #2980b9, #2c3e50); box-shadow: none;" onclick="addCategory()">+ เพิ่มหมวดหมู่</button>
+                </div>
+                <div id="categoryList" style="width: 100%; margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <!-- ป้ายหมวดหมู่จะถูกใส่ที่นี่ -->
+                </div>
+            </div>
+
+            <table class="manage-table" style="margin-bottom: 30px;">
+                <thead>
+                    <tr>
+                        <th>ทะเบียน</th>
+                        <th>รุ่นรถ</th>
+                        <th>หมวดหมู่ / เจ้าของ</th>
+                        <th>สถานะตอนนี้</th>
+                        <th style="text-align: right; min-width: 160px;">จัดการ</th>
+                    </tr>
+                </thead>
+                <tbody id="manageTableBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <div class="tab-container">
-        <button class="tab-btn active" onclick="switchMainTab('calc_wrapper', 'tab_black', this)">📊 งานดำ / หลบหนี</button>
-        <button class="tab-btn" onclick="switchMainTab('calc_wrapper', 'tab_flagrante', this)">🚨 จับเหตุซึ่งหน้า</button>
-        <button class="tab-btn" onclick="switchMainTab('page_summary', null, this)">📝 หน้าสรุปข้อความ</button>
+    <!-- หน้า 3: สรุปผล -->
+    <div id="dashboardPage" class="page">
+        <div class="view-filters" style="margin-bottom: 30px;">
+            <button class="view-btn active" id="btnDashFilterAll" onclick="setDashFilter('all')">ดูรวมทั้งหมด</button>
+            <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดกะปิ</button>
+            <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดเจ้าของ</button>
+        </div>
+
+        <h3 style="color: white; font-weight: 800; border-bottom: 2px solid var(--summer-orange); padding-bottom: 10px;" id="dashTitle1">
+            ส่วนที่ 1: ประวัติการเช่ารายสัปดาห์ (ตัดยอดทุกวันอาทิตย์)
+        </h3>
+        <div id="weeklyDashboardContainer"></div>
+
+        <h3 style="color: white; font-weight: 800; border-bottom: 2px solid var(--summer-green); padding-bottom: 10px; margin-top: 40px;" id="dashTitle2">
+            ส่วนที่ 2: สรุปรวมตลอดกาล
+        </h3>
+        <div id="overallDashboardContainer"></div>
     </div>
 </div>
 
+<!-- Modal ลงทะเบียนสัญญาเช่ารถ -->
+<div class="modal" id="rentModal">
+    <div class="modal-content">
+        <h2 style="color: var(--summer-orange); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">📋 ลงทะเบียนสัญญาเช่ารถ</h2>
+        <input type="hidden" id="rentCarId">
+        
+        <div class="form-group">
+            <label>ทะเบียนรถ</label>
+            <input type="text" id="rentCarName" disabled style="color: var(--summer-orange); background: rgba(255, 94, 58, 0.05);">
+        </div>
+        
+        <div class="form-group">
+            <label>ระยะเวลาสิ้นสุดสัญญา</label>
+            <input type="datetime-local" id="rentEndTime" required>
+        </div>
+        
+        <div class="form-group">
+            <label>ยอดเงินที่รับมา (sm)</label>
+            <input type="number" id="rentPrice" placeholder="ระบุจำนวนเงิน">
+        </div>
+
+        <div class="form-group">
+            <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
+            <select id="rentSplitType">
+                <option value="kapi">เข้ากะปิ 100%</option>
+                <option value="owner">เข้าเจ้าของรถ 100%</option>
+                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปิ)</option>
+            </select>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('rentModal')">CANCEL</button>
+            <button class="btn btn-rent" onclick="confirmRent()">CONFIRM</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal แก้ไขรถ -->
+<div class="modal" id="editModal">
+    <div class="modal-content">
+        <h2 style="color: var(--summer-blue); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">✏️ แก้ไขข้อมูลรถ</h2>
+        <input type="hidden" id="editCarId">
+        
+        <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+                <label>ชื่อรุ่นรถ</label>
+                <input type="text" id="editCarName">
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>ป้ายทะเบียน</label>
+                <input type="text" id="editCarPlate">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>หมวดหมู่</label>
+            <select id="editCarCategory"></select>
+        </div>
+        
+        <div class="form-group">
+            <label>URL รูปภาพรถ</label>
+            <input type="text" id="editCarImg">
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;">
+                <label>ประเภทเจ้าของ</label>
+                <select id="editCarOwnerType">
+                    <option value="owner">รถของเจ้าของ</option>
+                    <option value="kapi">รถของกะปิ</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label>ชื่อเจ้าของรถ</label>
+                <input type="text" id="editCarOwnerName" placeholder="เช่น พี่เอ (ไม่บังคับ)">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label style="display:flex; align-items:center;">
+                <input type="checkbox" id="editCarTurbo"> ติดเทอร์โบแล้ว
+            </label>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('editModal')">ยกเลิก</button>
+            <button class="btn btn-add" onclick="saveEditCar()">บันทึกข้อมูล</button>
+        </div>
+    </div>
+</div>
+
+<div id="screenshotTarget"></div>
+
 <script>
-    // --- Caching DOM Elements (Optimize 2) ---
-    const DOM = {
-        multiplierDisplay: document.getElementById('multiplierDisplay'),
-        finalFine: document.getElementById('finalFine'),
-        finalTime: document.getElementById('finalTime'),
-        copyText: document.getElementById('copyText'),
-        textNoBail: document.getElementById('textNoBail'),
-        textBail: document.getElementById('textBail'),
-        textTwitter: document.getElementById('textTwitter'),
-        btnCopyBail: document.getElementById('btnCopyBail'),
-        noBailWarning: document.getElementById('no-bail-warning'),
-        carModSec: document.getElementById('car-mod-section'),
-        
-        // Inputs
-        wheelDark: document.getElementById('wheelDark'),
-        paintDark: document.getElementById('paintDark'),
-        tradeCar: document.getElementById('tradeCar'),
-        accomplice: document.getElementById('accomplice'),
-        reviseCase: document.getElementById('reviseCase'),
-        
-        // Escape Rules Elements
-        cbInCity: document.getElementById('cb_inCity'),
-        cbOutCity: document.getElementById('cb_outCity'),
-        cbWater: document.getElementById('cb_water'),
-        cbHardToReach: document.getElementById('cb_hardToReach'),
-        cbAirport: document.getElementById('cb_airport')
-    };
+    const ADMIN_USER = "Kapi";
+    const ADMIN_PASS = "worawich0625";
+    
+    let defaultCars = [
+        { id: 1, name: "GTR R35", plate: "RXH 281", category: "ตัวท็อป", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null }
+    ];
+    let defaultCategories = ["น้ำมัน", "ไฟฟ้า", "ตัวท็อป", "ประมูล"];
+    
+    let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
+    let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
+    let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
 
-    // --- Tab Switch Logic ---
-    function switchMainTab(wrapperId, innerTabId, btn) {
-        document.querySelectorAll('.page, .tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById(wrapperId).classList.add('active');
-        btn.classList.add('active');
+    let currentOwnerFilter = 'all'; 
+    let currentDashFilter = 'all';
 
-        if (innerTabId) {
-            document.querySelectorAll('.calc-content').forEach(c => c.classList.remove('active'));
-            document.getElementById(innerTabId).classList.add('active');
-            
-            // Toggle Car Mod Section
-            if (DOM.carModSec) DOM.carModSec.style.display = (innerTabId === 'tab_flagrante') ? 'none' : 'block';
-        }
+    // อัปเดต Data เก่า
+    cars = cars.map(c => ({
+        ...c,
+        imageUrl: c.imageUrl || '',
+        isTurbo: c.isTurbo || false,
+        ownerType: c.ownerType || 'owner',
+        ownerName: c.ownerName || ''
+    }));
+
+    function saveDataLocally() {
+        localStorage.setItem('summerCars', JSON.stringify(cars));
+        localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
+        localStorage.setItem('summerCategories', JSON.stringify(categories));
     }
 
-    // --- Core Logic & Event Delegation (Optimize 1) ---
-    document.getElementById('main-container').addEventListener('change', (e) => {
-        const target = e.target;
-        
-        // Handle Event Delegation
-        if (target.classList.contains('location-cb')) enforceEscapeRules(target);
-        if (target.classList.contains('bail-cb')) handleBail(target);
-        
-        // Trigger calculate for relevant inputs
-        if (target.type === 'checkbox' || target.classList.contains('calc-trigger') || target.classList.contains('charge-cb')) {
-            calculate();
-        }
-    });
-
-    document.getElementById('main-container').addEventListener('input', (e) => {
-        if (e.target.classList.contains('qty')) calculate();
-    });
-
-    function enforceEscapeRules(target) {
-        if (!target.checked) return;
-
-        const { cbWater, cbInCity, cbOutCity, cbHardToReach, cbAirport } = DOM;
-
-        if (target === cbWater) {
-            if (cbInCity) cbInCity.checked = false;
-            if (cbOutCity) cbOutCity.checked = false;
-        } else if (target === cbInCity || target === cbOutCity) {
-            if (cbWater) cbWater.checked = false;
-            if (cbAirport) cbAirport.checked = false;
-            if (target === cbInCity && cbHardToReach) cbHardToReach.checked = false;
-            if (target === cbInCity && cbOutCity) cbOutCity.checked = false;
-            if (target === cbOutCity && cbInCity) cbInCity.checked = false;
-        } else if (target === cbHardToReach && cbInCity) {
-            cbInCity.checked = false;
-        } else if (target === cbAirport) {
-            if (cbInCity) cbInCity.checked = false;
-            if (cbOutCity) cbOutCity.checked = false;
-        }
-    }
-
-    function handleBail(clickedCb) {
-        if (clickedCb.checked) {
-            document.querySelectorAll('.bail-cb').forEach(cb => {
-                if (cb !== clickedCb) cb.checked = false;
-            });
-        }
-    }
-
-    // --- Main Calculation (Optimize 3) ---
-    function calculate() {
-        let fineWithMult = 0, fineNoMult = 0, totalBaseTime = 0;
-        let chargeNames = [], hardToReachName = "";
-        let hasNoBail = false;
-        const hasQtyList = ["ปูน", "ลวด", "ผงหลอดไฟแปรรูป"];
-
-        // Loop only through checked items
-        document.querySelectorAll('.charge-cb:checked').forEach(cb => {
-            let isNoBail = cb.getAttribute('data-no-bail') === "true";
-            if (isNoBail) hasNoBail = true;
-
-            let name = cb.getAttribute('data-name');
-            let fine = parseInt(cb.getAttribute('data-fine'));
-            let time = parseInt(cb.getAttribute('data-time'));
-            
-            let qtyInput = cb.closest('label').querySelector('.qty');
-            let qty = qtyInput ? parseInt(qtyInput.value) || 0 : 1;
-            let isFlagrante = cb.closest('#tab_flagrante') !== null;
-            let itemFine = 0, itemTime = 0, chargeString = "";
-
-            if (name === "เงินแดง" || name === "ผงหลอดไฟ") {
-                let sets = Math.round(qty / 10);
-                itemFine = sets * 1000;
-                itemTime = sets * 1;
-                if (sets > 0) chargeString = `${name} ${qty}`;
-            } else if (hasQtyList.includes(name)) {
-                itemFine = fine * qty;
-                itemTime = time * qty;
-                chargeString = `${name} ${qty}`;
-            } else {
-                itemFine = fine;
-                itemTime = time;
-                chargeString = name;
-            }
-
-            if (isFlagrante) fineNoMult += itemFine;
-            else fineWithMult += itemFine;
-            
-            totalBaseTime += itemTime;
-
-            if (chargeString) {
-                if (name === "หลบหนีพื้นที่เข้าถึงยาก") hardToReachName = chargeString;
-                else chargeNames.push(chargeString);
-            }
+    function copyText(event, text, btnElement) {
+        if(event) event.stopPropagation();
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "✔️";
+            setTimeout(() => { btnElement.innerText = originalText; }, 1500);
         });
+    }
 
-        if (hardToReachName) chargeNames.push(hardToReachName);
+    function generateShareLink(carId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('car', carId);
+        return url.href;
+    }
 
-        // UI update for Bail Options
-        let bailOptions = document.querySelectorAll('.bail-cb');
-        let bailLabels = document.querySelectorAll('.bail-label');
-        if (hasNoBail) {
-            bailOptions.forEach(cb => { cb.checked = false; cb.disabled = true; });
-            bailLabels.forEach(lbl => { lbl.style.opacity = '0.4'; lbl.style.cursor = 'not-allowed'; });
-            DOM.noBailWarning.style.display = 'block';
-        } else {
-            bailOptions.forEach(cb => cb.disabled = false);
-            bailLabels.forEach(lbl => { lbl.style.opacity = '1'; lbl.style.cursor = 'pointer'; });
-            DOM.noBailWarning.style.display = 'none';
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(pageId + 'Page').classList.add('active');
+        if (event && event.target && event.target.classList.contains('tab-btn')) {
+            event.target.classList.add('active');
         }
-
-        // Multiplier Logic
-        let mult = 1;
-        let wDark = DOM.wheelDark.checked;
-        let pDark = DOM.paintDark.checked;
-        let tCar = DOM.tradeCar.checked;
-
-        if (tCar) {
-            mult = (wDark && pDark) ? 9 : (wDark || pDark) ? 7 : 5;
-        } else {
-            mult = (wDark && pDark) ? 4 : (wDark || pDark) ? 2 : 1;
-        }
-
-        if (fineWithMult === 0) {
-            mult = 1;
-        } else {
-            if (tCar) chargeNames.push("เทรดรถ");
-            if (wDark) chargeNames.push("ล้อโทนมืด"); 
-            if (pDark) chargeNames.push("สีรถโทนมืด");
-        }
-        
-        DOM.multiplierDisplay.innerText = `x${mult}`;
-
-        // Base Calculations
-        let finalFineBase = (fineWithMult * mult) + fineNoMult;
-        let finalTimeBase = totalBaseTime; 
-        
-        let prefixes = [];
-        if (DOM.accomplice.checked) prefixes.push("สมรู้ร่วมคิด");
-        if (DOM.reviseCase.checked) prefixes.push("แก้คดี");
-        let prefixStr = prefixes.length > 0 ? prefixes.join(' ') + " " : "";
-        let baseChargeString = prefixStr + chargeNames.join(' + ');
-
-        let bailCb = document.querySelector('.bail-cb:checked');
-        let bailRate = (bailCb && !hasNoBail) ? parseInt(bailCb.value) : 0;
-        
-        let displayFine = finalFineBase;
-        let displayTime = finalTimeBase;
-        let displayChargeStr = baseChargeString;
-
-        if (bailRate > 0 && displayTime > 5) {
-            displayFine += (displayTime - 5) * bailRate;
-            displayTime = 5; 
-            displayChargeStr += displayChargeStr ? " + ประกัน" : "ประกัน";
-        }
-
-        // --- Update Output Elements ---
-        DOM.finalFine.innerText = displayFine.toLocaleString();
-        DOM.finalTime.innerText = displayTime.toLocaleString() + ' นาที';
-        DOM.copyText.value = displayChargeStr;
-
-        // No Bail Summary
-        let noBailText = chargeNames.length > 0 
-            ? `ข้อหา: ${baseChargeString}\nค่าปรับ: ${finalFineBase.toLocaleString()}\nเวลา: ${finalTimeBase.toLocaleString()} นาที`
-            : "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
-        DOM.textNoBail.value = noBailText;
-
-        // Bail & Twitter Summary
-        let bailText = "ข้อหา: -\nค่าปรับ: 0\nเวลา: 0 นาที";
-        let twitterLine = "";
-
-        if (chargeNames.length > 0) {
-            if (hasNoBail) {
-                bailText = "❌ คดีนี้ไม่สามารถประกันตัวได้\n(มีข้อหาที่ไม่อนุญาตให้ประกัน)";
-                twitterLine = `ค่าปรับ ${finalFineBase.toLocaleString()}`;
-                DOM.btnCopyBail.style.opacity = '0.5';
-                DOM.btnCopyBail.style.pointerEvents = 'none';
+        if(pageId === 'dashboard') updateDashboard();
+        if(pageId === 'manage') {
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                renderManageCars();
+                renderCategoryManager();
             } else {
-                let previewBailRate = bailRate > 0 ? bailRate : 2000; 
-                let bTime = finalTimeBase, bFine = finalFineBase, bChargeStr = baseChargeString, bailCost = 0;
+                document.getElementById('loginScreen').style.display = 'block';
+                document.getElementById('adminContent').style.display = 'none';
+            }
+        }
+    }
 
-                if (bTime > 5) {
-                    bailCost = (bTime - 5) * previewBailRate;
-                    bTime = 5;
-                    bChargeStr += " + ประกัน";
+    function checkLogin() {
+        if (document.getElementById('adminUser').value === ADMIN_USER && document.getElementById('adminPass').value === ADMIN_PASS) {
+            sessionStorage.setItem('isAdminLoggedIn', 'true');
+            switchPage('manage');
+        } else {
+            alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
+        }
+    }
+    
+    function logoutAdmin() {
+        sessionStorage.removeItem('isAdminLoggedIn');
+        switchPage('cars');
+    }
+
+    // --- ระบบจัดการหมวดหมู่ ---
+    function renderCategoryDropdowns() {
+        let filterHtml = '<option value="all">ทุกหมวดหมู่</option>';
+        let addEditHtml = '';
+        categories.forEach(c => {
+            filterHtml += `<option value="${c}">${c}</option>`;
+            addEditHtml += `<option value="${c}">${c}</option>`;
+        });
+        document.getElementById('categoryFilter').innerHTML = filterHtml;
+        document.getElementById('newCarCategory').innerHTML = addEditHtml;
+        document.getElementById('editCarCategory').innerHTML = addEditHtml;
+    }
+
+    function renderCategoryManager() {
+        const catList = document.getElementById('categoryList');
+        if(!catList) return;
+        catList.innerHTML = '';
+        categories.forEach(c => {
+            catList.innerHTML += `
+                <div class="cat-badge-edit">
+                    ${c} 
+                    <button class="cat-del-btn" onclick="deleteCategory('${c}')" title="ลบหมวดหมู่นี้">×</button>
+                </div>
+            `;
+        });
+    }
+
+    function addCategory() {
+        const input = document.getElementById('newCategoryInput');
+        const newCat = input.value.trim();
+        if(!newCat) return alert("กรุณาพิมพ์ชื่อหมวดหมู่ก่อนครับ!");
+        if(categories.includes(newCat)) return alert("หมวดหมู่นี้มีอยู่แล้ว!");
+        
+        categories.push(newCat);
+        saveDataLocally();
+        input.value = "";
+        renderCategoryManager();
+        renderCategoryDropdowns();
+        renderCars();
+    }
+
+    function deleteCategory(catName) {
+        if(confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${catName}"?\n(รถที่ใช้หมวดหมู่นี้อยู่จะยังคงอยู่ แต่ไม่สามารถเลือกเพิ่มได้อีก)`)) {
+            categories = categories.filter(c => c !== catName);
+            saveDataLocally();
+            renderCategoryManager();
+            renderCategoryDropdowns();
+            renderCars();
+        }
+    }
+
+    // --- Filter หน้าแรก ---
+    function setOwnerFilter(filter) {
+        currentOwnerFilter = filter;
+        document.getElementById('btnFilterAll').classList.remove('active');
+        document.getElementById('btnFilterKapi').classList.remove('active');
+        document.getElementById('btnFilterOwner').classList.remove('active');
+        
+        if(filter === 'all') document.getElementById('btnFilterAll').classList.add('active');
+        if(filter === 'kapi') document.getElementById('btnFilterKapi').classList.add('active');
+        if(filter === 'owner') document.getElementById('btnFilterOwner').classList.add('active');
+        renderCars();
+    }
+
+    function setDashFilter(filter) {
+        currentDashFilter = filter;
+        document.getElementById('btnDashFilterAll').classList.remove('active');
+        document.getElementById('btnDashFilterKapi').classList.remove('active');
+        document.getElementById('btnDashFilterOwner').classList.remove('active');
+
+        if(filter === 'all') document.getElementById('btnDashFilterAll').classList.add('active');
+        if(filter === 'kapi') document.getElementById('btnDashFilterKapi').classList.add('active');
+        if(filter === 'owner') document.getElementById('btnDashFilterOwner').classList.add('active');
+
+        updateDashboard();
+    }
+
+    function renderCars() {
+        const grid = document.getElementById('carGrid');
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const catFilter = document.getElementById('categoryFilter').value;
+        grid.innerHTML = '';
+
+        const filtered = cars.filter(c => 
+            (c.name.toLowerCase().includes(searchTerm) || c.plate.toLowerCase().includes(searchTerm)) &&
+            (catFilter === 'all' || c.category === catFilter) &&
+            (currentOwnerFilter === 'all' || c.ownerType === currentOwnerFilter)
+        );
+
+        filtered.forEach(car => {
+            const isBusy = car.status === 'busy';
+            const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
+            
+            let ownerText = car.ownerType === 'kapi' ? 'รถของกะปิ' : 'รถของเจ้าของ';
+            if (car.ownerName && car.ownerName.trim() !== '') {
+                ownerText += ` (${car.ownerName})`;
+            }
+
+            let html = `
+                <div class="car-card ${isBusy ? 'busy' : ''}">
+                    <div class="car-image-container">
+                        <img src="${imgUrl}" class="car-image" alt="car">
+                        ${isBusy ? `<div class="cross-overlay">❌</div>` : ''}
+                        <div class="tags-container">
+                            ${car.ownerType === 'kapi' ? `<span class="tag-kapi">${ownerText}</span>` : `<span class="tag-owner">${ownerText}</span>`}
+                            ${car.isTurbo ? '<span class="tag-turbo">🚀 TURBO</span>' : ''}
+                        </div>
+                    </div>
+                    <div class="car-details">
+                        <div class="car-title">
+                            ${car.name} <span class="badge">${car.category}</span>
+                        </div>
+                        <p style="margin: 5px 0; color: #888; font-size: 14px; display: flex; align-items: center;">
+                            ทะเบียน: &nbsp;<strong style="color:#fff; letter-spacing: 1px;">${car.plate}</strong>
+                            <span class="copy-btn" title="คัดลอกทะเบียน" onclick="copyText(event, '${car.plate}', this)">📑</span>
+                            <span class="link-btn" title="คัดลอกลิงก์รถ" onclick="copyText(event, '${generateShareLink(car.id)}', this)">🔗 Link</span>
+                        </p>
+            `;
+
+            if (isBusy) {
+                html += `
+                    <div class="rental-info">
+                        <span style="color: #FFB300; font-weight: 600;">💰 ยอดเช่า: ${car.price.toLocaleString()} sm</span>
+                        <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green);">โหลดเวลา...</div>
+                    </div></div>`; 
+            } else {
+                html += `</div>
+                    <div class="card-actions">
+                        <button class="btn btn-rent" style="flex: 1;" onclick="openRentModal(${car.id})">ลงทะเบียนสัญญา</button>
+                    </div>`;
+            }
+            grid.innerHTML += html;
+        });
+    }
+
+    // --- ระบบคืนรถอัตโนมัติ (นับถอยหลังทุก 1 วินาที) ---
+    setInterval(() => {
+        const nowTime = new Date().getTime();
+        let stateChanged = false;
+
+        cars.forEach(car => {
+            if(car.status === 'busy' && car.endTime) {
+                const distance = car.endTime - nowTime;
+                
+                if (distance <= 0) {
+                    // ดึงรถกลับอัตโนมัติ
+                    car.status = "available";
+                    car.price = 0;
+                    car.endTime = null;
+                    stateChanged = true;
+                } else {
+                    // อัปเดตเวลานับถอยหลังที่หน้าจอ
+                    const el = document.getElementById(`cd-${car.id}`);
+                    if(el) {
+                        const h = Math.floor(distance / (1000 * 60 * 60));
+                        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((distance % (1000 * 60)) / 1000);
+                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที ${s} วิ`;
+                    }
                 }
-                
-                let totalBailFine = bFine + bailCost;
-                let fineDisplayLine = bailCost > 0 
-                    ? `${bFine.toLocaleString()} + ${bailCost.toLocaleString()} = ${totalBailFine.toLocaleString()}` 
-                    : `${totalBailFine.toLocaleString()}`;
-
-                bailText = `ข้อหา: ${bChargeStr}\nค่าปรับ: ${fineDisplayLine}\nเวลา: ${bTime.toLocaleString()} นาที`;
-                twitterLine = bailCost > 0
-                    ? `ค่าปรับ ${bFine.toLocaleString()} + ค่าประกัน ${bailCost.toLocaleString()} = รวม ${totalBailFine.toLocaleString()}`
-                    : `ค่าปรับ ${bFine.toLocaleString()}`;
-                
-                DOM.btnCopyBail.style.opacity = '1';
-                DOM.btnCopyBail.style.pointerEvents = 'auto';
             }
-        } else {
-            DOM.btnCopyBail.style.opacity = '1';
-            DOM.btnCopyBail.style.pointerEvents = 'auto';
-        }
-        
-        DOM.textBail.value = bailText;
-        DOM.textTwitter.value = twitterLine;
-    }
-
-    // --- Helper Functions ---
-    function triggerCopyFeedback(btn, originalText) {
-        btn.innerHTML = "✅ สำเร็จ!"; 
-        btn.style.background = "#4caf50";
-        setTimeout(() => { btn.innerHTML = originalText; btn.style.background = ""; }, 1000);
-    }
-
-    function copyTextArea(elementId, btn) {
-        let copyText = document.getElementById(elementId);
-        if(!copyText.value || copyText.value.includes("ข้อหา: -") || copyText.value.includes("❌")) return;
-        
-        let textToCopy = copyText.value
-            .replace(/^ข้อหา:\s*/gm, '')
-            .replace(/^ค่าปรับ:\s*/gm, '')
-            .replace(/^เวลา:\s*/gm, '');
-
-        navigator.clipboard.writeText(textToCopy);
-        triggerCopyFeedback(btn, btn.innerHTML.replace("✅ สำเร็จ!", "").trim());
-    }
-
-    function copySimpleText(elementId, btn) {
-        let copyText = document.getElementById(elementId);
-        if(!copyText.value) return;
-        copyText.select(); 
-        navigator.clipboard.writeText(copyText.value);
-        triggerCopyFeedback(btn, btn.innerHTML.replace("✅ สำเร็จ!", "").trim());
-    }
-
-    function copyToClipboard(elementId) {
-        let copyText = document.getElementById(elementId);
-        if(!copyText.value) return;
-        copyText.select(); 
-        navigator.clipboard.writeText(copyText.value);
-        let btn = document.querySelector(`button[onclick="copyToClipboard('${elementId}')"]`);
-        triggerCopyFeedback(btn, "📋 คัดลอกข้อหา");
-    }
-
-    function copyValue(id, btn) {
-        let val = document.getElementById(id).innerText.replace(/,/g, '').replace(' นาที', '');
-        if (val === "0") return; 
-        navigator.clipboard.writeText(val);
-        triggerCopyFeedback(btn, "📋");
-    }
-
-    function resetAll() {
-        document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
-        document.querySelectorAll('input[type="number"]').forEach(num => {
-            let name = num.closest('label').querySelector('.charge-cb').getAttribute('data-name');
-            num.value = (name === "เงินแดง" || name === "ผงหลอดไฟ") ? 10 : 1;
         });
-        calculate();
+
+        if(stateChanged) {
+            saveDataLocally();
+            renderCars();
+            if (document.getElementById('managePage').classList.contains('active')) {
+                renderManageCars();
+            }
+        }
+    }, 1000); 
+
+    function openRentModal(id) {
+        const car = cars.find(c => c.id === id);
+        document.getElementById('rentCarId').value = car.id;
+        document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
+        document.getElementById('rentPrice').value = "";
+        
+        if (car.ownerType === 'kapi') { document.getElementById('rentSplitType').value = 'kapi'; }
+        else { document.getElementById('rentSplitType').value = 'split'; }
+
+        document.getElementById('rentModal').style.display = "flex";
     }
+
+    function confirmRent() {
+        const id = parseInt(document.getElementById('rentCarId').value);
+        const price = parseInt(document.getElementById('rentPrice').value);
+        const endTimeValue = document.getElementById('rentEndTime').value;
+        const splitType = document.getElementById('rentSplitType').value;
+
+        if (!price || price <= 0 || !endTimeValue) return alert("⚠️ กรุณาระบุยอดเงินและเวลาให้ครบ!");
+
+        const carIndex = cars.findIndex(c => c.id === id);
+        const car = cars[carIndex];
+        
+        let kapiIncome = 0;
+        let ownerIncome = 0;
+
+        if (splitType === 'kapi') { kapiIncome = price; }
+        else if (splitType === 'owner') { ownerIncome = price; }
+        else if (splitType === 'split') {
+            ownerIncome = 200000; 
+            kapiIncome = price - 200000;
+        }
+
+        car.status = "busy";
+        car.price = price;
+        car.endTime = new Date(endTimeValue).getTime();
+
+        rentalHistory.push({
+            id: Date.now(),
+            dateTimestamp: new Date().getTime(),
+            plate: car.plate, 
+            carName: car.name,
+            ownerType: car.ownerType,
+            price: price,
+            kapiIncome: kapiIncome,
+            ownerIncome: ownerIncome
+        });
+
+        saveDataLocally();
+        closeModal('rentModal');
+        renderCars();
+        if(document.getElementById('managePage').classList.contains('active')) {
+            renderManageCars();
+        }
+    }
+
+    function returnCar(id) {
+        if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม?")) {
+            const carIndex = cars.findIndex(c => c.id === id);
+            cars[carIndex].status = "available";
+            cars[carIndex].price = 0;
+            cars[carIndex].endTime = null;
+            saveDataLocally();
+            renderManageCars();
+            renderCars();
+        }
+    }
+
+    // --- ระบบแก้ไขรถ ---
+    function openEditModal(id) {
+        const car = cars.find(c => c.id === id);
+        document.getElementById('editCarId').value = car.id;
+        document.getElementById('editCarName').value = car.name;
+        document.getElementById('editCarPlate').value = car.plate;
+        document.getElementById('editCarCategory').value = car.category;
+        document.getElementById('editCarImg').value = car.imageUrl || '';
+        document.getElementById('editCarOwnerType').value = car.ownerType || 'owner';
+        document.getElementById('editCarOwnerName').value = car.ownerName || '';
+        document.getElementById('editCarTurbo').checked = car.isTurbo || false;
+
+        document.getElementById('editModal').style.display = "flex";
+    }
+
+    function saveEditCar() {
+        const id = parseInt(document.getElementById('editCarId').value);
+        const name = document.getElementById('editCarName').value;
+        const plate = document.getElementById('editCarPlate').value;
+        const category = document.getElementById('editCarCategory').value;
+        const imageUrl = document.getElementById('editCarImg').value;
+        const ownerType = document.getElementById('editCarOwnerType').value;
+        const ownerName = document.getElementById('editCarOwnerName').value;
+        const isTurbo = document.getElementById('editCarTurbo').checked;
+
+        if(!name || !plate) return alert("ใส่ชื่อและทะเบียนให้ครบครับ");
+
+        const index = cars.findIndex(c => c.id === id);
+        cars[index].name = name;
+        cars[index].plate = plate;
+        cars[index].category = category;
+        cars[index].imageUrl = imageUrl;
+        cars[index].ownerType = ownerType;
+        cars[index].ownerName = ownerName;
+        cars[index].isTurbo = isTurbo;
+
+        saveDataLocally();
+        closeModal('editModal');
+        renderManageCars();
+        renderCars();
+    }
+
+    function renderManageCars() {
+        const tbody = document.getElementById('manageTableBody');
+        tbody.innerHTML = '';
+        cars.forEach(car => {
+            const statusText = car.status === 'busy' ? '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>' : '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
+            
+            let ownerText = car.ownerType === 'kapi' ? 'กะปิ' : 'เจ้าของ';
+            if (car.ownerName && car.ownerName.trim() !== '') ownerText += ` (${car.ownerName})`;
+            const ownerBadge = car.ownerType === 'kapi' ? `<span class="tag-kapi">${ownerText}</span>` : `<span class="tag-owner">${ownerText}</span>`;
+            
+            // เพิ่มปุ่มแก้ไข (Edit) และจัดรูปแบบให้แสดงผลได้สวยงาม
+            let actionButtons = '';
+            if (car.status === 'busy') {
+                actionButtons = `<button class="btn btn-return" onclick="returnCar(${car.id})" style="width:100%;">คืนรถ</button>`;
+            } else {
+                actionButtons = `
+                    <div style="display:flex; gap:8px; justify-content:flex-end;">
+                        <button class="btn btn-edit" style="padding: 8px 15px; font-size:13px;" onclick="openEditModal(${car.id})">✏️ แก้ไข</button>
+                        <button class="btn btn-delete" style="padding: 8px 15px; font-size:13px;" onclick="deleteCar(${car.id})">🗑️ ลบ</button>
+                    </div>
+                `;
+            }
+
+            tbody.innerHTML += `
+                <tr>
+                    <td style="font-weight:600; color:#fff;">${car.plate}</td>
+                    <td>${car.name} ${car.isTurbo ? '🚀' : ''}</td>
+                    <td><span class="badge">${car.category}</span> <div style="margin-top:8px;">${ownerBadge}</div></td>
+                    <td>${statusText}</td>
+                    <td style="text-align: right; min-width: 160px;">${actionButtons}</td>
+                </tr>
+            `;
+        });
+    }
+
+    function addNewCar() {
+        const name = document.getElementById('newCarName').value;
+        const plate = document.getElementById('newCarPlate').value;
+        const category = document.getElementById('newCarCategory').value;
+        const imageUrl = document.getElementById('newCarImg').value;
+        const isTurbo = document.getElementById('newCarTurbo').checked;
+        const ownerType = document.getElementById('newCarOwnerType').value;
+        const ownerName = document.getElementById('newCarOwnerName').value;
+
+        if(!name || !plate) return alert("ใส่ชื่อและทะเบียนให้ครบครับ");
+        
+        const newId = cars.length > 0 ? Math.max(...cars.map(c => c.id)) + 1 : 1;
+        cars.push({ id: newId, name, plate, category, imageUrl, isTurbo, ownerType, ownerName, status: "available", price: 0, endTime: null });
+        
+        document.getElementById('newCarName').value = "";
+        document.getElementById('newCarPlate').value = "";
+        document.getElementById('newCarImg').value = "";
+        document.getElementById('newCarTurbo').checked = false;
+        document.getElementById('newCarOwnerName').value = "";
+
+        saveDataLocally();
+        renderManageCars();
+        renderCars();
+    }
+
+    function deleteCar(id) {
+        if(confirm("ลบรถคันนี้ออกจากสต็อกถาวร?")) {
+            cars = cars.filter(c => c.id != id);
+            saveDataLocally();
+            renderManageCars();
+            renderCars();
+        }
+    }
+
+    function getWeekKey(timestamp) {
+        const d = new Date(timestamp);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d.setDate(diff));
+        
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        
+        const format = (dt) => `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;
+        return `${format(monday)} - ${format(sunday)}`;
+    }
+
+    function updateDashboard() {
+        const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
+
+        const weeklyGroups = {};
+        filteredHistory.forEach(r => {
+            const wKey = getWeekKey(r.dateTimestamp);
+            if(!weeklyGroups[wKey]) weeklyGroups[wKey] = { records: [], count: 0, totalIncome: 0 };
+            
+            let existing = weeklyGroups[wKey].records.find(x => x.plate === r.plate);
+            if(!existing) {
+                existing = { plate: r.plate, carName: r.carName, count: 0, totalIncome: 0 };
+                weeklyGroups[wKey].records.push(existing);
+            }
+            existing.count += 1;
+            
+            let incomeToAdd = 0;
+            if (currentDashFilter === 'kapi') incomeToAdd = r.kapiIncome || 0;
+            else if (currentDashFilter === 'owner') incomeToAdd = r.ownerIncome || 0;
+            else incomeToAdd = r.price || 0;
+
+            existing.totalIncome += incomeToAdd;
+            weeklyGroups[wKey].count += 1;
+            weeklyGroups[wKey].totalIncome += incomeToAdd;
+        });
+
+        let html1 = '';
+        Object.keys(weeklyGroups).reverse().forEach(wk => {
+            const wg = weeklyGroups[wk];
+            html1 += `
+                <div class="dashboard-section">
+                    <h4>📅 สัปดาห์: ${wk}</h4>
+                    <table>
+                        <thead><tr><th>รุ่นรถ (ทะเบียน)</th><th>จำนวนครั้งที่เช่า</th><th>ยอดรายได้ (sm)</th></tr></thead>
+                        <tbody>
+                            ${wg.records.map(x => `<tr><td>${x.carName} (${x.plate})</td><td>${x.count} ครั้ง</td><td style="color:#00E676;">${x.totalIncome.toLocaleString()}</td></tr>`).join('')}
+                            <tr class="summary-row"><td>สรุปรวมสัปดาห์นี้</td><td>${wg.count} ครั้ง</td><td>${wg.totalIncome.toLocaleString()} sm</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        });
+        document.getElementById('weeklyDashboardContainer').innerHTML = html1 || '<p style="color:#888; font-weight: 600; padding: 20px;">ยังไม่มีประวัติในหมวดหมู่นี้ครับ</p>';
+
+        const overallGroups = {};
+        let totalOverallCount = 0, totalOverallIncome = 0;
+
+        filteredHistory.forEach(r => {
+            if(!overallGroups[r.plate]) overallGroups[r.plate] = { carName: r.carName, count: 0, netIncome: 0 };
+            overallGroups[r.plate].count += 1;
+            
+            let incomeToAdd = 0;
+            if (currentDashFilter === 'kapi') incomeToAdd = r.kapiIncome || 0;
+            else if (currentDashFilter === 'owner') incomeToAdd = r.ownerIncome || 0;
+            else incomeToAdd = r.price || 0;
+
+            overallGroups[r.plate].netIncome += incomeToAdd;
+            
+            totalOverallCount += 1;
+            totalOverallIncome += incomeToAdd;
+        });
+
+        let html2 = `
+            <div class="dashboard-section">
+                <table>
+                    <thead><tr><th>รุ่นรถ (ทะเบียน)</th><th>จำนวนที่ถูกเช่า (ครั้ง)</th><th>ยอดรายได้รวม (sm)</th></tr></thead>
+                    <tbody>
+                        ${Object.keys(overallGroups).map(plate => {
+                            const og = overallGroups[plate];
+                            return `<tr><td>${og.carName} (${plate})</td><td>${og.count}</td><td style="color:var(--summer-orange);">${og.netIncome.toLocaleString()}</td></tr>`;
+                        }).join('')}
+                        <tr class="summary-row"><td>ยอดสรุปรวมทั้งหมด</td><td>${totalOverallCount} ครั้ง</td><td>${totalOverallIncome.toLocaleString()} sm</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        `;
+        document.getElementById('overallDashboardContainer').innerHTML = totalOverallCount > 0 ? html2 : '<p style="color:#888; font-weight: 600; padding: 20px;">ยังไม่มีประวัติในหมวดหมู่นี้ครับ</p>';
+
+        let titleSuffix = " (ยอดรับรวมทั้งหมด)";
+        if (currentDashFilter === 'kapi') titleSuffix = " (เฉพาะยอดเงินสุทธิเข้ากะปิ)";
+        if (currentDashFilter === 'owner') titleSuffix = " (เฉพาะยอดเงินเข้าเจ้าของรถ)";
+
+        document.getElementById('dashTitle1').innerText = `ส่วนที่ 1: ประวัติการเช่ารายสัปดาห์` + titleSuffix;
+        document.getElementById('dashTitle2').innerText = `ส่วนที่ 2: สรุปรวมตลอดกาล` + titleSuffix;
+    }
+
+    function captureAvailableCars() {
+        const target = document.getElementById('screenshotTarget');
+        target.innerHTML = ''; 
+        
+        const availableCars = cars.filter(c => c.status === 'available');
+        if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
+
+        availableCars.forEach(car => {
+            const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
+            target.innerHTML += `
+                <div class="ss-card">
+                    <img src="${imgUrl}" class="ss-image" crossorigin="anonymous">
+                    <div class="ss-title">${car.name} ${car.isTurbo ? '🚀' : ''}</div>
+                </div>
+            `;
+        });
+
+        html2canvas(target, { backgroundColor: '#0B0B0E', useCORS: true }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `Available_Cars_${Date.now()}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
+        }).catch(err => {
+            console.error(err);
+            alert("ไม่สามารถสร้างรูปภาพได้ อาจเกิดจากรูปบางรูปบล็อกการดาวน์โหลด (CORS)");
+        });
+    }
+
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     // Init
-    window.onload = calculate;
+    renderCategoryDropdowns();
+    renderCars();
 </script>
+
 </body>
 </html>
