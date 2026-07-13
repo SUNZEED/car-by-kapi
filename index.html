@@ -168,7 +168,6 @@
         .ss-image { width: 100%; height: 200px; object-fit: cover; }
         .ss-title { padding: 15px; font-size: 20px; font-weight: 800; color: #fff; text-align: center; font-family: 'Kanit', sans-serif;}
 
-        /* สไตล์สำหรับป้ายหมวดหมู่ในหน้าตั้งค่า */
         .cat-badge-edit {
             display: inline-flex; align-items: center; gap: 8px; background: #222; 
             padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #444;
@@ -204,7 +203,7 @@
             <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
             <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
             <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
-            <button class="btn btn-add" style="margin-left: auto;" onclick="captureAvailableCars()">📸 แคปรูปรถที่เหลือ</button>
+            <button class="btn btn-add" id="captureBtn" style="margin-left: auto;" onclick="captureAvailableCars()">📸 แคปรูปรถที่เหลือ</button>
         </div>
 
         <div class="car-grid" id="carGrid"></div>
@@ -248,7 +247,7 @@
                 </div>
             </div>
 
-            <!-- โซน 2: หมวดหมู่ (นำกลับมา) -->
+            <!-- โซน 2: หมวดหมู่ -->
             <div class="controls">
                 <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">🏷️ จัดการหมวดหมู่รถ</h3>
                 <div style="display:flex; width:100%; gap:15px; align-items:center;">
@@ -256,7 +255,6 @@
                     <button class="btn btn-add" style="flex: none; background: linear-gradient(135deg, #2980b9, #2c3e50); box-shadow: none;" onclick="addCategory()">+ เพิ่มหมวดหมู่</button>
                 </div>
                 <div id="categoryList" style="width: 100%; margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <!-- ป้ายหมวดหมู่จะถูกใส่ที่นี่ -->
                 </div>
             </div>
 
@@ -607,13 +605,11 @@
                 const distance = car.endTime - nowTime;
                 
                 if (distance <= 0) {
-                    // ดึงรถกลับอัตโนมัติ
                     car.status = "available";
                     car.price = 0;
                     car.endTime = null;
                     stateChanged = true;
                 } else {
-                    // อัปเดตเวลานับถอยหลังที่หน้าจอ
                     const el = document.getElementById(`cd-${car.id}`);
                     if(el) {
                         const h = Math.floor(distance / (1000 * 60 * 60));
@@ -754,7 +750,6 @@
             if (car.ownerName && car.ownerName.trim() !== '') ownerText += ` (${car.ownerName})`;
             const ownerBadge = car.ownerType === 'kapi' ? `<span class="tag-kapi">${ownerText}</span>` : `<span class="tag-owner">${ownerText}</span>`;
             
-            // เพิ่มปุ่มแก้ไข (Edit) และจัดรูปแบบให้แสดงผลได้สวยงาม
             let actionButtons = '';
             if (car.status === 'busy') {
                 actionButtons = `<button class="btn btn-return" onclick="returnCar(${car.id})" style="width:100%;">คืนรถ</button>`;
@@ -911,6 +906,7 @@
         document.getElementById('dashTitle2').innerText = `ส่วนที่ 2: สรุปรวมตลอดกาล` + titleSuffix;
     }
 
+    // --- อัปเดตระบบแคปจอเพื่อแก้ปัญหารูปดำ ---
     function captureAvailableCars() {
         const target = document.getElementById('screenshotTarget');
         target.innerHTML = ''; 
@@ -918,24 +914,62 @@
         const availableCars = cars.filter(c => c.status === 'available');
         if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
 
+        // เปลี่ยนปุ่มเป็นสถานะกำลังโหลด
+        const captureBtn = document.getElementById('captureBtn');
+        const originalBtnText = captureBtn.innerText;
+        captureBtn.innerText = "⏳ กำลังโหลดรูปภาพ...";
+        captureBtn.style.opacity = "0.7";
+        captureBtn.style.pointerEvents = "none";
+
+        let htmlContent = "";
         availableCars.forEach(car => {
             const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
-            target.innerHTML += `
+            htmlContent += `
                 <div class="ss-card">
                     <img src="${imgUrl}" class="ss-image" crossorigin="anonymous">
                     <div class="ss-title">${car.name} ${car.isTurbo ? '🚀' : ''}</div>
                 </div>
             `;
         });
+        target.innerHTML = htmlContent;
 
-        html2canvas(target, { backgroundColor: '#0B0B0E', useCORS: true }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = `Available_Cars_${Date.now()}.png`;
-            link.href = canvas.toDataURL("image/png");
-            link.click();
-        }).catch(err => {
-            console.error(err);
-            alert("ไม่สามารถสร้างรูปภาพได้ อาจเกิดจากรูปบางรูปบล็อกการดาวน์โหลด (CORS)");
+        // รอให้ภาพทุกภาพในกล่องแคปจอ "โหลดเสร็จสมบูรณ์" ก่อน
+        const images = Array.from(target.querySelectorAll('img'));
+        const imagePromises = images.map(img => {
+            return new Promise(resolve => {
+                if (img.complete) return resolve(); // ถ้าโหลดเสร็จแล้ว
+                img.onload = resolve; // โหลดสำเร็จ
+                img.onerror = resolve; // โหลดพัง ก็ให้ผ่านไปเลยจะได้ไม่ค้าง
+            });
+        });
+
+        // เมื่อทุกรูปโหลดเสร็จ (หรือพยายามโหลดจนเสร็จ)
+        Promise.all(imagePromises).then(() => {
+            captureBtn.innerText = "📸 กำลังประมวลผล...";
+            
+            // หน่วงเวลาให้ Browser วาดลงจอ 0.5 วินาที
+            setTimeout(() => {
+                html2canvas(target, { 
+                    backgroundColor: '#0B0B0E', 
+                    useCORS: true 
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = `Available_Cars_${Date.now()}.png`;
+                    link.href = canvas.toDataURL("image/png");
+                    link.click();
+                    
+                    // คืนค่าปุ่ม
+                    captureBtn.innerText = originalBtnText;
+                    captureBtn.style.opacity = "1";
+                    captureBtn.style.pointerEvents = "auto";
+                }).catch(err => {
+                    console.error(err);
+                    alert("เกิดข้อผิดพลาด! บางรูปภาพอาจถูกบล็อกสิทธิ์ (CORS) จากเว็บที่ฝากรูปไว้ครับ");
+                    captureBtn.innerText = originalBtnText;
+                    captureBtn.style.opacity = "1";
+                    captureBtn.style.pointerEvents = "auto";
+                });
+            }, 500);
         });
     }
 
