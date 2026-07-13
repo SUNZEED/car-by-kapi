@@ -1,405 +1,9 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Summer City | ปล่อยเช่ารถ</title>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <style>
-        :root {
-            --summer-orange: #FF5E3A;
-            --summer-orange-glow: rgba(255, 94, 58, 0.4);
-            --summer-blue: #00D2FF;
-            --summer-blue-glow: rgba(0, 210, 255, 0.4);
-            --summer-green: #00E676;
-            --card-bg: #16161C; 
-            --bg-dark: #0B0B0E; 
-            --text-light: #EAEAEA;
-            --border-color: #262630;
-        }
-
-        body {
-            font-family: 'Kanit', sans-serif;
-            margin: 0; padding: 0;
-            background: var(--bg-dark);
-            min-height: 100vh;
-            color: var(--text-light);
-            background-image: radial-gradient(circle at 50% 0%, #1a1a24 0%, transparent 70%);
-        }
-
-        header {
-            background: rgba(11, 11, 14, 0.85);
-            backdrop-filter: blur(12px);
-            padding: 15px 30px;
-            display: flex; justify-content: space-between; align-items: center;
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
-            position: sticky; top: 0; z-index: 100;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        header h1 {
-            margin: 0; color: #fff; font-size: 24px; font-weight: 800;
-            display: flex; align-items: center; gap: 10px;
-            text-shadow: 0 0 15px var(--summer-orange-glow);
-            letter-spacing: 1px; cursor: pointer; user-select: none;
-        }
-        header h1:hover { text-shadow: 0 0 25px var(--summer-orange); }
-
-        .tab-menu { display: flex; gap: 12px; }
-        .tab-btn {
-            background: transparent; color: #888; border: 1px solid transparent;
-            padding: 8px 20px; border-radius: 8px; font-family: 'Kanit'; 
-            font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s ease;
-        }
-        .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-        .tab-btn.active {
-            background: rgba(255, 94, 58, 0.1); border-color: var(--summer-orange); 
-            color: var(--summer-orange); box-shadow: 0 0 15px var(--summer-orange-glow) inset;
-        }
-
-        .container { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
-        .page { display: none; }
-        .page.active { display: block; animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        .controls {
-            display: flex; gap: 15px; margin-bottom: 30px; flex-wrap: wrap;
-            background: rgba(22, 22, 28, 0.7); padding: 20px; border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 1px solid var(--border-color); align-items: center;
-            backdrop-filter: blur(10px);
-        }
-        .controls input[type="text"], .controls input[type="password"], .controls input[type="number"], .controls select {
-            padding: 12px 18px; border-radius: 8px; border: 1px solid #333; 
-            font-family: 'Kanit'; flex: 1; min-width: 150px; background: #0F0F13; color: #fff;
-            transition: all 0.3s ease;
-        }
-        .controls input:focus, .controls select:focus {
-            border-color: var(--summer-orange); outline: none; box-shadow: 0 0 10px var(--summer-orange-glow);
-        }
-
-        .view-filters { display: flex; gap: 10px; margin-bottom: 20px; align-items: center; flex-wrap: wrap; }
-        .view-btn {
-            background: #2A2A35; color: #aaa; border: 1px solid #444;
-            padding: 8px 16px; border-radius: 20px; font-family: 'Kanit'; cursor: pointer; font-size: 14px;
-            transition: 0.3s;
-        }
-        .view-btn.active { background: var(--summer-blue); color: #000; border-color: var(--summer-blue); font-weight: bold; }
-
-        .btn {
-            border: none; padding: 12px 20px; border-radius: 8px; font-family: 'Kanit'; 
-            cursor: pointer; transition: all 0.3s ease; 
-            font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.15); }
-        .btn:active { transform: translateY(1px); }
-        .btn-add { background: linear-gradient(135deg, #00C9FF, #0082FF); color: white; box-shadow: 0 4px 15px var(--summer-blue-glow); }
-        .btn-rent { background: linear-gradient(135deg, #FF7E5F, #FF5E3A); color: #fff; box-shadow: 0 4px 15px var(--summer-orange-glow); } 
-        .btn-return { background: transparent; color: #FFB300; border: 2px solid #FFB300; box-sizing: border-box; border-radius: 8px; }
-        .btn-return:hover { background: rgba(255, 179, 0, 0.1); box-shadow: 0 0 15px rgba(255, 179, 0, 0.3); }
-        .btn-edit { background: #2A2A35; color: #fff; border: 1px solid #444; }
-        .btn-delete { background: linear-gradient(135deg, #ff4757, #c0392b); color: #fff; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); }
-
-        .car-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
-        .car-card {
-            background: var(--card-bg); border-radius: 12px; overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;
-            border: 1px solid var(--border-color); position: relative; transition: all 0.3s ease;
-        }
-        .car-card:hover { transform: translateY(-5px); border-color: #444; box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
-        .car-card.busy { border-color: #ff4757; opacity: 0.8; }
-        
-        .car-image-container { position: relative; width: 100%; height: 180px; background: #000; }
-        .car-image { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
-        .car-card.busy .car-image { filter: grayscale(100%) brightness(40%); }
-        .cross-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 80px; color: rgba(255, 71, 87, 0.8); text-shadow: 0 0 20px #000;
-            pointer-events: none;
-        }
-
-        .tags-container { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; flex-wrap: wrap; }
-        .tag-turbo { background: #ff0055; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; box-shadow: 0 2px 10px rgba(255,0,85,0.5); }
-        .tag-owner { background: var(--summer-blue); color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
-        .tag-kapi { background: var(--summer-green); color: #000; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
-
-        .car-details { padding: 20px; flex-grow: 1; }
-        .car-title { font-size: 20px; margin: 0 0 12px 0; display: flex; align-items: center; justify-content: space-between; font-weight: 800; color: #fff; text-transform: uppercase;}
-        .badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 800; background: #262630; color: #aaa; letter-spacing: 0.5px; text-transform: uppercase;}
-        
-        .rental-info { background: rgba(0, 0, 0, 0.4); padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 14px; text-align: center; color: #ccc; border: 1px solid #333; }
-        .card-actions { display: flex; gap: 10px; padding: 15px 20px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border-color); }
-
-        .copy-btn { cursor: pointer; font-size: 14px; margin-left: 8px; opacity: 0.6; transition: 0.2s; }
-        .copy-btn:hover { opacity: 1; transform: scale(1.1); }
-
-        .dashboard-section {
-            background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px;
-            border: 1px solid var(--border-color); box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-        .dashboard-section h4 { margin-top: 0; color: var(--summer-orange); font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; font-weight: 800; }
-        table { width: 100%; background: transparent; border-collapse: collapse; }
-        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 15px; color: #d0d0d0;}
-        th { background: rgba(0,0,0,0.3); color: #888; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
-        .summary-row { background: rgba(255, 94, 58, 0.1); font-weight: bold; }
-        .summary-row td { color: #fff; border-top: 2px solid var(--summer-orange); }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
-        .modal-content { background: #121216; padding: 35px; border-radius: 16px; width: 90%; max-width: 450px; border: 1px solid var(--summer-orange); box-shadow: 0 0 40px var(--summer-orange-glow); color: white; animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto; }
-        @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: #aaa; font-size: 14px;}
-        .form-group input, .form-group select { width: 100%; padding: 12px 15px; border: 1px solid #333; border-radius: 8px; box-sizing: border-box; font-family: 'Kanit'; background: #0A0A0C; color: white; font-size: 15px; transition: all 0.3s; }
-        .form-group input[type="checkbox"] { width: auto; transform: scale(1.5); margin-right: 10px; cursor: pointer; }
-        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 30px; }
-
-        .manage-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid var(--border-color); }
-        .manage-table th, .manage-table td { padding: 18px 20px; border-bottom: 1px solid var(--border-color); text-align: left; }
-        .manage-table th { background: rgba(0,0,0,0.5); color: var(--summer-orange); font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; }
-
-        .cat-badge-edit {
-            display: inline-flex; align-items: center; gap: 8px; background: #222; 
-            padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #444;
-            font-weight: 600;
-        }
-        .cat-del-btn {
-            background: none; border: none; color: #ff4757; font-weight: bold; cursor: pointer; padding: 2px 6px; font-size: 16px;
-            transition: 0.2s;
-        }
-        .cat-del-btn:hover { color: #fff; background: #ff4757; border-radius: 50%; }
-
-    </style>
-</head>
-<body>
-
-<header>
-    <h1 onclick="switchPage('manage')" title="แอบเข้าหน้าจัดการ">🌴 SUMMER CITY <span style="font-size: 16px; font-weight: 400; color: #888; text-shadow: none;">| ปล่อยเช่ารถ</span></h1>
-    <div class="tab-menu">
-        <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
-        <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
-    </div>
-</header>
-
-<div class="container">
-    <!-- หน้า 1: ปล่อยเช่า -->
-    <div id="carsPage" class="page active">
-        <div class="controls">
-            <input type="text" id="searchInput" placeholder="🔍 ค้นหารถ, ทะเบียน..." oninput="renderCars()">
-            <select id="categoryFilter" onchange="renderCars()"></select>
-        </div>
-        
-        <div class="view-filters">
-            <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
-            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
-            
-            <div style="margin-left: auto; display: flex; gap: 10px;">
-                <!-- ปุ่มสแกนสัญญา ปรับให้เหลือแค่อิโมจิตามที่ขอ -->
-                <label class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); cursor: pointer; padding: 12px 18px; margin: 0; font-size: 16px;" title="AI อ่านรูปสัญญาอัตโนมัติ">
-                    📄✨
-                    <input type="file" id="ocrInput" accept="image/*" style="display: none;" onchange="processOCR(event)">
-                </label>
-                <!-- ปุ่มแคปหน้าจอ -->
-                <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()" style="margin: 0;">📸 แคปรูปรถที่เหลือ</button>
-            </div>
-        </div>
-        
-        <!-- สถานะการประมวลผล OCR -->
-        <div id="ocrStatus" style="font-size: 14px; font-weight: 600; margin-bottom: 20px; text-align: right;"></div>
-
-        <div class="car-grid" id="carGrid"></div>
-    </div>
-
-    <!-- หน้า 2: จัดการหลังบ้าน -->
-    <div id="managePage" class="page">
-        <div id="loginScreen" style="background: rgba(22,22,28,0.8); padding: 50px 40px; border-radius: 16px; max-width: 400px; margin: 80px auto; text-align: center; border: 1px solid #333;">
-            <h2 style="color: var(--summer-orange);">🔒 SYSTEM LOGIN</h2>
-            <input type="text" id="adminUser" placeholder="Username" style="width:100%; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#000; color:#fff;">
-            <input type="password" id="adminPass" placeholder="Password" style="width:100%; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #333; background:#000; color:#fff;">
-            <button class="btn btn-add" style="width:100%; padding: 15px;" onclick="checkLogin()">เข้าสู่ระบบ</button>
-        </div>
-
-        <div id="adminContent" style="display: none;">
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <button class="btn btn-add" style="background: #27ae60; box-shadow: none;" onclick="exportCars()">📤 Export ข้อมูลรถ</button>
-                    <label class="btn btn-edit" style="background: #2980b9; border: none; cursor: pointer; margin-left: 5px;">
-                        📥 Import ข้อมูลรถ
-                        <input type="file" accept=".json" style="display:none;" onchange="importCars(event)">
-                    </label>
-                </div>
-                <button class="btn btn-edit" style="background: transparent; color: #ff4757; border-color: #ff4757;" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
-            </div>
-
-            <!-- โซน 1: แอดรถ -->
-            <div class="controls">
-                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">+ เพิ่มรถใหม่เข้าระบบ</h3>
-                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap;">
-                    <input type="text" id="newCarName" placeholder="ชื่อรุ่นรถ (เช่น GTR R35)" style="flex:1;">
-                    <input type="text" id="newCarPlate" placeholder="ป้ายทะเบียน" style="flex:1;">
-                    <select id="newCarCategory" style="flex:1;"></select>
-                </div>
-                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center; margin-top:10px;">
-                    <input type="text" id="newCarImg" placeholder="URL รูปภาพรถ (Link)" style="flex:2;">
-                    
-                    <select id="newCarOwnerType" style="flex:1;">
-                        <option value="owner">รถของเจ้าของ</option>
-                        <option value="kapi">รถของกะปิ</option>
-                    </select>
-                    <input type="text" id="newCarOwnerName" placeholder="ชื่อเจ้าของรถ (เช่น พี่เอ)" style="flex:1;">
-
-                    <label style="color:#fff; display:flex; align-items:center; gap:5px; flex:1;">
-                        <input type="checkbox" id="newCarTurbo"> ติดเทอร์โบแล้ว
-                    </label>
-                    <button class="btn btn-add" style="flex: none;" onclick="addNewCar()">บันทึกเข้าระบบ</button>
-                </div>
-            </div>
-
-            <!-- โซน 2: หมวดหมู่ -->
-            <div class="controls">
-                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">🏷️ จัดการหมวดหมู่รถ</h3>
-                <div style="display:flex; width:100%; gap:15px; align-items:center;">
-                    <input type="text" id="newCategoryInput" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่ (เช่น รถสปอร์ต, รถครอบครัว)">
-                    <button class="btn btn-add" style="flex: none; background: linear-gradient(135deg, #2980b9, #2c3e50); box-shadow: none;" onclick="addCategory()">+ เพิ่มหมวดหมู่</button>
-                </div>
-                <div id="categoryList" style="width: 100%; margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;"></div>
-            </div>
-
-            <table class="manage-table" style="margin-bottom: 30px;">
-                <thead>
-                    <tr>
-                        <th>ทะเบียน</th>
-                        <th>รุ่นรถ</th>
-                        <th>หมวดหมู่ / เจ้าของ</th>
-                        <th>สถานะตอนนี้</th>
-                        <th style="text-align: right; min-width: 160px;">จัดการ</th>
-                    </tr>
-                </thead>
-                <tbody id="manageTableBody"></tbody>
-            </table>
-        </div>
-    </div>
-
-    <!-- หน้า 3: สรุปผล -->
-    <div id="dashboardPage" class="page">
-        <div class="view-filters" style="margin-bottom: 30px;">
-            <button class="view-btn active" id="btnDashFilterAll" onclick="setDashFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดกะปิ</button>
-            <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดเจ้าของ</button>
-        </div>
-
-        <h3 style="color: white; font-weight: 800; border-bottom: 2px solid var(--summer-orange); padding-bottom: 10px;" id="dashTitle1">
-            ส่วนที่ 1: ประวัติการเช่ารายสัปดาห์ (ตัดยอดทุกวันอาทิตย์)
-        </h3>
-        <div id="weeklyDashboardContainer"></div>
-
-        <h3 style="color: white; font-weight: 800; border-bottom: 2px solid var(--summer-green); padding-bottom: 10px; margin-top: 40px;" id="dashTitle2">
-            ส่วนที่ 2: สรุปรวมตลอดกาล
-        </h3>
-        <div id="overallDashboardContainer"></div>
-    </div>
-</div>
-
-<!-- Modal ลงทะเบียนสัญญาเช่ารถ -->
-<div class="modal" id="rentModal">
-    <div class="modal-content">
-        <h2 style="color: var(--summer-orange); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">📋 ลงทะเบียนสัญญาเช่ารถ</h2>
-        <input type="hidden" id="rentCarId">
-        
-        <div class="form-group">
-            <label>ทะเบียนรถ</label>
-            <input type="text" id="rentCarName" disabled style="color: var(--summer-orange); background: rgba(255, 94, 58, 0.05); font-weight: bold;">
-        </div>
-        
-        <div class="form-group">
-            <label>ระยะเวลาสิ้นสุดสัญญา</label>
-            <input type="datetime-local" id="rentEndTime" required>
-        </div>
-        
-        <div class="form-group">
-            <label>ยอดเงินที่รับมา (sm)</label>
-            <input type="number" id="rentPrice" placeholder="ระบุจำนวนเงิน" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);">
-        </div>
-
-        <div class="form-group">
-            <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
-            <select id="rentSplitType">
-                <option value="kapi">เข้ากะปิ 100%</option>
-                <option value="owner">เข้าเจ้าของรถ 100%</option>
-                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปิ)</option>
-            </select>
-        </div>
-
-        <div class="modal-actions">
-            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('rentModal')">CANCEL</button>
-            <button class="btn btn-rent" onclick="confirmRent()">CONFIRM</button>
-        </div>
-    </div>
-</div>
-
-<!-- Modal แก้ไขรถ -->
-<div class="modal" id="editModal">
-    <div class="modal-content">
-        <h2 style="color: var(--summer-blue); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">✏️ แก้ไขข้อมูลรถ</h2>
-        <input type="hidden" id="editCarId">
-        
-        <div style="display:flex; gap:10px;">
-            <div class="form-group" style="flex:1;">
-                <label>ชื่อรุ่นรถ</label>
-                <input type="text" id="editCarName">
-            </div>
-            <div class="form-group" style="flex:1;">
-                <label>ป้ายทะเบียน</label>
-                <input type="text" id="editCarPlate">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label>หมวดหมู่</label>
-            <select id="editCarCategory"></select>
-        </div>
-        
-        <div class="form-group">
-            <label>URL รูปภาพรถ</label>
-            <input type="text" id="editCarImg">
-        </div>
-
-        <div style="display:flex; gap:10px;">
-            <div class="form-group" style="flex:1;">
-                <label>ประเภทเจ้าของ</label>
-                <select id="editCarOwnerType">
-                    <option value="owner">รถของเจ้าของ</option>
-                    <option value="kapi">รถของกะปิ</option>
-                </select>
-            </div>
-            <div class="form-group" style="flex:1;">
-                <label>ชื่อเจ้าของรถ</label>
-                <input type="text" id="editCarOwnerName" placeholder="เช่น พี่เอ (ไม่บังคับ)">
-            </div>
-        </div>
-
-        <div class="form-group">
-            <label style="display:flex; align-items:center;">
-                <input type="checkbox" id="editCarTurbo"> ติดเทอร์โบแล้ว
-            </label>
-        </div>
-        
-        <div class="modal-actions">
-            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('editModal')">ยกเลิก</button>
-            <button class="btn btn-add" onclick="saveEditCar()">บันทึกข้อมูล</button>
-        </div>
-    </div>
-</div>
-
 <script>
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
     
     let defaultCars = [
-        { id: 1, name: "GTR R35", plate: "2DCOREY", category: "ตัวท็อป", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null }
+        { id: 1, name: "GTR R35", plate: "RXH 281", category: "ตัวท็อป", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null }
     ];
     let defaultCategories = ["น้ำมัน", "ไฟฟ้า", "ตัวท็อป", "ประมูล"];
     
@@ -434,13 +38,21 @@
         });
     }
 
+    function generateShareLink(carId) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('car', carId);
+        return url.href;
+    }
+
     function switchPage(pageId) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(pageId + 'Page').classList.add('active');
-        if (event && event.target && event.target.classList.contains('tab-btn')) {
-            event.target.classList.add('active');
+        
+        if (window.event && window.event.target && window.event.target.classList.contains('tab-btn')) {
+            window.event.target.classList.add('active');
         }
+        
         if(pageId === 'dashboard') updateDashboard();
         if(pageId === 'manage') {
             if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
@@ -463,40 +75,10 @@
             alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
         }
     }
+    
     function logoutAdmin() {
         sessionStorage.removeItem('isAdminLoggedIn');
         switchPage('cars');
-    }
-
-    // --- ระบบ Export / Import รถ ---
-    function exportCars() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cars));
-        const dlAnchorElem = document.createElement('a');
-        dlAnchorElem.setAttribute("href", dataStr);
-        dlAnchorElem.setAttribute("download", `summer_cars_export_${Date.now()}.json`);
-        dlAnchorElem.click();
-    }
-
-    function importCars(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const imported = JSON.parse(e.target.result);
-                if(Array.isArray(imported)) {
-                    cars = imported;
-                    saveDataLocally();
-                    renderManageCars();
-                    renderCars();
-                    alert("✅ อิมพอร์ตข้อมูลรถสำเร็จ!");
-                }
-            } catch(err) {
-                alert("❌ ไฟล์ไม่ถูกต้อง กรุณาอัปโหลดไฟล์ JSON ที่ได้จากระบบเท่านั้น");
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = ''; 
     }
 
     // --- ระบบจัดการหมวดหมู่ ---
@@ -550,79 +132,7 @@
         }
     }
 
-    // --- ระบบ OCR อ่านรูปภาพ ---
-    async function processOCR(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        
-        const statusEl = document.getElementById('ocrStatus');
-        statusEl.innerText = "⏳ ระบบกำลังใช้ AI อ่านรูปภาพ กรุณารอสักครู่...";
-        statusEl.style.color = "var(--summer-orange)";
-
-        try {
-            const worker = await Tesseract.createWorker('tha+eng');
-            const ret = await worker.recognize(file);
-            const text = ret.data.text.replace(/\n/g, ' '); 
-            await worker.terminate();
-
-            console.log("OCR Scanned Text:", text);
-
-            let matchedCar = null;
-            let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
-            for(let car of sortedCars) {
-                const cleanText = text.replace(/\s+/g, '').toUpperCase();
-                const cleanPlate = car.plate.replace(/\s+/g, '').toUpperCase();
-                
-                if (cleanText.includes(cleanPlate)) {
-                    matchedCar = car;
-                    break;
-                }
-            }
-
-            if (!matchedCar) {
-                statusEl.innerText = "❌ ไม่พบป้ายทะเบียนในระบบ หรือ AI อ่านป้ายไม่ชัดเจน";
-                statusEl.style.color = "#ff4757";
-                event.target.value = '';
-                return;
-            }
-
-            if (matchedCar.status === 'busy') {
-                statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
-                statusEl.style.color = "#ff4757";
-                event.target.value = '';
-                return;
-            }
-
-            let hours = 0, mins = 0;
-            const hMatch = text.match(/(\d+)\s*[ชซ]/);
-            const mMatch = text.match(/(\d+)\s*[นม]/);
-
-            if (hMatch) hours = parseInt(hMatch[1]);
-            if (mMatch) mins = parseInt(mMatch[1]);
-
-            let autoEndTime = new Date();
-            if (hours > 0 || mins > 0) {
-                autoEndTime.setHours(autoEndTime.getHours() + hours);
-                autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
-            } else {
-                autoEndTime.setDate(autoEndTime.getDate() + 1);
-            }
-
-            statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
-            statusEl.style.color = "var(--summer-green)";
-
-            openRentModal(matchedCar.id, autoEndTime);
-
-            event.target.value = '';
-            setTimeout(() => { statusEl.innerText = ""; }, 5000);
-
-        } catch (err) {
-            console.error(err);
-            statusEl.innerText = "❌ เกิดข้อผิดพลาดในการประมวลผลรูปภาพ";
-            statusEl.style.color = "#ff4757";
-        }
-    }
-
+    // --- Filter หน้าแรก ---
     function setOwnerFilter(filter) {
         currentOwnerFilter = filter;
         document.getElementById('btnFilterAll').classList.remove('active');
@@ -686,6 +196,7 @@
                         <p style="margin: 5px 0; color: #888; font-size: 14px; display: flex; align-items: center;">
                             ทะเบียน: &nbsp;<strong style="color:#fff; letter-spacing: 1px;">${car.plate}</strong>
                             <span class="copy-btn" title="คัดลอกทะเบียน" onclick="copyText(event, '${car.plate}', this)">📑</span>
+                            <span class="link-btn" title="คัดลอกลิงก์รถ" onclick="copyText(event, '${generateShareLink(car.id)}', this)">🔗 Link</span>
                         </p>
             `;
 
@@ -705,406 +216,373 @@
         });
     }
 
-    // --- ระบบคืนรถอัตโนมัติ ---
+    // --- ระบบคืนรถอัตโนมัติ (นับถอยหลังทุก 1 วินาที) ---
     setInterval(() => {
         const nowTime = new Date().getTime();
         let stateChanged = false;
 
         cars.forEach(car => {
-            if(car.status === 'busy' && car.endTime) {
-                const distance = car.endTime - nowTime;
-                
-                if (distance <= 0) {
-                    car.status = "available";
+            if (car.status === 'busy' && car.endTime) {
+                const end = new Date(car.endTime).getTime();
+                const diff = end - nowTime;
+                const el = document.getElementById(`cd-${car.id}`);
+
+                if (diff <= 0) {
+                    // เมื่อหมดเวลา สัญญาจะถูกเคลียร์สถานะเป็นว่างทันที
+                    car.status = 'available';
                     car.price = 0;
                     car.endTime = null;
                     stateChanged = true;
                 } else {
-                    const el = document.getElementById(`cd-${car.id}`);
-                    if(el) {
-                        const h = Math.floor(distance / (1000 * 60 * 60));
-                        const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                        const s = Math.floor((distance % (1000 * 60)) / 1000);
-                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที ${s} วิ`;
+                    // คำนวณเวลาที่เหลือและแสดงผลบนหน้าจอ
+                    if (el) {
+                        const hours = Math.floor(diff / (1000 * 60 * 60));
+                        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                        el.innerText = `⏳ เหลือเวลา: ${hours}ชม. ${minutes}นาที ${seconds}วิ.`;
                     }
                 }
             }
         });
 
-        if(stateChanged) {
+        if (stateChanged) {
             saveDataLocally();
             renderCars();
-            if (document.getElementById('managePage').classList.contains('active')) {
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                 renderManageCars();
             }
         }
-    }, 1000); 
+    }, 1000);
 
-    function openRentModal(id, autoEndTime = null) {
-        const car = cars.find(c => c.id === id);
-        document.getElementById('rentCarId').value = car.id;
-        document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
-        document.getElementById('rentPrice').value = "";
-        
-        if (car.ownerType === 'kapi') { document.getElementById('rentSplitType').value = 'kapi'; }
-        else { document.getElementById('rentSplitType').value = 'split'; }
+    // --- ระบบทำสัญญาเช่ารถ ---
+    function openRentModal(carId) {
+        const car = cars.find(c => c.id === carId);
+        if(!car) return;
+        document.getElementById('rentCarId').value = carId;
+        document.getElementById('rentCarName').value = `${car.name} [${car.plate}]`;
+        document.getElementById('rentModal').style.display = 'flex';
+    }
 
-        if(autoEndTime) {
-            autoEndTime.setMinutes(autoEndTime.getMinutes() - autoEndTime.getTimezoneOffset());
-            document.getElementById('rentEndTime').value = autoEndTime.toISOString().slice(0, 16);
-            setTimeout(() => { document.getElementById('rentPrice').focus(); }, 100);
-        } else {
-            document.getElementById('rentEndTime').value = "";
-        }
-
-        document.getElementById('rentModal').style.display = "flex";
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
     }
 
     function confirmRent() {
-        const id = parseInt(document.getElementById('rentCarId').value);
-        const price = parseInt(document.getElementById('rentPrice').value);
-        const endTimeValue = document.getElementById('rentEndTime').value;
+        const carId = parseInt(document.getElementById('rentCarId').value);
+        const endTime = document.getElementById('rentEndTime').value;
+        const price = parseFloat(document.getElementById('rentPrice').value) || 0;
         const splitType = document.getElementById('rentSplitType').value;
 
-        if (!price || price <= 0 || !endTimeValue) return alert("⚠️ กรุณาระบุยอดเงินและเวลาให้ครบ!");
+        if(!endTime) return alert("กรุณาระบุเวลาสิ้นสุดสัญญาเช่าด้วยครับ!");
 
-        const carIndex = cars.findIndex(c => c.id === id);
-        const car = cars[carIndex];
-        
-        let kapiIncome = 0;
-        let ownerIncome = 0;
+        const car = cars.find(c => c.id === carId);
+        if(car) {
+            car.status = 'busy';
+            car.price = price;
+            car.endTime = endTime;
 
-        if (splitType === 'kapi') { kapiIncome = price; }
-        else if (splitType === 'owner') { ownerIncome = price; }
-        else if (splitType === 'split') {
-            ownerIncome = 200000; 
-            kapiIncome = price - 200000;
-        }
+            // คำนวณส่วนแบ่งรายได้ตามเงื่อนไข
+            let kapiShare = 0;
+            let ownerShare = 0;
 
-        car.status = "busy";
-        car.price = price;
-        car.endTime = new Date(endTimeValue).getTime();
+            if (splitType === 'kapi') {
+                kapiShare = price;
+            } else if (splitType === 'owner') {
+                ownerShare = price;
+            } else if (splitType === 'split') {
+                if (price <= 200000) {
+                    ownerShare = price;
+                } else {
+                    ownerShare = 200000;
+                    kapiShare = price - 200000;
+                }
+            }
 
-        rentalHistory.push({
-            id: Date.now(),
-            dateTimestamp: new Date().getTime(),
-            plate: car.plate, 
-            carName: car.name,
-            ownerType: car.ownerType,
-            price: price,
-            kapiIncome: kapiIncome,
-            ownerIncome: ownerIncome
-        });
+            // บันทึกลงในฐานข้อมูลประวัติ
+            rentalHistory.push({
+                id: Date.now(),
+                carId: car.id,
+                name: car.name,
+                plate: car.plate,
+                ownerType: car.ownerType,
+                ownerName: car.ownerName,
+                price: price,
+                kapiShare: kapiShare,
+                ownerShare: ownerShare,
+                rentDate: new Date().toISOString(),
+                endDate: endTime
+            });
 
-        saveDataLocally();
-        closeModal('rentModal');
-        renderCars();
-        if(document.getElementById('managePage').classList.contains('active')) {
-            renderManageCars();
-        }
-    }
-
-    function returnCar(id) {
-        if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม?")) {
-            const carIndex = cars.findIndex(c => c.id === id);
-            cars[carIndex].status = "available";
-            cars[carIndex].price = 0;
-            cars[carIndex].endTime = null;
             saveDataLocally();
-            renderManageCars();
+            closeModal('rentModal');
             renderCars();
+            
+            // รีเซ็ตฟอร์ม
+            document.getElementById('rentEndTime').value = '';
+            document.getElementById('rentPrice').value = '';
         }
     }
 
-    function openEditModal(id) {
-        const car = cars.find(c => c.id === id);
-        document.getElementById('editCarId').value = car.id;
-        document.getElementById('editCarName').value = car.name;
-        document.getElementById('editCarPlate').value = car.plate;
-        document.getElementById('editCarCategory').value = car.category;
-        document.getElementById('editCarImg').value = car.imageUrl || '';
-        document.getElementById('editCarOwnerType').value = car.ownerType || 'owner';
-        document.getElementById('editCarOwnerName').value = car.ownerName || '';
-        document.getElementById('editCarTurbo').checked = car.isTurbo || false;
-
-        document.getElementById('editModal').style.display = "flex";
-    }
-
-    function saveEditCar() {
-        const id = parseInt(document.getElementById('editCarId').value);
-        const name = document.getElementById('editCarName').value;
-        const plate = document.getElementById('editCarPlate').value;
-        const category = document.getElementById('editCarCategory').value;
-        const imageUrl = document.getElementById('editCarImg').value;
-        const ownerType = document.getElementById('editCarOwnerType').value;
-        const ownerName = document.getElementById('editCarOwnerName').value;
-        const isTurbo = document.getElementById('editCarTurbo').checked;
-
-        if(!name || !plate) return alert("ใส่ชื่อและทะเบียนให้ครบครับ");
-
-        const index = cars.findIndex(c => c.id === id);
-        cars[index].name = name;
-        cars[index].plate = plate;
-        cars[index].category = category;
-        cars[index].imageUrl = imageUrl;
-        cars[index].ownerType = ownerType;
-        cars[index].ownerName = ownerName;
-        cars[index].isTurbo = isTurbo;
-
-        saveDataLocally();
-        closeModal('editModal');
-        renderManageCars();
-        renderCars();
-    }
-
+    // --- ระบบหลังบ้าน (แอดมิน) ---
     function renderManageCars() {
         const tbody = document.getElementById('manageTableBody');
+        if(!tbody) return;
         tbody.innerHTML = '';
+
         cars.forEach(car => {
-            const statusText = car.status === 'busy' ? '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>' : '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
-            
             let ownerText = car.ownerType === 'kapi' ? 'กะปิ' : 'เจ้าของ';
-            if (car.ownerName && car.ownerName.trim() !== '') ownerText += ` (${car.ownerName})`;
-            const ownerBadge = car.ownerType === 'kapi' ? `<span class="tag-kapi">${ownerText}</span>` : `<span class="tag-owner">${ownerText}</span>`;
-            
-            let actionButtons = '';
-            if (car.status === 'busy') {
-                actionButtons = `<button class="btn btn-return" onclick="returnCar(${car.id})" style="width:100%;">คืนรถ</button>`;
-            } else {
-                actionButtons = `
-                    <div style="display:flex; gap:8px; justify-content:flex-end;">
-                        <button class="btn btn-edit" style="padding: 8px 15px; font-size:13px;" onclick="openEditModal(${car.id})">✏️ แก้ไข</button>
-                        <button class="btn btn-delete" style="padding: 8px 15px; font-size:13px;" onclick="deleteCar(${car.id})">🗑️ ลบ</button>
-                    </div>
-                `;
-            }
+            if(car.ownerName) ownerText += ` (${car.ownerName})`;
 
             tbody.innerHTML += `
                 <tr>
-                    <td style="font-weight:600; color:#fff;">${car.plate}</td>
+                    <td><strong>${car.plate}</strong></td>
                     <td>${car.name} ${car.isTurbo ? '🚀' : ''}</td>
-                    <td><span class="badge">${car.category}</span> <div style="margin-top:8px;">${ownerBadge}</div></td>
-                    <td>${statusText}</td>
-                    <td style="text-align: right; min-width: 160px;">${actionButtons}</td>
+                    <td><span class="badge">${car.category}</span> / ${ownerText}</td>
+                    <td>
+                        <span style="color: ${car.status === 'busy' ? '#ff4757' : '#00E676'}; font-weight:bold;">
+                            ${car.status === 'busy' ? '🔴 ไม่ว่าง' : '🟢 ว่าง'}
+                        </span>
+                    </td>
+                    <td style="text-align: right;">
+                        ${car.status === 'busy' ? `<button class="btn btn-return" style="padding: 6px 12px; font-size: 12px; margin-right: 5px;" onclick="forceReturnCar(${car.id})">บังคับคืน</button>` : ''}
+                        <button class="btn btn-edit" style="padding: 6px 12px; font-size: 12px;" onclick="openEditModal(${car.id})">แก้ไข</button>
+                        <button class="btn btn-delete" style="padding: 6px 12px; font-size: 12px; margin-left: 5px;" onclick="deleteCar(${car.id})">ลบ</button>
+                    </td>
                 </tr>
             `;
         });
     }
 
     function addNewCar() {
-        const name = document.getElementById('newCarName').value;
-        const plate = document.getElementById('newCarPlate').value;
+        const name = document.getElementById('newCarName').value.trim();
+        const plate = document.getElementById('newCarPlate').value.trim();
         const category = document.getElementById('newCarCategory').value;
-        const imageUrl = document.getElementById('newCarImg').value;
-        const isTurbo = document.getElementById('newCarTurbo').checked;
+        const imageUrl = document.getElementById('newCarImg').value.trim();
         const ownerType = document.getElementById('newCarOwnerType').value;
-        const ownerName = document.getElementById('newCarOwnerName').value;
+        const ownerName = document.getElementById('newCarOwnerName').value.trim();
+        const isTurbo = document.getElementById('newCarTurbo').checked;
 
-        if(!name || !plate) return alert("ใส่ชื่อและทะเบียนให้ครบครับ");
-        
-        const newId = cars.length > 0 ? Math.max(...cars.map(c => c.id)) + 1 : 1;
-        cars.push({ id: newId, name, plate, category, imageUrl, isTurbo, ownerType, ownerName, status: "available", price: 0, endTime: null });
-        
-        document.getElementById('newCarName').value = "";
-        document.getElementById('newCarPlate').value = "";
-        document.getElementById('newCarImg').value = "";
-        document.getElementById('newCarTurbo').checked = false;
-        document.getElementById('newCarOwnerName').value = "";
+        if(!name || !plate) return alert("กรุณากรอกชื่อรุ่นและเลขทะเบียนรถก่อนบันทึกครับ!");
 
+        const newCar = {
+            id: Date.now(),
+            name, plate, category, imageUrl, ownerType, ownerName, isTurbo,
+            status: 'available', price: 0, endTime: null
+        };
+
+        cars.push(newCar);
         saveDataLocally();
-        renderManageCars();
         renderCars();
+        renderManageCars();
+
+        // เคลียร์ค่าใน Input
+        document.getElementById('newCarName').value = '';
+        document.getElementById('newCarPlate').value = '';
+        document.getElementById('newCarImg').value = '';
+        document.getElementById('newCarOwnerName').value = '';
+        document.getElementById('newCarTurbo').checked = false;
     }
 
-    function deleteCar(id) {
-        if(confirm("ลบรถคันนี้ออกจากสต็อกถาวร?")) {
-            cars = cars.filter(c => c.id != id);
-            saveDataLocally();
-            renderManageCars();
-            renderCars();
+    function forceReturnCar(carId) {
+        if(confirm("คุณต้องการบังคับคืนรถคันนี้ทันทีใช่หรือไม่? (ล้างสถานะเวลาเช่าปัจจุบัน)")) {
+            const car = cars.find(c => c.id === carId);
+            if(car) {
+                car.status = 'available';
+                car.price = 0;
+                car.endTime = null;
+                saveDataLocally();
+                renderCars();
+                renderManageCars();
+            }
         }
     }
 
-    function getWeekKey(timestamp) {
-        const d = new Date(timestamp);
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(d.setDate(diff));
+    function openEditModal(carId) {
+        const car = cars.find(c => c.id === carId);
+        if(!car) return;
         
-        const sunday = new Date(monday);
-        sunday.setDate(sunday.getDate() + 6);
+        document.getElementById('editCarId').value = car.id;
+        document.getElementById('editCarName').value = car.name;
+        document.getElementById('editCarPlate').value = car.plate;
+        document.getElementById('editCarCategory').value = car.category;
+        document.getElementById('editCarImg').value = car.imageUrl;
+        document.getElementById('editCarOwnerType').value = car.ownerType;
+        document.getElementById('editCarOwnerName').value = car.ownerName;
+        document.getElementById('editCarTurbo').checked = car.isTurbo;
         
-        const format = (dt) => `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;
-        return `${format(monday)} - ${format(sunday)}`;
+        document.getElementById('editModal').style.display = 'flex';
     }
 
+    function saveEditCar() {
+        const id = parseInt(document.getElementById('editCarId').value);
+        const car = cars.find(c => c.id === id);
+        
+        if(car) {
+            car.name = document.getElementById('editCarName').value.trim();
+            car.plate = document.getElementById('editCarPlate').value.trim();
+            car.category = document.getElementById('editCarCategory').value;
+            car.imageUrl = document.getElementById('editCarImg').value.trim();
+            car.ownerType = document.getElementById('editCarOwnerType').value;
+            car.ownerName = document.getElementById('editCarOwnerName').value.trim();
+            car.isTurbo = document.getElementById('editCarTurbo').checked;
+
+            saveDataLocally();
+            closeModal('editModal');
+            renderCars();
+            renderManageCars();
+        }
+    }
+
+    document.getElementById('editModal').addEventListener('click', function(e) {
+        if(e.target === this) closeModal('editModal');
+    });
+    document.getElementById('rentModal').addEventListener('click', function(e) {
+        if(e.target === this) closeModal('rentModal');
+    });
+
+    function deleteCar(carId) {
+        if(confirm("คุณต้องการลบรถคันนี้ออกจากระบบ Summer City อย่างถาวรใช่หรือไม่?")) {
+            cars = cars.filter(c => c.id !== carId);
+            saveDataLocally();
+            renderCars();
+            renderManageCars();
+        }
+    }
+
+    // --- ระบบแดชบอร์ดสรุปรายงานยอดเงิน ---
     function updateDashboard() {
-        const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
+        const weeklyContainer = document.getElementById('weeklyDashboardContainer');
+        const overallContainer = document.getElementById('overallDashboardContainer');
+        if(!weeklyContainer || !overallContainer) return;
 
-        const weeklyGroups = {};
-        filteredHistory.forEach(r => {
-            const wKey = getWeekKey(r.dateTimestamp);
-            if(!weeklyGroups[wKey]) weeklyGroups[wKey] = { records: [], count: 0, totalIncome: 0 };
-            
-            let existing = weeklyGroups[wKey].records.find(x => x.plate === r.plate);
-            if(!existing) {
-                existing = { plate: r.plate, carName: r.carName, count: 0, totalIncome: 0 };
-                weeklyGroups[wKey].records.push(existing);
-            }
-            existing.count += 1;
-            
-            let incomeToAdd = 0;
-            if (currentDashFilter === 'kapi') incomeToAdd = r.kapiIncome || 0;
-            else if (currentDashFilter === 'owner') incomeToAdd = r.ownerIncome || 0;
-            else incomeToAdd = r.price || 0;
+        let totalRevenue = 0;
+        let totalKapi = 0;
+        let totalOwner = 0;
 
-            existing.totalIncome += incomeToAdd;
-            weeklyGroups[wKey].count += 1;
-            weeklyGroups[wKey].totalIncome += incomeToAdd;
+        rentalHistory.forEach(h => {
+            totalRevenue += h.price;
+            totalKapi += h.kapiShare || 0;
+            totalOwner += h.ownerShare || 0;
         });
 
-        let html1 = '';
-        Object.keys(weeklyGroups).reverse().forEach(wk => {
-            const wg = weeklyGroups[wk];
-            html1 += `
-                <div class="dashboard-section">
-                    <h4>📅 สัปดาห์: ${wk}</h4>
-                    <table>
-                        <thead><tr><th>รุ่นรถ (ทะเบียน)</th><th>จำนวนครั้งที่เช่า</th><th>ยอดรายได้ (sm)</th></tr></thead>
-                        <tbody>
-                            ${wg.records.map(x => `<tr><td>${x.carName} (${x.plate})</td><td>${x.count} ครั้ง</td><td style="color:#00E676;">${x.totalIncome.toLocaleString()}</td></tr>`).join('')}
-                            <tr class="summary-row"><td>สรุปรวมสัปดาห์นี้</td><td>${wg.count} ครั้ง</td><td>${wg.totalIncome.toLocaleString()} sm</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            `;
-        });
-        document.getElementById('weeklyDashboardContainer').innerHTML = html1 || '<p style="color:#888; font-weight: 600; padding: 20px;">ยังไม่มีประวัติในหมวดหมู่นี้ครับ</p>';
+        let targetRevenue = totalRevenue;
+        if(currentDashFilter === 'kapi') targetRevenue = totalKapi;
+        if(currentDashFilter === 'owner') targetRevenue = totalOwner;
 
-        const overallGroups = {};
-        let totalOverallCount = 0, totalOverallIncome = 0;
-
-        filteredHistory.forEach(r => {
-            if(!overallGroups[r.plate]) overallGroups[r.plate] = { carName: r.carName, count: 0, netIncome: 0 };
-            overallGroups[r.plate].count += 1;
-            
-            let incomeToAdd = 0;
-            if (currentDashFilter === 'kapi') incomeToAdd = r.kapiIncome || 0;
-            else if (currentDashFilter === 'owner') incomeToAdd = r.ownerIncome || 0;
-            else incomeToAdd = r.price || 0;
-
-            overallGroups[r.plate].netIncome += incomeToAdd;
-            
-            totalOverallCount += 1;
-            totalOverallIncome += incomeToAdd;
-        });
-
-        let html2 = `
+        // เรนเดอร์ส่วนสรุปรวมตลอดกาล
+        overallContainer.innerHTML = `
             <div class="dashboard-section">
+                <h4>📊 สรุปสัดส่วนยอดเงินรวมทั้งหมด</h4>
                 <table>
-                    <thead><tr><th>รุ่นรถ (ทะเบียน)</th><th>จำนวนที่ถูกเช่า (ครั้ง)</th><th>ยอดรายได้รวม (sm)</th></tr></thead>
+                    <thead>
+                        <tr>
+                            <th>ประเภทรายได้</th>
+                            <th>ยอดเงินสะสม (sm)</th>
+                        </tr>
+                    </thead>
                     <tbody>
-                        ${Object.keys(overallGroups).map(plate => {
-                            const og = overallGroups[plate];
-                            return `<tr><td>${og.carName} (${plate})</td><td>${og.count}</td><td style="color:var(--summer-orange);">${og.netIncome.toLocaleString()}</td></tr>`;
-                        }).join('')}
-                        <tr class="summary-row"><td>ยอดสรุปรวมทั้งหมด</td><td>${totalOverallCount} ครั้ง</td><td>${totalOverallIncome.toLocaleString()} sm</td></tr>
+                        ${currentDashFilter === 'all' || currentDashFilter === 'kapi' ? `<tr><td>🥬 ยอดส่วนแบ่งเข้ากะปิ</td><td><strong>${totalKapi.toLocaleString()} sm</strong></td></tr>` : ''}
+                        ${currentDashFilter === 'all' || currentDashFilter === 'owner' ? `<tr><td>🏎️ ยอดส่วนแบ่งเข้าเจ้าของรถ</td><td><strong>${totalOwner.toLocaleString()} sm</strong></td></tr>` : ''}
+                        <tr class="summary-row">
+                            <td>📈 ยอดรวมสุทธิ (ตามตัวกรองปัจจุบัน)</td>
+                            <td>${targetRevenue.toLocaleString()} sm</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         `;
-        document.getElementById('overallDashboardContainer').innerHTML = totalOverallCount > 0 ? html2 : '<p style="color:#888; font-weight: 600; padding: 20px;">ยังไม่มีประวัติในหมวดหมู่นี้ครับ</p>';
 
-        let titleSuffix = " (ยอดรับรวมทั้งหมด)";
-        if (currentDashFilter === 'kapi') titleSuffix = " (เฉพาะยอดเงินสุทธิเข้ากะปิ)";
-        if (currentDashFilter === 'owner') titleSuffix = " (เฉพาะยอดเงินเข้าเจ้าของรถ)";
+        // เรนเดอร์รายการประวัติ
+        let historyRows = '';
+        rentalHistory.slice().reverse().forEach(h => {
+            let showAmount = h.price;
+            if(currentDashFilter === 'kapi') showAmount = h.kapiShare;
+            if(currentDashFilter === 'owner') showAmount = h.ownerShare;
 
-        document.getElementById('dashTitle1').innerText = `ส่วนที่ 1: ประวัติการเช่ารายสัปดาห์` + titleSuffix;
-        document.getElementById('dashTitle2').innerText = `ส่วนที่ 2: สรุปรวมตลอดกาล` + titleSuffix;
+            const dateFormatted = new Date(h.rentDate).toLocaleString('th-TH', { hour12: false });
+            let displayOwner = h.ownerType === 'kapi' ? 'กะปิ' : 'เจ้าของ';
+            if(h.ownerName) displayOwner += ` (${h.ownerName})`;
+
+            historyRows += `
+                <tr>
+                    <td>${dateFormatted}</td>
+                    <td><strong>${h.name}</strong> [${h.plate}]</td>
+                    <td>${displayOwner}</td>
+                    <td style="color:var(--summer-green); font-weight:600;">+ ${showAmount.toLocaleString()} sm</td>
+                </tr>
+            `;
+        });
+
+        weeklyContainer.innerHTML = `
+            <div class="dashboard-section">
+                <h4>🗒️ บันทึกประวัติการเดินบัญชีเช่ารถ</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>วัน-เวลาที่เช่า</th>
+                            <th>ข้อมูลรถ</th>
+                            <th>ประเภทเจ้าของ</th>
+                            <th>ยอดส่วนแบ่งแสดงผล</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${historyRows || '<tr><td colspan="4" style="text-align:center; color:#666;">ยังไม่มีประวัติการเช่าในระบบคลาวด์</td></tr>'}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
-    // --- แก้บั๊กกล่องถ่ายรูปจอดำ โดยใช้วิธีสร้างกล่องชั่วคราวแล้วลบออก ---
+    // --- ฟังก์ชันแคปรูปภาพรถว่างอัตโนมัติ ---
     function captureAvailableCars() {
-        const availableCars = cars.filter(c => c.status === 'available');
-        if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
+        const target = document.getElementById('screenshotTarget');
+        if(!target) return;
+        target.innerHTML = '';
+        
+        // กรองเอาเฉพาะรถที่สถานะว่างตามฟิลเตอร์ประเภทเจ้าของ
+        const availableCars = cars.filter(c => c.status === 'available' && (currentOwnerFilter === 'all' || c.ownerType === currentOwnerFilter));
+        
+        if(availableCars.length === 0) {
+            return alert("ในระบบตัวกรองนี้ไม่มีรถคันไหนว่างให้แคปรูปเลยครับ!");
+        }
 
-        const captureBtn = document.getElementById('captureBtn');
-        const originalBtnText = captureBtn.innerText;
-        captureBtn.innerText = "⏳ รอแป๊บ...";
-        captureBtn.style.pointerEvents = "none";
-
-        const target = document.createElement('div');
-        // เลื่อนกล่องออกไปนอกจอแทนการใช้ visibility hidden เพื่อให้ Browser เรนเดอร์ภาพได้สมบูรณ์
-        target.style.position = "absolute";
-        target.style.left = "-9999px";
-        target.style.top = "0";
-        target.style.width = "1000px";
-        target.style.backgroundColor = "#0B0B0E";
-        target.style.padding = "40px";
-        target.style.display = "grid";
-        target.style.gridTemplateColumns = "repeat(3, 1fr)";
-        target.style.gap = "20px";
-        document.body.appendChild(target);
-
-        let htmlContent = "";
         availableCars.forEach(car => {
             const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
-            htmlContent += `
-                <div style="background: #16161C; border-radius: 12px; overflow: hidden; border: 1px solid #262630;">
-                    <img src="${imgUrl}" crossorigin="anonymous" style="width: 100%; height: 200px; object-fit: cover; display: block;">
-                    <div style="padding: 15px; font-size: 20px; font-weight: 800; color: #fff; text-align: center; font-family: 'Kanit', sans-serif;">
-                        ${car.name} ${car.isTurbo ? '🚀' : ''}
-                    </div>
+            target.innerHTML += `
+                <div class="ss-card">
+                    <img src="${imgUrl}" class="ss-image">
+                    <div class="ss-title">${car.name} [${car.plate}] ${car.isTurbo ? '🚀' : ''}</div>
                 </div>
             `;
         });
-        target.innerHTML = htmlContent;
 
-        // รอจนกว่ารูปภาพทั้งหมดโหลดเข้า DOM เสร็จ 100%
-        const images = Array.from(target.querySelectorAll('img'));
-        const imagePromises = images.map(img => {
-            return new Promise(resolve => {
-                if (img.complete) return resolve();
-                img.onload = resolve;
-                img.onerror = resolve; 
-            });
-        });
-
-        Promise.all(imagePromises).then(() => {
-            captureBtn.innerText = "📸 กำลังเซฟ...";
-            
-            // รออีก 0.8 วินาทีให้ชัวร์ว่า Browser ระบายสีบนภาพครบ
-            setTimeout(() => {
-                html2canvas(target, { 
-                    backgroundColor: '#0B0B0E', 
-                    useCORS: true,
-                    scale: 2 // ช่วยให้ภาพชัดขึ้น
-                }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `Available_Cars_${Date.now()}.png`;
-                    link.href = canvas.toDataURL("image/png");
-                    link.click();
-                    
-                    target.remove();
-                    captureBtn.innerText = originalBtnText;
-                    captureBtn.style.pointerEvents = "auto";
-                }).catch(err => {
-                    console.error(err);
-                    alert("แคปภาพไม่สำเร็จ (อาจติดปัญหาดึงรูปรถจากบางเว็บ)");
-                    target.remove();
-                    captureBtn.innerText = originalBtnText;
-                    captureBtn.style.pointerEvents = "auto";
-                });
-            }, 800);
+        // ดึง html2canvas ทำงานแปลงอิลิเมนต์นอกจอให้เป็นไฟล์ดาวน์โหลด
+        html2canvas(target, { useCORS: true, backgroundColor: "#0B0B0E" }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = `summer-city-cars-${new Date().toISOString().slice(0,10)}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            target.innerHTML = ''; 
+        }).catch(err => {
+            console.error(err);
+            alert("ระบบตรวจพบปัญหาในการเข้าถึงภาพดิบ ลิงก์รูปภาพรถของคุณอาจติด CORS ป้องกันไว้!");
         });
     }
 
-    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    // --- การทำงานเริ่มแรกเมื่อเปิดหน้าเว็บ ---
+    window.onload = function() {
+        renderCategoryDropdowns();
+        renderCars();
 
-    // Init
-    renderCategoryDropdowns();
-    renderCars();
+        // ฟังการแชร์ลิงก์ด่วน (Query Parameter ?car=ทะเบียน หรือ ?car=ไอดี)
+        const params = new URLSearchParams(window.location.search);
+        const carParam = params.get('car');
+        if(carParam) {
+            const targetCar = cars.find(c => c.id == carParam || c.plate.toLowerCase() === carParam.toLowerCase());
+            if(targetCar) {
+                document.getElementById('searchInput').value = targetCar.plate;
+                renderCars();
+            }
+        }
+    };
 </script>
-
-</body>
-</html>
