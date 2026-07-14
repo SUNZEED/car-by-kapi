@@ -197,7 +197,6 @@
             <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
             
             <div style="margin-left: auto; display: flex; gap: 10px;">
-                <!-- ปุ่มสแกนสัญญา เปิดหน้าต่างสำหรับกด Ctrl+V -->
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
                 </button>
@@ -325,11 +324,14 @@
         
         <div class="form-group">
             <label>ระยะเวลาสิ้นสุดสัญญา</label>
-            <input type="datetime-local" id="rentEndTime" required>
+            <input type="datetime-local" id="rentEndTime" required oninput="calculateDuration()" onchange="calculateDuration()">
         </div>
         
         <div class="form-group">
-            <label>ยอดเงินที่รับมา (sm)</label>
+            <label>
+                ยอดเงินที่รับมา (sm)
+                <span id="durationPreview" style="color: var(--summer-green); margin-left: 10px; font-weight: normal;"></span>
+            </label>
             <input type="number" id="rentPrice" placeholder="ระบุจำนวนเงิน" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);">
         </div>
 
@@ -584,7 +586,6 @@
         }
     }
 
-    // --- ระบบวางรูป (Paste) และ OCR AI รุ่นใหม่ ---
     function openOcrPasteModal() {
         document.getElementById('ocrPasteStatus').innerText = "";
         document.getElementById('pasteArea').innerHTML = "วางรูปภาพตรงนี้ (Ctrl+V)";
@@ -620,7 +621,6 @@
         const statusEl = document.getElementById('ocrPasteStatus');
         const pasteArea = document.getElementById('pasteArea');
 
-        // แสดงรูปที่แปะลงไป
         const reader = new FileReader();
         reader.onload = function(e) {
             pasteArea.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
@@ -636,33 +636,27 @@
             let text = ret.data.text.toUpperCase();
             await worker.terminate();
 
-            // หาเวลา (ชั่วโมง / นาที)
             const hMatch = text.match(/(\d+)\s*[ชซ]/);
             const mMatch = text.match(/(\d+)\s*[นิม]/);
             let hours = hMatch ? parseInt(hMatch[1]) : 0;
             let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
-            // คลีนตัวหนังสือให้เหลือแค่ภาษาอังกฤษและตัวเลขสำหรับการหาทะเบียน
             let cleanText = text.replace(/[^A-Z0-9]/g, '');
             let matchedCar = null;
             let minDistance = 999;
 
-            // ระบบค้นหาป้ายแบบ Fuzzy Sliding Window (เดาป้ายแม้ AI พิมพ์ผิด 1-2 ตัวอักษร)
             for(let car of cars) {
                 const cleanPlate = car.plate.replace(/[^A-Z0-9]/g, '').toUpperCase();
                 
-                // ตรวจสอบแบบตรงตัวก่อน
                 if (cleanText.includes(cleanPlate)) {
                     matchedCar = car;
                     break;
                 }
                 
-                // หากไม่เจอตรงๆ ลองสแกนเลื่อนทีละคำเพื่อหาค่าที่ใกล้เคียงที่สุด
                 if (cleanText.length >= cleanPlate.length) {
                     for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
                         const sub = cleanText.substring(i, i + cleanPlate.length);
                         const dist = getLevenshteinDistance(sub, cleanPlate);
-                        // ยอมให้ผิดพลาดได้ 2 ตัวอักษร
                         if (dist <= 2 && dist < minDistance) {
                             minDistance = dist;
                             matchedCar = car;
@@ -814,7 +808,6 @@
                         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         const s = Math.floor((distance % (1000 * 60)) / 1000);
                         
-                        // สร้างตัวแสดงเวลาที่รถจะกลับมา
                         const endDate = new Date(car.endTime);
                         const returnTimeStr = `${endDate.getHours().toString().padStart(2,'0')}:${endDate.getMinutes().toString().padStart(2,'0')} น.`;
 
@@ -832,6 +825,37 @@
             }
         }
     }, 1000); 
+
+    // --- ฟังก์ชันคำนวณระยะเวลา (คูลดาวน์เวลา) แบบเรียลไทม์ ---
+    function calculateDuration() {
+        const endTimeVal = document.getElementById('rentEndTime').value;
+        const previewEl = document.getElementById('durationPreview');
+        if (!endTimeVal) {
+            previewEl.innerText = "";
+            return;
+        }
+
+        const endTime = new Date(endTimeVal).getTime();
+        const nowTime = new Date().getTime();
+        const diff = endTime - nowTime;
+
+        if (diff <= 0) {
+            previewEl.innerText = "(เวลาไม่ถูกต้อง)";
+            previewEl.style.color = "#ff4757";
+        } else {
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+            let text = "(ระยะเวลาเช่า: ";
+            if (d > 0) text += `${d} วัน `;
+            if (h > 0) text += `${h} ชม. `;
+            text += `${m} นาที)`;
+
+            previewEl.innerText = text;
+            previewEl.style.color = "var(--summer-green)";
+        }
+    }
 
     function openRentModal(id, autoEndTime = null) {
         const car = cars.find(c => c.id === id);
@@ -851,6 +875,7 @@
         }
 
         document.getElementById('rentModal').style.display = "flex";
+        calculateDuration(); // เรียกให้คำนวณเวลาทันทีเมื่อเปิดหน้าต่าง
     }
 
     function confirmRent() {
