@@ -197,18 +197,13 @@
             <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
             
             <div style="margin-left: auto; display: flex; gap: 10px;">
-                <!-- ปุ่มสแกนสัญญา (AI) -->
-                <label class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); cursor: pointer; padding: 12px 18px; margin: 0; font-size: 16px;" title="AI อ่านรูปสัญญาอัตโนมัติ">
-                    📄✨
-                    <input type="file" id="ocrInput" accept="image/*" style="display: none;" onchange="processOCR(event)">
-                </label>
-                <!-- ปุ่มแคปหน้าจอ -->
+                <!-- ปุ่มสแกนสัญญา เปิดหน้าต่างสำหรับกด Ctrl+V -->
+                <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
+                    📄✨ สแกนสัญญา (Ctrl+V)
+                </button>
                 <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()" style="margin: 0;">📸 แคปรูปรถที่เหลือ</button>
             </div>
         </div>
-        
-        <!-- สถานะการประมวลผล OCR -->
-        <div id="ocrStatus" style="font-size: 14px; font-weight: 600; margin-bottom: 20px; text-align: right;"></div>
 
         <div class="car-grid" id="carGrid"></div>
     </div>
@@ -281,7 +276,7 @@
                 <tbody id="manageTableBody"></tbody>
             </table>
 
-            <!-- โซนอันตราย (ลบประวัติ) -->
+            <!-- โซนอันตราย -->
             <div class="controls" style="background: rgba(255, 71, 87, 0.05); border: 1px solid rgba(255, 71, 87, 0.3); margin-top: 30px;">
                 <h3 style="margin: 0; color: #ff4757; width: 100%; font-weight: 800;">⚠️ โซนล้างข้อมูล (รหัส PIN: 1234)</h3>
                 <button class="btn btn-delete" style="flex: 1;" onclick="clearHistoryWithPIN()">🗑️ ล้างประวัติรายได้ทั้งหมด</button>
@@ -299,6 +294,21 @@
         </div>
 
         <div id="overallDashboardContainer"></div>
+    </div>
+</div>
+
+<!-- Modal วางรูปภาพ (Ctrl+V) -->
+<div class="modal" id="ocrPasteModal">
+    <div class="modal-content" style="text-align: center;">
+        <h2 style="color: var(--summer-blue); margin-top: 0;">📸 สแกนสัญญาเช่า (AI)</h2>
+        <p style="color: #aaa; margin-bottom: 20px;">คลิกที่หน้าต่างนี้แล้วกด <strong>Ctrl + V</strong> เพื่อวางรูปภาพสัญญา</p>
+        <div id="pasteArea" style="border: 2px dashed #444; border-radius: 12px; padding: 40px; background: #1a1a24; color: #666; font-size: 18px; margin-bottom: 20px;">
+            วางรูปภาพตรงนี้ (Ctrl+V)
+        </div>
+        <div id="ocrPasteStatus" style="font-weight: bold; margin-bottom: 20px; font-size: 15px;"></div>
+        <div class="modal-actions" style="justify-content: center;">
+            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('ocrPasteModal')">ปิดหน้าต่าง</button>
+        </div>
     </div>
 </div>
 
@@ -466,7 +476,6 @@
         switchPage('cars');
     }
 
-    // --- ระบบลบประวัติ / ล้างข้อมูล ---
     function promptForPIN(callback) {
         const pin = prompt("⚠️ คำเตือน: ข้อมูลที่ลบจะไม่สามารถกู้คืนได้\n\nกรุณาใส่รหัส PIN (1234) เพื่อยืนยันการลบ:");
         if (pin === "1234") {
@@ -495,7 +504,6 @@
         });
     }
 
-    // --- ระบบ Export / Import รถ ---
     function exportCars() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(cars));
         const dlAnchorElem = document.createElement('a');
@@ -526,7 +534,6 @@
         event.target.value = ''; 
     }
 
-    // --- ระบบจัดการหมวดหมู่ ---
     function renderCategoryDropdowns() {
         let filterHtml = '<option value="all">ทุกหมวดหมู่</option>';
         let addEditHtml = '';
@@ -577,7 +584,26 @@
         }
     }
 
-    // --- ระบบ OCR อ่านรูปภาพ (Fuzzy Matching) ---
+    // --- ระบบวางรูป (Paste) และ OCR AI รุ่นใหม่ ---
+    function openOcrPasteModal() {
+        document.getElementById('ocrPasteStatus').innerText = "";
+        document.getElementById('pasteArea').innerHTML = "วางรูปภาพตรงนี้ (Ctrl+V)";
+        document.getElementById('ocrPasteModal').style.display = "flex";
+    }
+
+    window.addEventListener('paste', e => {
+        if (document.getElementById('ocrPasteModal').style.display === 'flex') {
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    processPastedImage(blob);
+                    break;
+                }
+            }
+        }
+    });
+
     function getLevenshteinDistance(a, b) {
         const tmp = [];
         for (let i = 0; i <= a.length; i++) tmp[i] = [i];
@@ -590,55 +616,78 @@
         return tmp[a.length][b.length];
     }
 
-    async function processOCR(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        
-        const statusEl = document.getElementById('ocrStatus');
+    async function processPastedImage(file) {
+        const statusEl = document.getElementById('ocrPasteStatus');
+        const pasteArea = document.getElementById('pasteArea');
+
+        // แสดงรูปที่แปะลงไป
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            pasteArea.innerHTML = `<img src="${e.target.result}" style="max-width: 100%; max-height: 200px; border-radius: 8px;">`;
+        };
+        reader.readAsDataURL(file);
+
         statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI กรุณารอสักครู่...";
         statusEl.style.color = "var(--summer-orange)";
 
         try {
             const worker = await Tesseract.createWorker('tha+eng');
             const ret = await worker.recognize(file);
-            const text = ret.data.text.replace(/\s+/g, '').toUpperCase(); 
+            let text = ret.data.text.toUpperCase();
             await worker.terminate();
 
+            // หาเวลา (ชั่วโมง / นาที)
+            const hMatch = text.match(/(\d+)\s*[ชซ]/);
+            const mMatch = text.match(/(\d+)\s*[นิม]/);
+            let hours = hMatch ? parseInt(hMatch[1]) : 0;
+            let mins = mMatch ? parseInt(mMatch[1]) : 0;
+
+            // คลีนตัวหนังสือให้เหลือแค่ภาษาอังกฤษและตัวเลขสำหรับการหาทะเบียน
+            let cleanText = text.replace(/[^A-Z0-9]/g, '');
             let matchedCar = null;
             let minDistance = 999;
 
-            // ค้นหาป้ายที่ใกล้เคียงที่สุด (ยอมให้ผิดพลาดได้นิดหน่อย)
+            // ระบบค้นหาป้ายแบบ Fuzzy Sliding Window (เดาป้ายแม้ AI พิมพ์ผิด 1-2 ตัวอักษร)
             for(let car of cars) {
-                const cleanPlate = car.plate.replace(/\s+/g, '').toUpperCase();
-                const dist = getLevenshteinDistance(text, cleanPlate);
+                const cleanPlate = car.plate.replace(/[^A-Z0-9]/g, '').toUpperCase();
                 
-                // ถ้าระยะห่างความผิดพลาดน้อยกว่า 3 ตัวอักษร (เช่น 0 เป็น O)
-                if (dist < 3) {
+                // ตรวจสอบแบบตรงตัวก่อน
+                if (cleanText.includes(cleanPlate)) {
                     matchedCar = car;
-                    minDistance = dist;
                     break;
+                }
+                
+                // หากไม่เจอตรงๆ ลองสแกนเลื่อนทีละคำเพื่อหาค่าที่ใกล้เคียงที่สุด
+                if (cleanText.length >= cleanPlate.length) {
+                    for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
+                        const sub = cleanText.substring(i, i + cleanPlate.length);
+                        const dist = getLevenshteinDistance(sub, cleanPlate);
+                        // ยอมให้ผิดพลาดได้ 2 ตัวอักษร
+                        if (dist <= 2 && dist < minDistance) {
+                            minDistance = dist;
+                            matchedCar = car;
+                        }
+                    }
+                } else {
+                    const dist = getLevenshteinDistance(cleanText, cleanPlate);
+                    if (dist <= 2 && dist < minDistance) {
+                        minDistance = dist;
+                        matchedCar = car;
+                    }
                 }
             }
 
             if (!matchedCar) {
-                statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (AI อาจอ่านป้ายไม่ชัดเจน)`;
+                statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (อ่านข้อมูลได้: ${cleanText})`;
                 statusEl.style.color = "#ff4757";
-                event.target.value = '';
                 return;
             }
 
             if (matchedCar.status === 'busy') {
                 statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
                 statusEl.style.color = "#ff4757";
-                event.target.value = '';
                 return;
             }
-
-            // หาเวลา (ชั่วโมง / นาที)
-            const hMatch = text.match(/(\d+)[ชซ]/);
-            const mMatch = text.match(/(\d+)[นม]/);
-            let hours = hMatch ? parseInt(hMatch[1]) : 0;
-            let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
             let autoEndTime = new Date();
             if (hours > 0 || mins > 0) {
@@ -651,10 +700,10 @@
             statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
             statusEl.style.color = "var(--summer-green)";
 
-            openRentModal(matchedCar.id, autoEndTime);
-
-            event.target.value = '';
-            setTimeout(() => { statusEl.innerText = ""; }, 5000);
+            setTimeout(() => {
+                closeModal('ocrPasteModal');
+                openRentModal(matchedCar.id, autoEndTime);
+            }, 800);
 
         } catch (err) {
             console.error(err);
@@ -733,7 +782,7 @@
                 html += `
                     <div class="rental-info">
                         <span style="color: #FFB300; font-weight: 600;">💰 ยอดเช่า: ${car.price.toLocaleString()} sm</span>
-                        <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green);">โหลดเวลา...</div>
+                        <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green); line-height: 1.5;">โหลดเวลา...</div>
                     </div></div>`; 
             } else {
                 html += `</div>
@@ -764,7 +813,12 @@
                         const h = Math.floor(distance / (1000 * 60 * 60));
                         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         const s = Math.floor((distance % (1000 * 60)) / 1000);
-                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที ${s} วิ`;
+                        
+                        // สร้างตัวแสดงเวลาที่รถจะกลับมา
+                        const endDate = new Date(car.endTime);
+                        const returnTimeStr = `${endDate.getHours().toString().padStart(2,'0')}:${endDate.getMinutes().toString().padStart(2,'0')} น.`;
+
+                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที ${s} วิ<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
                     }
                 }
             }
@@ -843,13 +897,11 @@
         }
     }
 
-    // --- อัปเดต: การกดคืนรถ จะลบประวัติการเช่าล่าสุดของคันนั้นด้วย ---
     function returnCar(id) {
         if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม? (ประวัติรายได้ล่าสุดของรถคันนี้จะถูกลบออกด้วย)")) {
             const carIndex = cars.findIndex(c => c.id === id);
             const car = cars[carIndex];
             
-            // หาประวัติล่าสุดของรถคันนี้แล้วลบออก
             const lastHistoryIndex = rentalHistory.map(r => r.plate).lastIndexOf(car.plate);
             if (lastHistoryIndex !== -1) {
                 rentalHistory.splice(lastHistoryIndex, 1);
@@ -973,7 +1025,6 @@
         }
     }
 
-    // --- อัปเดตหน้า Dashboard ใหม่ทั้งหมด โชว์แยกเป็นคัน วันเวลาครบถ้วน ---
     function updateDashboard() {
         const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
 
@@ -1003,7 +1054,6 @@
             totalIncome += incomeToAdd;
         });
 
-        // สร้างส่วนหัวสรุปรวมทั้งหมด
         let html = `
             <div style="background: rgba(0, 230, 118, 0.1); border: 1px solid var(--summer-green); padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: center;">
                 <h3 style="margin: 0; color: #fff;">📊 สรุปรวมยอดการเช่าทั้งหมด</h3>
@@ -1017,7 +1067,6 @@
         if(Object.keys(carGroups).length === 0) {
             html += '<p style="color:#888; text-align: center; font-size: 16px;">ยังไม่มีประวัติการเช่าในหมวดหมู่นี้ครับ</p>';
         } else {
-            // สร้างรายการแจกแจงทีละคัน
             for(let plate in carGroups) {
                 const group = carGroups[plate];
                 html += `
@@ -1052,7 +1101,6 @@
         document.getElementById('overallDashboardContainer').innerHTML = html;
     }
 
-    // --- ฟังก์ชันแคปภาพที่ใช้ Fetch + Base64 ช่วยแก้ปัญหาจอดำเพราะติด CORS ---
     async function captureAvailableCars() {
         const availableCars = cars.filter(c => c.status === 'available');
         if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
@@ -1074,7 +1122,6 @@
         target.style.gap = "20px";
         document.body.appendChild(target);
 
-        // แปลงภาพจาก URL เป็น Base64 ข้ามการติดบล็อก CORS
         async function toDataURL(url) {
             try {
                 const response = await fetch(url);
