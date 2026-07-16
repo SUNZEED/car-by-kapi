@@ -7,11 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    
-    <!-- นำเข้า Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <style>
         :root {
             --summer-orange: #FF5E3A;
@@ -176,16 +171,6 @@
         }
         .cat-del-btn:hover { color: #fff; background: #ff4757; border-radius: 50%; }
 
-        /* ป้ายสถานะการเชื่อมต่อ Database */
-        #syncStatus {
-            position: fixed; bottom: 20px; right: 20px; background: rgba(0,210,255,0.2); 
-            color: var(--summer-blue); border: 1px solid var(--summer-blue);
-            padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold;
-            z-index: 9999; display: flex; align-items: center; gap: 8px;
-        }
-        .dot { height: 8px; width: 8px; background-color: var(--summer-blue); border-radius: 50%; display: inline-block; animation: blink 1.5s infinite; }
-        @keyframes blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
-
     </style>
 </head>
 <body>
@@ -197,8 +182,6 @@
         <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
 </header>
-
-<div id="syncStatus"><span class="dot" style="background:var(--summer-orange);"></span> กำลังเชื่อมต่อ...</div>
 
 <div class="container">
     <!-- หน้า 1: ปล่อยเช่า -->
@@ -423,22 +406,6 @@
 </div>
 
 <script>
-    // -------------------------------------------------------------
-    // ตั้งค่า Firebase
-    // -------------------------------------------------------------
-    const firebaseConfig = {
-      apiKey: "AIzaSyCgjbwVk506Eh4yQDGFict-ioThlsSlomg",
-      authDomain: "carname-3bfc2.firebaseapp.com",
-      databaseURL: "https://carname-3bfc2-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "carname-3bfc2",
-      storageBucket: "carname-3bfc2.appspot.com",
-      messagingSenderId: "975323167111",
-      appId: "1:975323167111:web:8f3f63d1c583ae43493b22"
-    };
-
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
-
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
     
@@ -447,71 +414,27 @@
     ];
     let defaultCategories = ["น้ำมัน", "ไฟฟ้า", "ตัวท็อป", "ประมูล"];
     
-    let cars = [];
-    let rentalHistory = [];
-    let categories = [];
+    let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
+    let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
+    let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
 
     let currentOwnerFilter = 'all'; 
     let currentDashFilter = 'all';
 
-    // -------------------------------------------------------------
-    // ระบบดึงข้อมูล Real-time จาก Firebase
-    // -------------------------------------------------------------
-    db.ref('/').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.summerCars) {
-            cars = Object.values(data.summerCars);
-            rentalHistory = data.summerHistory ? Object.values(data.summerHistory) : [];
-            categories = data.summerCategories || defaultCategories;
-            
-            // เปลี่ยนป้ายสถานะเป็นสีเขียว
-            const syncEl = document.getElementById('syncStatus');
-            if(syncEl) {
-                syncEl.innerHTML = '<span class="dot" style="background:var(--summer-green);"></span> Online (เชื่อมต่อแล้ว)';
-                syncEl.style.color = "var(--summer-green)";
-                syncEl.style.borderColor = "var(--summer-green)";
-            }
-        } else {
-            // ถ้า Database ว่างเปล่า ให้ใช้ข้อมูลเริ่มต้นแล้วเขียนลง Firebase
-            cars = defaultCars;
-            categories = defaultCategories;
-            rentalHistory = [];
-            saveDataLocally();
-        }
+    cars = cars.map(c => ({
+        ...c,
+        imageUrl: c.imageUrl || '',
+        isTurbo: c.isTurbo || false,
+        ownerType: c.ownerType || 'owner',
+        ownerName: c.ownerName || ''
+    }));
 
-        cars = cars.map(c => ({
-            ...c,
-            imageUrl: c.imageUrl || '',
-            isTurbo: c.isTurbo || false,
-            ownerType: c.ownerType || 'owner',
-            ownerName: c.ownerName || ''
-        }));
-
-        renderCategoryDropdowns();
-        renderCars();
-        if (document.getElementById('managePage').classList.contains('active')) {
-            renderManageCars();
-            renderCategoryManager();
-        }
-        if (document.getElementById('dashboardPage').classList.contains('active')) {
-            updateDashboard();
-        }
-    });
-
-    // -------------------------------------------------------------
-    // ฟังก์ชันบันทึกข้อมูล (ส่งขึ้น Firebase)
-    // -------------------------------------------------------------
     function saveDataLocally() {
-        db.ref('/').set({
-            summerCars: cars,
-            summerHistory: rentalHistory,
-            summerCategories: categories
-        });
+        localStorage.setItem('summerCars', JSON.stringify(cars));
+        localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
+        localStorage.setItem('summerCategories', JSON.stringify(categories));
     }
 
-    // -------------------------------------------------------------
-    // โค้ดระบบหลักทั้งหมด
-    // -------------------------------------------------------------
     function copyText(event, text, btnElement) {
         if(event) event.stopPropagation();
         navigator.clipboard.writeText(text).then(() => {
@@ -550,7 +473,6 @@
             alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
         }
     }
-
     function logoutAdmin() {
         sessionStorage.removeItem('isAdminLoggedIn');
         switchPage('cars');
@@ -579,6 +501,8 @@
             cars = [];
             saveDataLocally();
             alert("✅ ล้างข้อมูลสต็อกรถทั้งหมดเรียบร้อยแล้ว!");
+            renderCars();
+            renderManageCars();
         });
     }
 
@@ -600,6 +524,8 @@
                 if(Array.isArray(imported)) {
                     cars = imported;
                     saveDataLocally();
+                    renderManageCars();
+                    renderCars();
                     alert("✅ อิมพอร์ตข้อมูลรถสำเร็จ!");
                 }
             } catch(err) {
@@ -645,12 +571,18 @@
         categories.push(newCat);
         saveDataLocally();
         input.value = "";
+        renderCategoryManager();
+        renderCategoryDropdowns();
+        renderCars();
     }
 
     function deleteCategory(catName) {
         if(confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${catName}"?\n(รถที่ใช้หมวดหมู่นี้อยู่จะยังคงอยู่ แต่ไม่สามารถเลือกเพิ่มได้อีก)`)) {
             categories = categories.filter(c => c !== catName);
             saveDataLocally();
+            renderCategoryManager();
+            renderCategoryDropdowns();
+            renderCars();
         }
     }
 
@@ -801,7 +733,6 @@
 
     function renderCars() {
         const grid = document.getElementById('carGrid');
-        if(!grid) return;
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const catFilter = document.getElementById('categoryFilter').value;
         grid.innerHTML = '';
@@ -888,6 +819,10 @@
 
         if(stateChanged) {
             saveDataLocally();
+            renderCars();
+            if (document.getElementById('managePage').classList.contains('active')) {
+                renderManageCars();
+            }
         }
     }, 1000); 
 
@@ -980,6 +915,10 @@
 
         saveDataLocally();
         closeModal('rentModal');
+        renderCars();
+        if(document.getElementById('managePage').classList.contains('active')) {
+            renderManageCars();
+        }
     }
 
     function returnCar(id) {
@@ -996,6 +935,8 @@
             car.price = 0;
             car.endTime = null;
             saveDataLocally();
+            renderManageCars();
+            renderCars();
         }
     }
 
@@ -1036,11 +977,12 @@
 
         saveDataLocally();
         closeModal('editModal');
+        renderManageCars();
+        renderCars();
     }
 
     function renderManageCars() {
         const tbody = document.getElementById('manageTableBody');
-        if(!tbody) return;
         tbody.innerHTML = '';
         cars.forEach(car => {
             const statusText = car.status === 'busy' ? '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>' : '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
@@ -1094,13 +1036,30 @@
         document.getElementById('newCarOwnerName').value = "";
 
         saveDataLocally();
+        renderManageCars();
+        renderCars();
     }
 
     function deleteCar(id) {
         if(confirm("ลบรถคันนี้ออกจากสต็อกถาวร?")) {
             cars = cars.filter(c => c.id != id);
             saveDataLocally();
+            renderManageCars();
+            renderCars();
         }
+    }
+
+    function getWeekKey(timestamp) {
+        const d = new Date(timestamp);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        const monday = new Date(d.setDate(diff));
+        
+        const sunday = new Date(monday);
+        sunday.setDate(sunday.getDate() + 6);
+        
+        const format = (dt) => `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;
+        return `${format(monday)} - ${format(sunday)}`;
     }
 
     function updateDashboard() {
@@ -1110,6 +1069,7 @@
         let totalIncome = 0;
         const carGroups = {};
 
+        // Calculate boundaries for this week and last week
         const now = new Date();
         const day = now.getDay();
         const diff = now.getDate() - day + (day === 0 ? -6 : 1);
@@ -1293,9 +1253,10 @@
 
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+    // Init
+    renderCategoryDropdowns();
+    renderCars();
 </script>
 
 </body>
 </html>
-<!-- อัปเดตระบบ -->
-<!-- อัปเดตระบบ -->
