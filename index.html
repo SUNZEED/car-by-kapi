@@ -914,7 +914,7 @@
         });
 
         // ---------------- เพิ่มโค้ดส่วนนี้เพื่อส่งเข้า Google Sheets ----------------
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbwBGI-ao1DNdaNtzE1HqToN_Fd759jAU1TbEh-sbuQI1G83dax_WrtqiP6yUCxAabEb/exec'; 
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyv2IxsGEY0rCgWWOhDy-HBS2rrgCE15vkqh1mmW2VMtoM6Sjup6_jsEtt9jb7aD0rp/exec'; 
 
         fetch(scriptURL, {
             method: 'POST',
@@ -922,8 +922,7 @@
                 id: rentalHistory.length,
                 item: `ปล่อยเช่า ${car.name} (${car.plate})`,
                 income: price,
-                expense: 0,
-                remark: `รูปแบบ: ${splitType === 'kapi' ? 'เข้ากะปิ 100%' : (splitType === 'owner' ? 'เข้าเจ้าของ 100%' : 'หัก 200,000 เข้าเจ้าของ')}`
+                expense: 0
             })
         }).then(response => console.log('บันทึกลง Sheet สำเร็จ!'))
           .catch(error => console.error('Error!', error.message));
