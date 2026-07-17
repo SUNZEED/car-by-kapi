@@ -913,6 +913,22 @@
             ownerIncome: ownerIncome
         });
 
+        // ---------------- เพิ่มโค้ดส่วนนี้เพื่อส่งเข้า Google Sheets ----------------
+        const scriptURL = 'วาง_URL_ของเว็บแอปที่ก๊อปปี้มา_ลงตรงนี้'; // <--- อย่าลืมเอา URL ของคุณมาวางแทนตรงนี้นะครับ
+
+        fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify({
+                id: rentalHistory.length,
+                item: `ปล่อยเช่า ${car.name} (${car.plate})`,
+                income: price,
+                expense: 0,
+                remark: `รูปแบบ: ${splitType === 'kapi' ? 'เข้ากะปิ 100%' : (splitType === 'owner' ? 'เข้าเจ้าของ 100%' : 'หัก 200,000 เข้าเจ้าของ')}`
+            })
+        }).then(response => console.log('บันทึกลง Sheet สำเร็จ!'))
+          .catch(error => console.error('Error!', error.message));
+        // -------------------------------------------------------------------------
+
         saveDataLocally();
         closeModal('rentModal');
         renderCars();
