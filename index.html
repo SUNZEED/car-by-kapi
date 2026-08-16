@@ -685,14 +685,14 @@
             let hours = hMatch ? parseInt(hMatch[1]) : 0;
             let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
-            // Normalize O->0, I->1
-            let cleanText = text.replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/I/g, '1');
+            // Normalize O->0, I->1 (รองรับภาษาไทย)
+            let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
             let matchedCar = null;
             let minDistance = 999;
 
             for(let car of cars) {
-                // Normalize O->0, I->1
-                const cleanPlate = car.plate.replace(/[^A-Z0-9]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                // Normalize O->0, I->1 (รองรับภาษาไทย)
+                const cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
                 
                 if (cleanText.includes(cleanPlate)) {
                     matchedCar = car;
@@ -727,9 +727,24 @@
                     });
 
                     if (possibleCars.length > 0) {
-                        // เลือกคันที่เลขตรงกันยาวที่สุด
+                        // เรียงลำดับเพื่อหาคันที่น่าจะใช่ที่สุด
                         possibleCars.sort((a, b) => {
-                            return b.plate.replace(/[^0-9]/g, '').length - a.plate.replace(/[^0-9]/g, '').length;
+                            // 1. ให้ความสำคัญกับรถที่ "ว่าง" ก่อน (เพราะเราสแกนเพื่อจะปล่อยเช่า)
+                            if (a.status === 'available' && b.status === 'busy') return -1;
+                            if (b.status === 'available' && a.status === 'busy') return 1;
+
+                            // 2. ถ้าสถานะเหมือนกัน (เช่น ว่างทั้งคู่) ให้เลือกคันที่ตัวเลขตรงกันยาวที่สุด
+                            const aNum = a.plate.replace(/[^0-9]/g, '');
+                            const bNum = b.plate.replace(/[^0-9]/g, '');
+                            if (bNum.length !== aNum.length) {
+                                return bNum.length - aNum.length;
+                            }
+
+                            // 3. ถ้าตัวเลขยาวเท่ากัน ให้เช็คว่ามีตัวอักษรหลงเหลือใน AI ให้จับคู่บ้างไหม
+                            const aChars = a.plate.replace(/[^A-Zก-ฮ]/g, '');
+                            const bChars = b.plate.replace(/[^A-Zก-ฮ]/g, '');
+                            const countMatches = (chars) => chars.split('').filter(char => cleanText.includes(char)).length;
+                            return countMatches(bChars) - countMatches(aChars);
                         });
                         matchedCar = possibleCars[0];
                     }
