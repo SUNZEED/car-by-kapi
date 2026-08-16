@@ -1117,7 +1117,13 @@
             
             let actionButtons = '';
             if (car.status === 'busy') {
-                actionButtons = `<button class="btn btn-return" onclick="returnCar(${car.id})" style="width:100%;">คืนรถ</button>`;
+                // เพิ่มปุ่มแก้ไข (Edit) เข้าไปข้างๆ ปุ่มคืนรถ
+                actionButtons = `
+                    <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
+                        <button class="btn btn-return" onclick="returnCar(${car.id})" style="flex:1; padding: 8px 15px; font-size:13px;">คืนรถ</button>
+                        <button class="btn btn-edit" style="padding: 8px 15px; font-size:13px;" onclick="openEditModal(${car.id})">✏️</button>
+                    </div>
+                `;
             } else {
                 let hideBtnText = car.isHidden ? "👁️ แสดง" : "👻 ซ่อน";
                 let hideBtnColor = car.isHidden ? "#f39c12" : "#7f8c8d";
