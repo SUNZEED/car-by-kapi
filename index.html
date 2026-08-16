@@ -717,6 +717,26 @@
                 }
             }
 
+            // --------- ระบบค้นหาสำรองด้วยการกรองเฉพาะตัวเลข ---------
+            if (!matchedCar) {
+                const numberText = cleanText.replace(/[^0-9]/g, ''); 
+                if (numberText.length > 0) {
+                    let possibleCars = cars.filter(c => {
+                        const numberPlate = c.plate.replace(/[^0-9]/g, '');
+                        return numberPlate.length >= 2 && numberText.includes(numberPlate);
+                    });
+
+                    if (possibleCars.length > 0) {
+                        // เลือกคันที่เลขตรงกันยาวที่สุด
+                        possibleCars.sort((a, b) => {
+                            return b.plate.replace(/[^0-9]/g, '').length - a.plate.replace(/[^0-9]/g, '').length;
+                        });
+                        matchedCar = possibleCars[0];
+                    }
+                }
+            }
+            // ---------------------------------------------------
+
             if (!matchedCar) {
                 statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (อ่านข้อมูลได้: ${cleanText})`;
                 statusEl.style.color = "#ff4757";
