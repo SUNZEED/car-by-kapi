@@ -176,7 +176,10 @@
 <body>
 
 <header>
-    <h1 onclick="switchPage('manage')" title="แอบเข้าหน้าจัดการ">🌴 SUMMER CITY <span style="font-size: 16px; font-weight: 400; color: #888; text-shadow: none;">| ปล่อยเช่ารถ</span></h1>
+    <h1 onclick="switchPage('manage')" title="แอบเข้าหน้าจัดการ">
+        <span id="displaySiteTitle">🌴 SUMMER CITY</span> 
+        <span id="displaySiteSubtitle" style="font-size: 16px; font-weight: 400; color: #888; text-shadow: none;">| ปล่อยเช่ารถ</span>
+    </h1>
     <div class="tab-menu">
         <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
         <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
@@ -196,6 +199,11 @@
             <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
             <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
             
+            <div style="border-left: 2px solid #333; height: 30px; margin: 0 10px;"></div>
+            
+            <button class="view-btn active" id="btnFilterAvailableAll" onclick="setAvailableFilter('all')">ดูรถทั้งหมด</button>
+            <button class="view-btn" id="btnFilterAvailableOnly" onclick="setAvailableFilter('available')">เฉพาะรถว่าง 🟢</button>
+
             <div style="margin-left: auto; display: flex; gap: 10px;">
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
@@ -228,12 +236,22 @@
                 <button class="btn btn-edit" style="background: transparent; color: #ff4757; border-color: #ff4757;" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
             </div>
 
+            <!-- โซน 0: ตั้งค่าข้อความหน้าเว็บ -->
+            <div class="controls" style="margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">⚙️ ตั้งค่าหัวเว็บ</h3>
+                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center;">
+                    <input type="text" id="settingSiteTitle" placeholder="ชื่อเว็บหลัก (เช่น 🌴 SUMMER CITY)" style="flex:1;">
+                    <input type="text" id="settingSiteSubtitle" placeholder="คำอธิบาย (เช่น | ปล่อยเช่ารถ)" style="flex:1;">
+                    <button class="btn btn-add" style="flex: none;" onclick="saveSiteSettings()">💾 บันทึก</button>
+                </div>
+            </div>
+
             <!-- โซน 1: แอดรถ -->
             <div class="controls">
                 <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">+ เพิ่มรถใหม่เข้าระบบ</h3>
                 <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap;">
                     <input type="text" id="newCarName" placeholder="ชื่อรุ่นรถ (เช่น GTR R35)" style="flex:1;">
-                    <input type="text" id="newCarPlate" placeholder="ป้ายทะเบียน" style="flex:1;">
+                    <input type="text" id="newCarPlate" placeholder="ป้ายทะเบียน (ใส่ลูกน้ำคั่นเพื่อเพิ่มทีละหลายคัน เช่น กค111, ขค222)" style="flex:2;">
                     <select id="newCarCategory" style="flex:1;"></select>
                 </div>
                 <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center; margin-top:10px;">
@@ -332,7 +350,7 @@
                 ยอดเงินที่รับมา (sm)
                 <span id="durationPreview" style="color: var(--summer-green); margin-left: 10px; font-weight: normal;"></span>
             </label>
-            <input type="number" id="rentPrice" placeholder="ระบุจำนวนเงิน" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);">
+            <input type="text" id="rentPrice" placeholder="ระบุจำนวนเงิน (เช่น 1,000)" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);" oninput="formatNumber(this)">
         </div>
 
         <div class="form-group">
@@ -410,15 +428,17 @@
     const ADMIN_PASS = "worawich0625";
     
     let defaultCars = [
-        { id: 1, name: "GTR R35", plate: "2DCOREY", category: "ตัวท็อป", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null }
+        { id: 1, name: "GTR R35", plate: "2DCOREY", category: "ตัวท็อป", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null, isHidden: false }
     ];
     let defaultCategories = ["น้ำมัน", "ไฟฟ้า", "ตัวท็อป", "ประมูล"];
     
     let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
     let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
+    let siteSettings = JSON.parse(localStorage.getItem('summerSettings')) || { title: "🌴 SUMMER CITY", subtitle: "| ปล่อยเช่ารถ" };
 
     let currentOwnerFilter = 'all'; 
+    let currentAvailableFilter = 'all'; 
     let currentDashFilter = 'all';
 
     cars = cars.map(c => ({
@@ -426,8 +446,31 @@
         imageUrl: c.imageUrl || '',
         isTurbo: c.isTurbo || false,
         ownerType: c.ownerType || 'owner',
-        ownerName: c.ownerName || ''
+        ownerName: c.ownerName || '',
+        isHidden: c.isHidden || false
     }));
+
+    function applySiteSettings() {
+        document.getElementById('displaySiteTitle').innerText = siteSettings.title;
+        document.getElementById('displaySiteSubtitle').innerText = siteSettings.subtitle;
+        if(document.getElementById('settingSiteTitle')) {
+            document.getElementById('settingSiteTitle').value = siteSettings.title;
+            document.getElementById('settingSiteSubtitle').value = siteSettings.subtitle;
+        }
+    }
+
+    function saveSiteSettings() {
+        siteSettings.title = document.getElementById('settingSiteTitle').value;
+        siteSettings.subtitle = document.getElementById('settingSiteSubtitle').value;
+        localStorage.setItem('summerSettings', JSON.stringify(siteSettings));
+        applySiteSettings();
+        alert("✅ บันทึกข้อความหน้าเว็บเรียบร้อย!");
+    }
+
+    function formatNumber(input) {
+        let value = input.value.replace(/,/g, '').replace(/\D/g, '');
+        input.value = value ? parseInt(value).toLocaleString() : '';
+    }
 
     function saveDataLocally() {
         localStorage.setItem('summerCars', JSON.stringify(cars));
@@ -473,6 +516,7 @@
             alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
         }
     }
+    
     function logoutAdmin() {
         sessionStorage.removeItem('isAdminLoggedIn');
         switchPage('cars');
@@ -641,12 +685,14 @@
             let hours = hMatch ? parseInt(hMatch[1]) : 0;
             let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
-            let cleanText = text.replace(/[^A-Z0-9]/g, '');
+            // Normalize O->0, I->1
+            let cleanText = text.replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/I/g, '1');
             let matchedCar = null;
             let minDistance = 999;
 
             for(let car of cars) {
-                const cleanPlate = car.plate.replace(/[^A-Z0-9]/g, '').toUpperCase();
+                // Normalize O->0, I->1
+                const cleanPlate = car.plate.replace(/[^A-Z0-9]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
                 
                 if (cleanText.includes(cleanPlate)) {
                     matchedCar = car;
@@ -718,6 +764,16 @@
         renderCars();
     }
 
+    function setAvailableFilter(filter) {
+        currentAvailableFilter = filter;
+        document.getElementById('btnFilterAvailableAll').classList.remove('active');
+        document.getElementById('btnFilterAvailableOnly').classList.remove('active');
+        
+        if(filter === 'all') document.getElementById('btnFilterAvailableAll').classList.add('active');
+        if(filter === 'available') document.getElementById('btnFilterAvailableOnly').classList.add('active');
+        renderCars();
+    }
+
     function setDashFilter(filter) {
         currentDashFilter = filter;
         document.getElementById('btnDashFilterAll').classList.remove('active');
@@ -737,11 +793,16 @@
         const catFilter = document.getElementById('categoryFilter').value;
         grid.innerHTML = '';
 
-        const filtered = cars.filter(c => 
+        let filtered = cars.filter(c => 
             (c.name.toLowerCase().includes(searchTerm) || c.plate.toLowerCase().includes(searchTerm)) &&
             (catFilter === 'all' || c.category === catFilter) &&
-            (currentOwnerFilter === 'all' || c.ownerType === currentOwnerFilter)
+            (currentOwnerFilter === 'all' || c.ownerType === currentOwnerFilter) &&
+            (currentAvailableFilter === 'all' || c.status === currentAvailableFilter) &&
+            (!c.isHidden)
         );
+
+        // Sorting by name ก-ฮ
+        filtered.sort((a, b) => a.name.localeCompare(b.name, 'th', { sensitivity: 'base' }));
 
         filtered.forEach(car => {
             const isBusy = car.status === 'busy';
@@ -879,7 +940,8 @@
 
     function confirmRent() {
         const id = parseInt(document.getElementById('rentCarId').value);
-        const price = parseInt(document.getElementById('rentPrice').value);
+        // แปลงค่าโดยตัดลูกน้ำออกก่อน
+        const price = parseInt(document.getElementById('rentPrice').value.replace(/,/g, ''));
         const endTimeValue = document.getElementById('rentEndTime').value;
         const splitType = document.getElementById('rentSplitType').value;
 
@@ -996,10 +1058,22 @@
         renderCars();
     }
 
+    function toggleHideCar(id) {
+        const car = cars.find(c => c.id === id);
+        car.isHidden = !car.isHidden;
+        saveDataLocally();
+        renderManageCars();
+        renderCars();
+    }
+
     function renderManageCars() {
         const tbody = document.getElementById('manageTableBody');
         tbody.innerHTML = '';
-        cars.forEach(car => {
+        
+        // Sorting by name in admin panel as well
+        let sortedCars = [...cars].sort((a, b) => a.name.localeCompare(b.name, 'th', { sensitivity: 'base' }));
+
+        sortedCars.forEach(car => {
             const statusText = car.status === 'busy' ? '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>' : '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
             
             let ownerText = car.ownerType === 'kapi' ? 'กะปิ' : 'เจ้าของ';
@@ -1010,17 +1084,20 @@
             if (car.status === 'busy') {
                 actionButtons = `<button class="btn btn-return" onclick="returnCar(${car.id})" style="width:100%;">คืนรถ</button>`;
             } else {
+                let hideBtnText = car.isHidden ? "👁️ แสดง" : "👻 ซ่อน";
+                let hideBtnColor = car.isHidden ? "#f39c12" : "#7f8c8d";
                 actionButtons = `
                     <div style="display:flex; gap:8px; justify-content:flex-end;">
-                        <button class="btn btn-edit" style="padding: 8px 15px; font-size:13px;" onclick="openEditModal(${car.id})">✏️ แก้ไข</button>
-                        <button class="btn btn-delete" style="padding: 8px 15px; font-size:13px;" onclick="deleteCar(${car.id})">🗑️ ลบ</button>
+                        <button class="btn btn-edit" style="padding: 8px 15px; font-size:13px; background: ${hideBtnColor}; border:none; color:white;" onclick="toggleHideCar(${car.id})">${hideBtnText}</button>
+                        <button class="btn btn-edit" style="padding: 8px 15px; font-size:13px;" onclick="openEditModal(${car.id})">✏️</button>
+                        <button class="btn btn-delete" style="padding: 8px 15px; font-size:13px;" onclick="deleteCar(${car.id})">🗑️</button>
                     </div>
                 `;
             }
 
             tbody.innerHTML += `
-                <tr>
-                    <td style="font-weight:600; color:#fff;">${car.plate}</td>
+                <tr style="${car.isHidden ? 'opacity: 0.4;' : ''}">
+                    <td style="font-weight:600; color:#fff;">${car.plate} ${car.isHidden ? '<span style="color:#f39c12; font-size:12px;">(ซ่อนอยู่)</span>' : ''}</td>
                     <td>${car.name} ${car.isTurbo ? '🚀' : ''}</td>
                     <td><span class="badge">${car.category}</span> <div style="margin-top:8px;">${ownerBadge}</div></td>
                     <td>${statusText}</td>
@@ -1032,17 +1109,23 @@
 
     function addNewCar() {
         const name = document.getElementById('newCarName').value;
-        const plate = document.getElementById('newCarPlate').value;
+        const platesInput = document.getElementById('newCarPlate').value;
         const category = document.getElementById('newCarCategory').value;
         const imageUrl = document.getElementById('newCarImg').value;
         const isTurbo = document.getElementById('newCarTurbo').checked;
         const ownerType = document.getElementById('newCarOwnerType').value;
         const ownerName = document.getElementById('newCarOwnerName').value;
 
-        if(!name || !plate) return alert("ใส่ชื่อและทะเบียนให้ครบครับ");
+        const plates = platesInput.split(',').map(p => p.trim()).filter(p => p !== "");
+
+        if(!name || plates.length === 0) return alert("ใส่ชื่อและทะเบียนให้ครบครับ");
         
-        const newId = cars.length > 0 ? Math.max(...cars.map(c => c.id)) + 1 : 1;
-        cars.push({ id: newId, name, plate, category, imageUrl, isTurbo, ownerType, ownerName, status: "available", price: 0, endTime: null });
+        let newId = cars.length > 0 ? Math.max(...cars.map(c => c.id)) : 0;
+        
+        plates.forEach(plate => {
+            newId++;
+            cars.push({ id: newId, name, plate, category, imageUrl, isTurbo, ownerType, ownerName, status: "available", price: 0, endTime: null, isHidden: false });
+        });
         
         document.getElementById('newCarName').value = "";
         document.getElementById('newCarPlate').value = "";
@@ -1053,6 +1136,7 @@
         saveDataLocally();
         renderManageCars();
         renderCars();
+        alert(`✅ เพิ่มรถ ${name} ทั้งหมด ${plates.length} คันเรียบร้อย!`);
     }
 
     function deleteCar(id) {
@@ -1064,19 +1148,6 @@
         }
     }
 
-    function getWeekKey(timestamp) {
-        const d = new Date(timestamp);
-        const day = d.getDay();
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(d.setDate(diff));
-        
-        const sunday = new Date(monday);
-        sunday.setDate(sunday.getDate() + 6);
-        
-        const format = (dt) => `${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')}/${dt.getFullYear()}`;
-        return `${format(monday)} - ${format(sunday)}`;
-    }
-
     function updateDashboard() {
         const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
 
@@ -1084,7 +1155,6 @@
         let totalIncome = 0;
         const carGroups = {};
 
-        // Calculate boundaries for this week and last week
         const now = new Date();
         const day = now.getDay();
         const diff = now.getDate() - day + (day === 0 ? -6 : 1);
@@ -1201,7 +1271,7 @@
     }
 
     async function captureAvailableCars() {
-        const availableCars = cars.filter(c => c.status === 'available');
+        const availableCars = cars.filter(c => c.status === 'available' && !c.isHidden);
         if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
 
         const captureBtn = document.getElementById('captureBtn');
@@ -1269,6 +1339,7 @@
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     // Init
+    applySiteSettings();
     renderCategoryDropdowns();
     renderCars();
 </script>
