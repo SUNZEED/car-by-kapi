@@ -427,10 +427,13 @@
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
     
+    // ตั้งค่าหมวดหมู่พื้นฐานและลำดับการจัดเรียงที่ต้องการ
+    const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
+    let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
+    
     let defaultCars = [
-        { id: 1, name: "GTR R35", plate: "2DCOREY", category: "ตัวท็อป", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null, isHidden: false }
+        { id: 1, name: "GTR R35", plate: "2DCOREY", category: "ประมูล", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null, isHidden: false }
     ];
-    let defaultCategories = ["น้ำมัน", "ไฟฟ้า", "ตัวท็อป", "ประมูล"];
     
     let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
@@ -836,8 +839,20 @@
             (!c.isHidden)
         );
 
-        // Sorting by name ก-ฮ
-        filtered.sort((a, b) => a.name.localeCompare(b.name, 'th', { sensitivity: 'base' }));
+        // ระบบจัดเรียง: หมวดหมู่ (ตาม Custom Order) -> เรียงตามชื่อ (ก-ฮ)
+        filtered.sort((a, b) => {
+            let catIndexA = customCategoryOrder.findIndex(c => c.toLowerCase() === (a.category || '').toLowerCase());
+            let catIndexB = customCategoryOrder.findIndex(c => c.toLowerCase() === (b.category || '').toLowerCase());
+            
+            if(catIndexA === -1) catIndexA = 999;
+            if(catIndexB === -1) catIndexB = 999;
+
+            if (catIndexA !== catIndexB) {
+                return catIndexA - catIndexB; // เรียงตามลำดับที่ตั้งไว้
+            }
+            // ถ้าหมวดหมู่เดียวกัน ให้เรียงตามชื่อรถ (ก-ฮ)
+            return a.name.localeCompare(b.name, 'th', { sensitivity: 'base' });
+        });
 
         filtered.forEach(car => {
             const isBusy = car.status === 'busy';
@@ -1105,8 +1120,17 @@
         const tbody = document.getElementById('manageTableBody');
         tbody.innerHTML = '';
         
-        // Sorting by name in admin panel as well
-        let sortedCars = [...cars].sort((a, b) => a.name.localeCompare(b.name, 'th', { sensitivity: 'base' }));
+        // Sorting by name in admin panel as well (ระบบเรียงเหมือนหน้าแรก)
+        let sortedCars = [...cars].sort((a, b) => {
+            let catIndexA = customCategoryOrder.findIndex(c => c.toLowerCase() === (a.category || '').toLowerCase());
+            let catIndexB = customCategoryOrder.findIndex(c => c.toLowerCase() === (b.category || '').toLowerCase());
+            
+            if(catIndexA === -1) catIndexA = 999;
+            if(catIndexB === -1) catIndexB = 999;
+
+            if (catIndexA !== catIndexB) return catIndexA - catIndexB;
+            return a.name.localeCompare(b.name, 'th', { sensitivity: 'base' });
+        });
 
         sortedCars.forEach(car => {
             const statusText = car.status === 'busy' ? '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>' : '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
