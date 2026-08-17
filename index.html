@@ -444,6 +444,9 @@
     let currentAvailableFilter = 'all'; 
     let currentDashFilter = 'all';
 
+    // State ป้องกันการวางรูปซ้ำ
+    window.isOcrProcessing = false;
+
     cars = cars.map(c => ({
         ...c,
         imageUrl: c.imageUrl || '',
@@ -633,7 +636,9 @@
         }
     }
 
+    // ========== ระบบแก้ไขปัญหา AI สแกนผิดพลาด ==========
     function openOcrPasteModal() {
+        window.isOcrProcessing = false; // ป้องกันบักการกดซ้ำ
         document.getElementById('ocrPasteStatus').innerText = "";
         document.getElementById('pasteArea').innerHTML = "วางรูปภาพตรงนี้ (Ctrl+V)";
         document.getElementById('ocrPasteModal').style.display = "flex";
@@ -641,11 +646,16 @@
 
     window.addEventListener('paste', e => {
         if (document.getElementById('ocrPasteModal').style.display === 'flex') {
+            if (window.isOcrProcessing) return; // บล็อกถ้าระบบกำลังประมวลผลอยู่
+            
             const items = e.clipboardData.items;
             for (let i = 0; i < items.length; i++) {
                 if (items[i].type.indexOf('image') !== -1) {
                     const blob = items[i].getAsFile();
-                    processPastedImage(blob);
+                    window.isOcrProcessing = true; // ล็อกสถานะ
+                    processPastedImage(blob).finally(() => {
+                        window.isOcrProcessing = false; // ปลดล็อก
+                    });
                     break;
                 }
             }
@@ -683,77 +693,56 @@
             let text = ret.data.text.toUpperCase();
             await worker.terminate();
 
+            console.log("👉 [Debug] ข้อความดิบจาก AI: ", text);
+
             const hMatch = text.match(/(\d+)\s*[ชซ]/);
             const mMatch = text.match(/(\d+)\s*[นิม]/);
             let hours = hMatch ? parseInt(hMatch[1]) : 0;
             let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
-            // Normalize O->0, I->1 (รองรับภาษาไทย)
+            // คลีนข้อความให้เหลือแค่ตัวอักษรและตัวเลข (ตัดวันที่และอักขระพิเศษทิ้ง)
             let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
-            let matchedCar = null;
-            let minDistance = 999;
+            console.log("👉 [Debug] ข้อความหลังคลีน Regex: ", cleanText);
 
+            let matchedCar = null;
+
+            // ด่านที่ 1: หาแบบเป๊ะๆ 100% (Exact Match)
             for(let car of cars) {
-                // Normalize O->0, I->1 (รองรับภาษาไทย)
                 const cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                
-                if (cleanText.includes(cleanPlate)) {
+                if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
                     matchedCar = car;
+                    console.log("🎯 พบทะเบียนเป๊ะๆ: ", car.plate);
                     break;
                 }
-                
-                if (cleanText.length >= cleanPlate.length) {
-                    for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
-                        const sub = cleanText.substring(i, i + cleanPlate.length);
-                        const dist = getLevenshteinDistance(sub, cleanPlate);
-                        if (dist <= 2 && dist < minDistance) {
-                            minDistance = dist;
-                            matchedCar = car;
+            }
+
+            // ด่านที่ 2: ถ้าไม่เจอเป๊ะๆ ค่อยยอมให้เดา (Fuzzy Match แบบเข้มงวด)
+            if (!matchedCar) {
+                let minDistance = 999;
+                for(let car of cars) {
+                    const cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                    
+                    // ป้องกันบั๊ก: ข้ามป้ายทะเบียนที่สั้นเกินไป เพราะ AI จะจับคู่มั่ว
+                    if (cleanPlate.length < 3) continue; 
+
+                    // ยอมให้ผิดเพี้ยนได้สูงสุดแค่ 1-2 ตัวอักษรเท่านั้น
+                    const allowedDist = Math.min(2, Math.floor(cleanPlate.length / 4) + 1);
+
+                    if (cleanText.length >= cleanPlate.length) {
+                        for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
+                            const sub = cleanText.substring(i, i + cleanPlate.length);
+                            const dist = getLevenshteinDistance(sub, cleanPlate);
+                            if (dist <= allowedDist && dist < minDistance) {
+                                minDistance = dist;
+                                matchedCar = car;
+                            }
                         }
                     }
-                } else {
-                    const dist = getLevenshteinDistance(cleanText, cleanPlate);
-                    if (dist <= 2 && dist < minDistance) {
-                        minDistance = dist;
-                        matchedCar = car;
-                    }
                 }
+                if (matchedCar) console.log("🧩 พบทะเบียนใกล้เคียง: ", matchedCar.plate);
             }
 
-            // --------- ระบบค้นหาสำรองด้วยการกรองเฉพาะตัวเลข ---------
-            if (!matchedCar) {
-                const numberText = cleanText.replace(/[^0-9]/g, ''); 
-                if (numberText.length > 0) {
-                    let possibleCars = cars.filter(c => {
-                        const numberPlate = c.plate.replace(/[^0-9]/g, '');
-                        return numberPlate.length >= 2 && numberText.includes(numberPlate);
-                    });
-
-                    if (possibleCars.length > 0) {
-                        // เรียงลำดับเพื่อหาคันที่น่าจะใช่ที่สุด
-                        possibleCars.sort((a, b) => {
-                            // 1. ให้ความสำคัญกับรถที่ "ว่าง" ก่อน (เพราะเราสแกนเพื่อจะปล่อยเช่า)
-                            if (a.status === 'available' && b.status === 'busy') return -1;
-                            if (b.status === 'available' && a.status === 'busy') return 1;
-
-                            // 2. ถ้าสถานะเหมือนกัน (เช่น ว่างทั้งคู่) ให้เลือกคันที่ตัวเลขตรงกันยาวที่สุด
-                            const aNum = a.plate.replace(/[^0-9]/g, '');
-                            const bNum = b.plate.replace(/[^0-9]/g, '');
-                            if (bNum.length !== aNum.length) {
-                                return bNum.length - aNum.length;
-                            }
-
-                            // 3. ถ้าตัวเลขยาวเท่ากัน ให้เช็คว่ามีตัวอักษรหลงเหลือใน AI ให้จับคู่บ้างไหม
-                            const aChars = a.plate.replace(/[^A-Zก-ฮ]/g, '');
-                            const bChars = b.plate.replace(/[^A-Zก-ฮ]/g, '');
-                            const countMatches = (chars) => chars.split('').filter(char => cleanText.includes(char)).length;
-                            return countMatches(bChars) - countMatches(aChars);
-                        });
-                        matchedCar = possibleCars[0];
-                    }
-                }
-            }
-            // ---------------------------------------------------
+            // ถอดระบบค้นหาเฉพาะตัวเลข (Number fallback) ทิ้งไปเลย เพราะมันดึงเลขจาก 'วันที่' มามั่ว
 
             if (!matchedCar) {
                 statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (อ่านข้อมูลได้: ${cleanText})`;
@@ -789,6 +778,7 @@
             statusEl.style.color = "#ff4757";
         }
     }
+    // ===============================================
 
     function setOwnerFilter(filter) {
         currentOwnerFilter = filter;
@@ -990,7 +980,6 @@
 
     function confirmRent() {
         const id = parseInt(document.getElementById('rentCarId').value);
-        // แปลงค่าโดยตัดลูกน้ำออกก่อน
         const price = parseInt(document.getElementById('rentPrice').value.replace(/,/g, ''));
         const endTimeValue = document.getElementById('rentEndTime').value;
         const splitType = document.getElementById('rentSplitType').value;
@@ -1120,7 +1109,6 @@
         const tbody = document.getElementById('manageTableBody');
         tbody.innerHTML = '';
         
-        // Sorting by name in admin panel as well (ระบบเรียงเหมือนหน้าแรก)
         let sortedCars = [...cars].sort((a, b) => {
             let catIndexA = customCategoryOrder.findIndex(c => c.toLowerCase() === (a.category || '').toLowerCase());
             let catIndexB = customCategoryOrder.findIndex(c => c.toLowerCase() === (b.category || '').toLowerCase());
@@ -1141,7 +1129,6 @@
             
             let actionButtons = '';
             if (car.status === 'busy') {
-                // เพิ่มปุ่มแก้ไข (Edit) เข้าไปข้างๆ ปุ่มคืนรถ
                 actionButtons = `
                     <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
                         <button class="btn btn-return" onclick="returnCar(${car.id})" style="flex:1; padding: 8px 15px; font-size:13px;">คืนรถ</button>
