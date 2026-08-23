@@ -204,7 +204,8 @@
             <button class="view-btn active" id="btnFilterAvailableAll" onclick="setAvailableFilter('all')">ดูรถทั้งหมด</button>
             <button class="view-btn" id="btnFilterAvailableOnly" onclick="setAvailableFilter('available')">เฉพาะรถว่าง 🟢</button>
 
-            <div style="margin-left: auto; display: flex; gap: 10px;">
+            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา / แคปรูป) ถ้ายังไม่ล็อคอิน -->
+            <div id="adminActionButtons" style="margin-left: auto; display: none; gap: 10px;">
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
                 </button>
@@ -424,28 +425,27 @@
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbwBQeSUmlh1LQK6JdbqxAE-IQjmr2mg5egoOlb2HUf0A9ORvug9jyoHGR2MURTzYCsY/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxVkgPyZ6nHMpqaa2s92YUpDhLxEybOduquKjNv-NJKuNQczQOmWjpFeLfFWi7aA5w-/exec';
     
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
-    
-    // --- ฟังก์ชันเช็คว่าล็อคอินหรือยัง ---
-    function requireLogin() {
-        if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') {
-            alert("🔒 ระบบป้องกัน: กรุณาเข้าสู่ระบบก่อนทำรายการครับ\n\n(ระบบจะพาคุณไปยังหน้าล็อคอิน...)");
-            switchPage('manage');
-            return false;
-        }
-        return true;
-    }
 
-    // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ (ซิงค์ข้อมูลให้ทุกคนเห็นตรงกัน) ---
+    // --- ฟังก์ชันสำหรับซ่อน/แสดงปุ่มต่างๆ ตามสถานะการล็อคอิน ---
+    function updateAuthUI() {
+        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+        const adminControls = document.getElementById('adminActionButtons');
+        if (adminControls) {
+            adminControls.style.display = isLoggedIn ? 'flex' : 'none'; // ซ่อนปุ่มด้านบนถ้าไม่ล็อคอิน
+        }
+        renderCars(); // รีโหลดการแสดงผลรถ เพื่อซ่อน/แสดงปุ่ม "ลงทะเบียนสัญญา"
+    }
+    
+    // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ ---
     function fetchLatestCars() {
         fetch(scriptURL)
             .then(res => res.json())
             .then(data => {
                 if (data.cars && data.cars.length > 0) {
-                    // ตรวจสอบว่ามีข้อมูลเปลี่ยนไปไหม ถ้าเปลี่ยน ค่อยอัปเดตหน้าจอ (กันหน้าจอกระพริบ)
                     if (JSON.stringify(cars) !== JSON.stringify(data.cars)) {
                         cars = data.cars;
                         localStorage.setItem('summerCars', JSON.stringify(cars));
@@ -459,19 +459,19 @@
             .catch(err => console.log('Sync Error:', err));
     }
 
-    // ดึงข้อมูลครั้งแรกที่เปิดเว็บ
-    window.addEventListener('DOMContentLoaded', fetchLatestCars);
+    // ดึงข้อมูลครั้งแรกที่เปิดเว็บ และอัปเดตหน้าตาปุ่มล็อคอิน
+    window.addEventListener('DOMContentLoaded', () => {
+        updateAuthUI();
+        fetchLatestCars();
+    });
     
-    // ดึงข้อมูลอัปเดตจากชีทอัตโนมัติ ทุกๆ 10 วินาที เพื่อให้หน้าจอซิงค์กันทุกคน!
+    // ซิงค์อัตโนมัติทุกๆ 10 วิ
     setInterval(fetchLatestCars, 10000); 
 
-    // ตั้งค่าหมวดหมู่พื้นฐานและลำดับการจัดเรียงที่ต้องการ
+    // ตั้งค่าตัวแปร
     const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
-    
-    let defaultCars = [
-        { id: 1, name: "GTR R35", plate: "2DCOREY", category: "ประมูล", imageUrl: "https://images.unsplash.com/photo-1603513360447-73b3eafc1cc5?w=600", isTurbo: true, ownerType: "owner", ownerName: "", status: "available", price: 0, endTime: null, isHidden: false }
-    ];
+    let defaultCars = [];
     
     let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
@@ -513,7 +513,6 @@
         input.value = value ? parseInt(value).toLocaleString() : '';
     }
 
-    // --- แก้ไขการเซฟ ป้องกันการส่งข้อมูลเบิ้ลไปที่ชีท ทำให้ข้อมูลรวน/รูปหาย ---
     function saveDataLocally(skipCloudSync = false) {
         localStorage.setItem('summerCars', JSON.stringify(cars));
         localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
@@ -560,6 +559,7 @@
     function checkLogin() {
         if (document.getElementById('adminUser').value === ADMIN_USER && document.getElementById('adminPass').value === ADMIN_PASS) {
             sessionStorage.setItem('isAdminLoggedIn', 'true');
+            updateAuthUI(); // อัปเดตให้โชว์ปุ่มทั้งหมด
             switchPage('manage');
         } else {
             alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
@@ -568,8 +568,9 @@
     
     function logoutAdmin() {
         sessionStorage.removeItem('isAdminLoggedIn');
+        updateAuthUI(); // ซ่อนปุ่มทั้งหมดทันทีที่ออก
         switchPage('cars');
-        alert("ออกจากระบบเรียบร้อยแล้ว");
+        alert("🚪 ออกจากระบบเรียบร้อยแล้ว (คุณอยู่ในโหมดดูได้อย่างเดียว)");
     }
 
     function promptForPIN(callback) {
@@ -681,8 +682,6 @@
     }
 
     function openOcrPasteModal() {
-        if(!requireLogin()) return; // ล็อคการกดสแกนสัญญาถ้ายังไม่ล็อคอิน
-        
         document.getElementById('ocrPasteStatus').innerText = "";
         document.getElementById('pasteArea').innerHTML = "วางรูปภาพตรงนี้ (Ctrl+V)";
         document.getElementById('ocrPasteModal').style.display = "flex";
@@ -743,7 +742,6 @@
             let minDistance = 999;
 
             for(let car of cars) {
-                // Normalize O->0, I->1 (รองรับภาษาไทย)
                 const cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
                 
                 if (cleanText.includes(cleanPlate)) {
@@ -769,7 +767,6 @@
                 }
             }
 
-            // --------- ระบบค้นหาสำรองด้วยการกรองเฉพาะตัวเลข ---------
             if (!matchedCar) {
                 const numberText = cleanText.replace(/[^0-9]/g, ''); 
                 if (numberText.length > 0) {
@@ -779,20 +776,12 @@
                     });
 
                     if (possibleCars.length > 0) {
-                        // เรียงลำดับเพื่อหาคันที่น่าจะใช่ที่สุด
                         possibleCars.sort((a, b) => {
-                            // 1. ให้ความสำคัญกับรถที่ "ว่าง" ก่อน (เพราะเราสแกนเพื่อจะปล่อยเช่า)
                             if (a.status === 'available' && b.status === 'busy') return -1;
                             if (b.status === 'available' && a.status === 'busy') return 1;
-
-                            // 2. ถ้าสถานะเหมือนกัน (เช่น ว่างทั้งคู่) ให้เลือกคันที่ตัวเลขตรงกันยาวที่สุด
                             const aNum = a.plate.replace(/[^0-9]/g, '');
                             const bNum = b.plate.replace(/[^0-9]/g, '');
-                            if (bNum.length !== aNum.length) {
-                                return bNum.length - aNum.length;
-                            }
-
-                            // 3. ถ้าตัวเลขยาวเท่ากัน ให้เช็คว่ามีตัวอักษรหลงเหลือใน AI ให้จับคู่บ้างไหม
+                            if (bNum.length !== aNum.length) return bNum.length - aNum.length;
                             const aChars = a.plate.replace(/[^A-Zก-ฮ]/g, '');
                             const bChars = b.plate.replace(/[^A-Zก-ฮ]/g, '');
                             const countMatches = (chars) => chars.split('').filter(char => cleanText.includes(char)).length;
@@ -802,7 +791,6 @@
                     }
                 }
             }
-            // ---------------------------------------------------
 
             if (!matchedCar) {
                 statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (อ่านข้อมูลได้: ${cleanText})`;
@@ -878,6 +866,7 @@
         const grid = document.getElementById('carGrid');
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const catFilter = document.getElementById('categoryFilter').value;
+        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true'; // เช็คการล็อคอินที่นี่ด้วย
         grid.innerHTML = '';
 
         let filtered = cars.filter(c => 
@@ -888,18 +877,12 @@
             (!c.isHidden)
         );
 
-        // ระบบจัดเรียง: หมวดหมู่ (ตาม Custom Order) -> เรียงตามชื่อ (ก-ฮ)
         filtered.sort((a, b) => {
             let catIndexA = customCategoryOrder.findIndex(c => c.toLowerCase() === (a.category || '').toLowerCase());
             let catIndexB = customCategoryOrder.findIndex(c => c.toLowerCase() === (b.category || '').toLowerCase());
-            
             if(catIndexA === -1) catIndexA = 999;
             if(catIndexB === -1) catIndexB = 999;
-
-            if (catIndexA !== catIndexB) {
-                return catIndexA - catIndexB; // เรียงตามลำดับที่ตั้งไว้
-            }
-            // ถ้าหมวดหมู่เดียวกัน ให้เรียงตามชื่อรถ (ก-ฮ)
+            if (catIndexA !== catIndexB) return catIndexA - catIndexB;
             return a.name.localeCompare(b.name, 'th', { sensitivity: 'base' });
         });
 
@@ -939,10 +922,14 @@
                         <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green); line-height: 1.5;">โหลดเวลา...</div>
                     </div></div>`; 
             } else {
-                html += `</div>
-                    <div class="card-actions">
-                        <button class="btn btn-rent" style="flex: 1;" onclick="openRentModal(${car.id})">ลงทะเบียนสัญญา</button>
-                    </div>`;
+                html += `</div>`;
+                // เงื่อนไข: ถ้าล็อคอินแล้ว ถึงจะโชว์ปุ่ม "ลงทะเบียนสัญญา" ให้กด
+                if (isLoggedIn) {
+                    html += `
+                        <div class="card-actions">
+                            <button class="btn btn-rent" style="flex: 1;" onclick="openRentModal(${car.id})">ลงทะเบียนสัญญา</button>
+                        </div>`;
+                }
             }
             grid.innerHTML += html;
         });
@@ -1017,8 +1004,6 @@
     }
 
     function openRentModal(id, autoEndTime = null) {
-        if(!requireLogin()) return; // ล็อคการกดเช่า ถ้ายังไม่ล็อคอิน
-        
         const car = cars.find(c => c.id === id);
         document.getElementById('rentCarId').value = car.id;
         document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
@@ -1075,7 +1060,6 @@
             ownerIncome: ownerIncome
         });
 
-        // ส่งข้อมูลชุดใหม่ไปอัปเดตบน Cloud 
         fetch(scriptURL, {
             method: 'POST',
             body: JSON.stringify({
@@ -1088,7 +1072,7 @@
         }).then(response => console.log('บันทึกลง Sheet สำเร็จ!'))
           .catch(error => console.error('Error!', error.message));
 
-        saveDataLocally(true); // ให้เซฟลงเครื่องตัวเอง แต่ "ข้าม" การซิงค์ซ้ำซ้อน
+        saveDataLocally(true); 
         closeModal('rentModal');
         renderCars();
         if(document.getElementById('managePage').classList.contains('active')) {
@@ -1097,8 +1081,6 @@
     }
 
     function returnCar(id) {
-        if(!requireLogin()) return; // ล็อคการกดคืนรถ ถ้ายังไม่ล็อคอิน
-        
         if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม? (ประวัติรายได้ล่าสุดของรถคันนี้จะถูกลบออกด้วย)")) {
             const carIndex = cars.findIndex(c => c.id === id);
             const car = cars[carIndex];
@@ -1454,7 +1436,6 @@
     // Init
     applySiteSettings();
     renderCategoryDropdowns();
-    renderCars();
 </script>
 
 </body>
