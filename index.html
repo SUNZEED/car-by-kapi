@@ -424,9 +424,14 @@
 </div>
 
 <script>
+    // =========================================================================
+    // 🔧 เปลี่ยนลิงก์ Google Apps Script ตรงนี้ครับ 🔧
+    // คราวหน้าถ้า Deploy ใหม่ เอาก๊อป URL มาวางเปลี่ยนในบรรทัดข้างล่างนี้ได้เลย
+    // =========================================================================
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbwBQeSUmlh1LQK6JdbqxAE-IQjmr2mg5egoOlb2HUf0A9ORvug9jyoHGR2MURTzYCsY/exec';
+    
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbw701K7HkB537YejVrcIfKhqzyMfNxbTCWEd8lnIhG3DJ-6zGbW5dXgQbYUkjzXtAM5/exec';
     
     // ดึงข้อมูลรถจาก Google Sheets มาโชว์ตอนเปิดหน้าเว็บ (เพื่อให้ทุกคนเห็นข้อมูลชุดเดียวกัน)
     window.addEventListener('DOMContentLoaded', () => {
