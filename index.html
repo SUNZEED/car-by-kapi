@@ -424,30 +424,46 @@
 </div>
 
 <script>
-    // =========================================================================
-    // 🔧 เปลี่ยนลิงก์ Google Apps Script ตรงนี้ครับ 🔧
-    // คราวหน้าถ้า Deploy ใหม่ เอาก๊อป URL มาวางเปลี่ยนในบรรทัดข้างล่างนี้ได้เลย
-    // =========================================================================
     const scriptURL = 'https://script.google.com/macros/s/AKfycbwBQeSUmlh1LQK6JdbqxAE-IQjmr2mg5egoOlb2HUf0A9ORvug9jyoHGR2MURTzYCsY/exec';
     
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
     
-    // ดึงข้อมูลรถจาก Google Sheets มาโชว์ตอนเปิดหน้าเว็บ (เพื่อให้ทุกคนเห็นข้อมูลชุดเดียวกัน)
-    window.addEventListener('DOMContentLoaded', () => {
+    // --- ฟังก์ชันเช็คว่าล็อคอินหรือยัง ---
+    function requireLogin() {
+        if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') {
+            alert("🔒 ระบบป้องกัน: กรุณาเข้าสู่ระบบก่อนทำรายการครับ\n\n(ระบบจะพาคุณไปยังหน้าล็อคอิน...)");
+            switchPage('manage');
+            return false;
+        }
+        return true;
+    }
+
+    // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ (ซิงค์ข้อมูลให้ทุกคนเห็นตรงกัน) ---
+    function fetchLatestCars() {
         fetch(scriptURL)
             .then(res => res.json())
             .then(data => {
                 if (data.cars && data.cars.length > 0) {
-                    cars = data.cars;
-                    renderCars();
-                    if (document.getElementById('managePage').classList.contains('active')) {
-                        renderManageCars();
+                    // ตรวจสอบว่ามีข้อมูลเปลี่ยนไปไหม ถ้าเปลี่ยน ค่อยอัปเดตหน้าจอ (กันหน้าจอกระพริบ)
+                    if (JSON.stringify(cars) !== JSON.stringify(data.cars)) {
+                        cars = data.cars;
+                        localStorage.setItem('summerCars', JSON.stringify(cars));
+                        renderCars();
+                        if (document.getElementById('managePage').classList.contains('active')) {
+                            renderManageCars();
+                        }
                     }
                 }
             })
-            .catch(err => console.log('Error loading shared data:', err));
-    });
+            .catch(err => console.log('Sync Error:', err));
+    }
+
+    // ดึงข้อมูลครั้งแรกที่เปิดเว็บ
+    window.addEventListener('DOMContentLoaded', fetchLatestCars);
+    
+    // ดึงข้อมูลอัปเดตจากชีทอัตโนมัติ ทุกๆ 10 วินาที เพื่อให้หน้าจอซิงค์กันทุกคน!
+    setInterval(fetchLatestCars, 10000); 
 
     // ตั้งค่าหมวดหมู่พื้นฐานและลำดับการจัดเรียงที่ต้องการ
     const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
@@ -497,17 +513,18 @@
         input.value = value ? parseInt(value).toLocaleString() : '';
     }
 
-    // ปรับฟังก์ชันเซฟให้ส่งข้อมูลขึ้น Cloud ด้วย 
-    function saveDataLocally() {
+    // --- แก้ไขการเซฟ ป้องกันการส่งข้อมูลเบิ้ลไปที่ชีท ทำให้ข้อมูลรวน/รูปหาย ---
+    function saveDataLocally(skipCloudSync = false) {
         localStorage.setItem('summerCars', JSON.stringify(cars));
         localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
         localStorage.setItem('summerCategories', JSON.stringify(categories));
 
-        // ซิงค์ข้อมูลสต็อกรถล่าสุดขึ้นชีทอัตโนมัติ
-        fetch(scriptURL, {
-            method: 'POST',
-            body: JSON.stringify({ action: 'syncCars', cars: cars })
-        }).catch(e => console.log('Sync Error:', e));
+        if (!skipCloudSync) {
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'syncCars', cars: cars })
+            }).catch(e => console.log('Sync Error:', e));
+        }
     }
 
     function copyText(event, text, btnElement) {
@@ -552,6 +569,7 @@
     function logoutAdmin() {
         sessionStorage.removeItem('isAdminLoggedIn');
         switchPage('cars');
+        alert("ออกจากระบบเรียบร้อยแล้ว");
     }
 
     function promptForPIN(callback) {
@@ -663,6 +681,8 @@
     }
 
     function openOcrPasteModal() {
+        if(!requireLogin()) return; // ล็อคการกดสแกนสัญญาถ้ายังไม่ล็อคอิน
+        
         document.getElementById('ocrPasteStatus').innerText = "";
         document.getElementById('pasteArea').innerHTML = "วางรูปภาพตรงนี้ (Ctrl+V)";
         document.getElementById('ocrPasteModal').style.display = "flex";
@@ -997,6 +1017,8 @@
     }
 
     function openRentModal(id, autoEndTime = null) {
+        if(!requireLogin()) return; // ล็อคการกดเช่า ถ้ายังไม่ล็อคอิน
+        
         const car = cars.find(c => c.id === id);
         document.getElementById('rentCarId').value = car.id;
         document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
@@ -1019,7 +1041,6 @@
 
     function confirmRent() {
         const id = parseInt(document.getElementById('rentCarId').value);
-        // แปลงค่าโดยตัดลูกน้ำออกก่อน
         const price = parseInt(document.getElementById('rentPrice').value.replace(/,/g, ''));
         const endTimeValue = document.getElementById('rentEndTime').value;
         const splitType = document.getElementById('rentSplitType').value;
@@ -1054,7 +1075,7 @@
             ownerIncome: ownerIncome
         });
 
-        // ---------------- เพิ่มโค้ดส่วนนี้เพื่อส่งเข้า Google Sheets ----------------
+        // ส่งข้อมูลชุดใหม่ไปอัปเดตบน Cloud 
         fetch(scriptURL, {
             method: 'POST',
             body: JSON.stringify({
@@ -1066,9 +1087,8 @@
             })
         }).then(response => console.log('บันทึกลง Sheet สำเร็จ!'))
           .catch(error => console.error('Error!', error.message));
-        // -------------------------------------------------------------------------
 
-        saveDataLocally();
+        saveDataLocally(true); // ให้เซฟลงเครื่องตัวเอง แต่ "ข้าม" การซิงค์ซ้ำซ้อน
         closeModal('rentModal');
         renderCars();
         if(document.getElementById('managePage').classList.contains('active')) {
@@ -1077,6 +1097,8 @@
     }
 
     function returnCar(id) {
+        if(!requireLogin()) return; // ล็อคการกดคืนรถ ถ้ายังไม่ล็อคอิน
+        
         if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม? (ประวัติรายได้ล่าสุดของรถคันนี้จะถูกลบออกด้วย)")) {
             const carIndex = cars.findIndex(c => c.id === id);
             const car = cars[carIndex];
@@ -1148,7 +1170,6 @@
         const tbody = document.getElementById('manageTableBody');
         tbody.innerHTML = '';
         
-        // Sorting by name in admin panel as well (ระบบเรียงเหมือนหน้าแรก)
         let sortedCars = [...cars].sort((a, b) => {
             let catIndexA = customCategoryOrder.findIndex(c => c.toLowerCase() === (a.category || '').toLowerCase());
             let catIndexB = customCategoryOrder.findIndex(c => c.toLowerCase() === (b.category || '').toLowerCase());
@@ -1169,7 +1190,6 @@
             
             let actionButtons = '';
             if (car.status === 'busy') {
-                // เพิ่มปุ่มแก้ไข (Edit) เข้าไปข้างๆ ปุ่มคืนรถ
                 actionButtons = `
                     <div style="display:flex; gap:8px; justify-content:flex-end; align-items:center;">
                         <button class="btn btn-return" onclick="returnCar(${car.id})" style="flex:1; padding: 8px 15px; font-size:13px;">คืนรถ</button>
