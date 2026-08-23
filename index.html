@@ -426,7 +426,24 @@
 <script>
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbw701K7HkB537YejVrcIfKhqzyMfNxbTCWEd8lnIhG3DJ-6zGbW5dXgQbYUkjzXtAM5/exec';
     
+    // ดึงข้อมูลรถจาก Google Sheets มาโชว์ตอนเปิดหน้าเว็บ (เพื่อให้ทุกคนเห็นข้อมูลชุดเดียวกัน)
+    window.addEventListener('DOMContentLoaded', () => {
+        fetch(scriptURL)
+            .then(res => res.json())
+            .then(data => {
+                if (data.cars && data.cars.length > 0) {
+                    cars = data.cars;
+                    renderCars();
+                    if (document.getElementById('managePage').classList.contains('active')) {
+                        renderManageCars();
+                    }
+                }
+            })
+            .catch(err => console.log('Error loading shared data:', err));
+    });
+
     // ตั้งค่าหมวดหมู่พื้นฐานและลำดับการจัดเรียงที่ต้องการ
     const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
@@ -475,10 +492,17 @@
         input.value = value ? parseInt(value).toLocaleString() : '';
     }
 
+    // ปรับฟังก์ชันเซฟให้ส่งข้อมูลขึ้น Cloud ด้วย 
     function saveDataLocally() {
         localStorage.setItem('summerCars', JSON.stringify(cars));
         localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
         localStorage.setItem('summerCategories', JSON.stringify(categories));
+
+        // ซิงค์ข้อมูลสต็อกรถล่าสุดขึ้นชีทอัตโนมัติ
+        fetch(scriptURL, {
+            method: 'POST',
+            body: JSON.stringify({ action: 'syncCars', cars: cars })
+        }).catch(e => console.log('Sync Error:', e));
     }
 
     function copyText(event, text, btnElement) {
@@ -1026,15 +1050,14 @@
         });
 
         // ---------------- เพิ่มโค้ดส่วนนี้เพื่อส่งเข้า Google Sheets ----------------
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyv2IxsGEY0rCgWWOhDy-HBS2rrgCE15vkqh1mmW2VMtoM6Sjup6_jsEtt9jb7aD0rp/exec'; 
-
         fetch(scriptURL, {
             method: 'POST',
             body: JSON.stringify({
-                id: rentalHistory.length,
+                action: 'rent',
                 item: `ปล่อยเช่า ${car.name} (${car.plate})`,
                 income: price,
-                expense: 0
+                expense: 0,
+                cars: cars
             })
         }).then(response => console.log('บันทึกลง Sheet สำเร็จ!'))
           .catch(error => console.error('Error!', error.message));
