@@ -135,6 +135,17 @@
         .copy-btn { cursor: pointer; font-size: 14px; margin-left: 8px; opacity: 0.6; transition: 0.2s; }
         .copy-btn:hover { opacity: 1; transform: scale(1.1); }
 
+        .dashboard-section {
+            background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px;
+            border: 1px solid var(--border-color); box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .dashboard-section h4 { margin-top: 0; color: var(--summer-orange); font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; font-weight: 800; }
+        table { width: 100%; background: transparent; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 15px; color: #d0d0d0;}
+        th { background: rgba(0,0,0,0.3); color: #888; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
+        .summary-row { background: rgba(255, 94, 58, 0.1); font-weight: bold; }
+        .summary-row td { color: #fff; border-top: 2px solid var(--summer-orange); }
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(5px); }
         .modal-content { background: #121216; padding: 35px; border-radius: 16px; width: 90%; max-width: 450px; border: 1px solid var(--summer-orange); box-shadow: 0 0 40px var(--summer-orange-glow); color: white; animation: modalPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); max-height: 90vh; overflow-y: auto; }
         @keyframes modalPop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -159,6 +170,7 @@
             transition: 0.2s;
         }
         .cat-del-btn:hover { color: #fff; background: #ff4757; border-radius: 50%; }
+
     </style>
 </head>
 <body>
@@ -170,6 +182,7 @@
     </h1>
     <div class="tab-menu">
         <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
+        <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
 </header>
 
@@ -183,19 +196,20 @@
         
         <div class="view-filters">
             <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปื</button>
-            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถaxis</button>
+            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
+            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
             
             <div style="border-left: 2px solid #333; height: 30px; margin: 0 10px;"></div>
             
             <button class="view-btn active" id="btnFilterAvailableAll" onclick="setAvailableFilter('all')">ดูรถทั้งหมด</button>
             <button class="view-btn" id="btnFilterAvailableOnly" onclick="setAvailableFilter('available')">เฉพาะรถว่าง 🟢</button>
 
-            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา) ถ้ายังไม่ล็อคอิน -->
+            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา / แคปรูป) ถ้ายังไม่ล็อคอิน -->
             <div id="adminActionButtons" style="margin-left: auto; display: none; gap: 10px;">
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
                 </button>
+                <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()" style="margin: 0;">📸 แคปรูปรถที่เหลือ</button>
             </div>
         </div>
 
@@ -223,6 +237,16 @@
                 <button class="btn btn-edit" style="background: transparent; color: #ff4757; border-color: #ff4757;" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
             </div>
 
+            <!-- โซน 0: ตั้งค่าข้อความหน้าเว็บ -->
+            <div class="controls" style="margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">⚙️ ตั้งค่าหัวเว็บ</h3>
+                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center;">
+                    <input type="text" id="settingSiteTitle" placeholder="ชื่อเว็บหลัก (เช่น 🌴 SUMMER CITY)" style="flex:1;">
+                    <input type="text" id="settingSiteSubtitle" placeholder="คำอธิบาย (เช่น | ปล่อยเช่ารถ)" style="flex:1;">
+                    <button class="btn btn-add" style="flex: none;" onclick="saveSiteSettings()">💾 บันทึก</button>
+                </div>
+            </div>
+
             <!-- โซน 1: แอดรถ -->
             <div class="controls">
                 <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">+ เพิ่มรถใหม่เข้าระบบ</h3>
@@ -235,8 +259,8 @@
                     <input type="text" id="newCarImg" placeholder="URL รูปภาพรถ (Link)" style="flex:2;">
                     
                     <select id="newCarOwnerType" style="flex:1;">
-                        <option value="owner">รถaxis</option>
-                        <option value="kapi">รถกะปื</option>
+                        <option value="owner">รถของเจ้าของ</option>
+                        <option value="kapi">รถของกะปิ</option>
                     </select>
                     <input type="text" id="newCarOwnerName" placeholder="ชื่อเจ้าของรถ (เช่น พี่เอ)" style="flex:1;">
 
@@ -277,6 +301,17 @@
                 <button class="btn btn-delete" style="flex: 1; background: linear-gradient(135deg, #900, #400);" onclick="clearCarsWithPIN()">🚗 ล้างข้อมูลรถทั้งหมด</button>
             </div>
         </div>
+    </div>
+
+    <!-- หน้า 3: สรุปผล -->
+    <div id="dashboardPage" class="page">
+        <div class="view-filters" style="margin-bottom: 30px;">
+            <button class="view-btn active" id="btnDashFilterAll" onclick="setDashFilter('all')">ดูรวมทั้งหมด</button>
+            <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดกะปิ</button>
+            <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดเจ้าของ</button>
+        </div>
+
+        <div id="overallDashboardContainer"></div>
     </div>
 </div>
 
@@ -322,9 +357,9 @@
         <div class="form-group">
             <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
             <select id="rentSplitType">
-                <option value="kapi">เข้ากะปื 100%</option>
+                <option value="kapi">เข้ากะปิ 100%</option>
                 <option value="owner">เข้าเจ้าของรถ 100%</option>
-                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปื)</option>
+                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปิ)</option>
             </select>
         </div>
 
@@ -366,8 +401,8 @@
             <div class="form-group" style="flex:1;">
                 <label>ประเภทเจ้าของ</label>
                 <select id="editCarOwnerType">
-                    <option value="owner">รถaxis</option>
-                    <option value="kapi">รถกะปื</option>
+                    <option value="owner">รถของเจ้าของ</option>
+                    <option value="kapi">รถของกะปิ</option>
                 </select>
             </div>
             <div class="form-group" style="flex:1;">
@@ -390,3 +425,167 @@
 </div>
 
 <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxVkgPyZ6nHMpqaa2s92YUpDhLxEybOduquKjNv-NJKuNQczQOmWjpFeLfFWi7aA5w-/exec';
+    
+    const ADMIN_USER = "Kapi";
+    const ADMIN_PASS = "worawich0625";
+
+    // --- ฟังก์ชันสำหรับซ่อน/แสดงปุ่มต่างๆ ตามสถานะการล็อคอิน ---
+    function updateAuthUI() {
+        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
+        const adminControls = document.getElementById('adminActionButtons');
+        if (adminControls) {
+            adminControls.style.display = isLoggedIn ? 'flex' : 'none'; // ซ่อนปุ่มด้านบนถ้าไม่ล็อคอิน
+        }
+        renderCars(); // รีโหลดการแสดงผลรถ เพื่อซ่อน/แสดงปุ่ม "ลงทะเบียนสัญญา"
+    }
+    
+    // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ ---
+    function fetchLatestCars() {
+        fetch(scriptURL)
+            .then(res => res.json())
+            .then(data => {
+                if (data.cars && data.cars.length > 0) {
+                    if (JSON.stringify(cars) !== JSON.stringify(data.cars)) {
+                        cars = data.cars;
+                        localStorage.setItem('summerCars', JSON.stringify(cars));
+                        renderCars();
+                        if (document.getElementById('managePage').classList.contains('active')) {
+                            renderManageCars();
+                        }
+                    }
+                }
+            })
+            .catch(err => console.log('Sync Error:', err));
+    }
+
+    // ดึงข้อมูลครั้งแรกที่เปิดเว็บ และอัปเดตหน้าตาปุ่มล็อคอิน
+    window.addEventListener('DOMContentLoaded', () => {
+        updateAuthUI();
+        fetchLatestCars();
+    });
+    
+    // ซิงค์อัตโนมัติทุกๆ 10 วิ
+    setInterval(fetchLatestCars, 10000); 
+
+    // ตั้งค่าตัวแปร
+    const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
+    let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
+    let defaultCars = [];
+    
+    let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
+    let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
+    let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
+    let siteSettings = JSON.parse(localStorage.getItem('summerSettings')) || { title: "🌴 SUMMER CITY", subtitle: "| ปล่อยเช่ารถ" };
+
+    let currentOwnerFilter = 'all'; 
+    let currentAvailableFilter = 'all'; 
+    let currentDashFilter = 'all';
+
+    cars = cars.map(c => ({
+        ...c,
+        imageUrl: c.imageUrl || '',
+        isTurbo: c.isTurbo || false,
+        ownerType: c.ownerType || 'owner',
+        ownerName: c.ownerName || '',
+        isHidden: c.isHidden || false
+    }));
+
+    function applySiteSettings() {
+        document.getElementById('displaySiteTitle').innerText = siteSettings.title;
+        document.getElementById('displaySiteSubtitle').innerText = siteSettings.subtitle;
+        if(document.getElementById('settingSiteTitle')) {
+            document.getElementById('settingSiteTitle').value = siteSettings.title;
+            document.getElementById('settingSiteSubtitle').value = siteSettings.subtitle;
+        }
+    }
+
+    function saveSiteSettings() {
+        siteSettings.title = document.getElementById('settingSiteTitle').value;
+        siteSettings.subtitle = document.getElementById('settingSiteSubtitle').value;
+        localStorage.setItem('summerSettings', JSON.stringify(siteSettings));
+        applySiteSettings();
+        alert("✅ บันทึกข้อความหน้าเว็บเรียบร้อย!");
+    }
+
+    function formatNumber(input) {
+        let value = input.value.replace(/,/g, '').replace(/\D/g, '');
+        input.value = value ? parseInt(value).toLocaleString() : '';
+    }
+
+    function saveDataLocally(skipCloudSync = false) {
+        localStorage.setItem('summerCars', JSON.stringify(cars));
+        localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
+        localStorage.setItem('summerCategories', JSON.stringify(categories));
+
+        if (!skipCloudSync) {
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'syncCars', cars: cars })
+            }).catch(e => console.log('Sync Error:', e));
+        }
+    }
+
+    function copyText(event, text, btnElement) {
+        if(event) event.stopPropagation();
+        navigator.clipboard.writeText(text).then(() => {
+            const originalText = btnElement.innerText;
+            btnElement.innerText = "✔️";
+            setTimeout(() => { btnElement.innerText = originalText; }, 1500);
+        });
+    }
+
+    function switchPage(pageId) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(pageId + 'Page').classList.add('active');
+        if (event && event.target && event.target.classList.contains('tab-btn')) {
+            event.target.classList.add('active');
+        }
+        if(pageId === 'dashboard') updateDashboard();
+        if(pageId === 'manage') {
+            if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('adminContent').style.display = 'block';
+                renderManageCars();
+                renderCategoryManager();
+            } else {
+                document.getElementById('loginScreen').style.display = 'block';
+                document.getElementById('adminContent').style.display = 'none';
+            }
+        }
+    }
+
+    function checkLogin() {
+        if (document.getElementById('adminUser').value === ADMIN_USER && document.getElementById('adminPass').value === ADMIN_PASS) {
+            sessionStorage.setItem('isAdminLoggedIn', 'true');
+            updateAuthUI(); // อัปเดตให้โชว์ปุ่มทั้งหมด
+            switchPage('manage');
+        } else {
+            alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
+        }
+    }
+    
+    function logoutAdmin() {
+        sessionStorage.removeItem('isAdminLoggedIn');
+        updateAuthUI(); // ซ่อนปุ่มทั้งหมดทันทีที่ออก
+        switchPage('cars');
+        alert("🚪 ออกจากระบบเรียบร้อยแล้ว (คุณอยู่ในโหมดดูได้อย่างเดียว)");
+    }
+
+    function promptForPIN(callback) {
+        const pin = prompt("⚠️ คำเตือน: ข้อมูลที่ลบจะไม่สามารถกู้คืนได้\n\nกรุณาใส่รหัส PIN (1234) เพื่อยืนยันการลบ:");
+        if (pin === "1234") {
+            callback();
+        } else if (pin !== null) {
+            alert("❌ รหัส PIN ไม่ถูกต้อง! ยกเลิกการล้างข้อมูล");
+        }
+    }
+
+    function clearHistoryWithPIN() {
+        promptForPIN(() => {
+            rentalHistory = [];
+            saveDataLocally();
+            alert("✅ ล้างประวัติรายได้ทั้งหมดเรียบร้อยแล้ว!");
+            if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
+  
