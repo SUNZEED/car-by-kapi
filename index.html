@@ -195,15 +195,15 @@
         
         <div class="view-filters">
             <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
-            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('axis')">ดูเฉพาะรถaxis</button>
+            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปื</button>
+            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถaxis</button>
             
             <div style="border-left: 2px solid #333; height: 30px; margin: 0 10px;"></div>
             
             <button class="view-btn active" id="btnFilterAvailableAll" onclick="setAvailableFilter('all')">ดูรถทั้งหมด</button>
             <button class="view-btn" id="btnFilterAvailableOnly" onclick="setAvailableFilter('available')">เฉพาะรถว่าง 🟢</button>
 
-            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา / แคปรูป) ถ้ายังไม่ล็อคอิน -->
+            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา) ถ้ายังไม่ล็อคอิน -->
             <div id="adminActionButtons" style="margin-left: auto; display: none; gap: 10px;">
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
@@ -247,8 +247,8 @@
                     <input type="text" id="newCarImg" placeholder="URL รูปภาพรถ (Link)" style="flex:2;">
                     
                     <select id="newCarOwnerType" style="flex:1;">
-                        <option value="kapi">รถกะปิ</option>
-                        <option value="axis">รถaxis</option>
+                        <option value="owner">รถaxis</option>
+                        <option value="kapi">รถกะปื</option>
                     </select>
                     <input type="text" id="newCarOwnerName" placeholder="ชื่อเจ้าของรถ (เช่น พี่เอ)" style="flex:1;">
 
@@ -334,9 +334,9 @@
         <div class="form-group">
             <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
             <select id="rentSplitType">
-                <option value="kapi">เข้ากะปิ 100%</option>
+                <option value="kapi">เข้ากะปื 100%</option>
                 <option value="owner">เข้าเจ้าของรถ 100%</option>
-                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปิ)</option>
+                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปื)</option>
             </select>
         </div>
 
@@ -378,8 +378,8 @@
             <div class="form-group" style="flex:1;">
                 <label>ประเภทเจ้าของ</label>
                 <select id="editCarOwnerType">
-                    <option value="kapi">รถกะปิ</option>
-                    <option value="axis">รถaxis</option>
+                    <option value="owner">รถaxis</option>
+                    <option value="kapi">รถกะปื</option>
                 </select>
             </div>
             <div class="form-group" style="flex:1;">
@@ -456,6 +456,7 @@
 
     let currentOwnerFilter = 'all'; 
     let currentAvailableFilter = 'all'; 
+    let currentDashFilter = 'all';
 
     cars = cars.map(c => ({
         ...c,
@@ -500,6 +501,7 @@
         if (event && event.target && event.target.classList.contains('tab-btn')) {
             event.target.classList.add('active');
         }
+        
         if(pageId === 'manage') {
             if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                 document.getElementById('loginScreen').style.display = 'none';
@@ -544,18 +546,3 @@
             rentalHistory = [];
             saveDataLocally();
             alert("✅ ล้างประวัติรายได้ทั้งหมดเรียบร้อยแล้ว!");
-        });
-    }
-
-    function clearCarsWithPIN() {
-        promptForPIN(() => {
-            cars = [];
-            saveDataLocally();
-            renderManageCars();
-            renderCars();
-            alert("✅ ล้างข้อมูลรถทั้งหมดเรียบร้อยแล้ว!");
-        });
-    }
-</script>
-</body>
-</html>
