@@ -694,89 +694,118 @@
         };
         reader.readAsDataURL(file);
 
-        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI กรุณารอสักครู่...";
+        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับภาพให้ชัดขึ้น)...";
         statusEl.style.color = "var(--summer-orange)";
 
-        try {
-            const worker = await Tesseract.createWorker('tha+eng');
-            const ret = await worker.recognize(file);
-            let text = ret.data.text.toUpperCase();
-            await worker.terminate();
+        const img = new Image();
+        img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            // ขยายภาพ 2.5 เท่า เพื่อให้ AI อ่านตัวอักษรเล็กๆ ออกได้อย่างชัดเจน
+            canvas.width = img.width * 2.5;
+            canvas.height = img.height * 2.5;
+            ctx.imageSmoothingEnabled = false; 
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-            const hMatch = text.match(/(\d+)\s*[ชซ]/);
-            const mMatch = text.match(/(\d+)\s*[นิม]/);
-            let hours = hMatch ? parseInt(hMatch[1]) : 0;
-            let mins = mMatch ? parseInt(mMatch[1]) : 0;
+            canvas.toBlob(async (blob) => {
+                try {
+                    const worker = await Tesseract.createWorker('tha+eng');
+                    const ret = await worker.recognize(blob);
+                    let text = ret.data.text.toUpperCase();
+                    await worker.terminate();
 
-            let matchedCar = null;
-            let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
-            
-            // Clean string of everything except letters and numbers
-            let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
+                    const hMatch = text.match(/(\d+)\s*[ชซ]/);
+                    const mMatch = text.match(/(\d+)\s*[นิม]/);
+                    let hours = hMatch ? parseInt(hMatch[1]) : 0;
+                    let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
-            // 1. หาแบบเป๊ะๆ 100% (ลบเว้นวรรคออกแล้วเทียบ)
-            for(let car of sortedCars) {
-                let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
-                    matchedCar = car;
-                    break;
-                }
-            }
+                    let matchedCar = null;
+                    let bestMatchScore = -1;
 
-            // 2. ถ้ายกเว้นวรรคแล้วยังหาไม่เจอ อนุญาตให้อ่านเพี้ยนได้แค่ 1-2 ตัวอักษร (ฉลาดขึ้น ไม่เอาเลขมารวมมั่วๆ)
-            if (!matchedCar && cleanText.length > 0) {
-                let minDist = 999;
-                for(let car of sortedCars) {
-                    let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                    if (cleanPlate.length < 3) continue; // ถ้าทะเบียนสั้นเกินไป ไม่ให้เดา ป้องกันมั่ว
-                    
-                    // กำหนดโควต้าตัวอักษรที่อ่านเพี้ยนได้ (ถ้าทะเบียน 6 ตัวขึ้นไปยอมให้เพี้ยนได้ 2 ตัว)
-                    let maxTypos = cleanPlate.length >= 6 ? 2 : 1;
+                    let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
 
-                    for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
-                        let subText = cleanText.substring(i, i + cleanPlate.length);
-                        let dist = getLevenshteinDistance(subText, cleanPlate);
-                        if (dist <= maxTypos && dist < minDist) {
-                            minDist = dist;
+                    // 1. ค้นหาแบบเป๊ะๆ 100% (ลบเว้นวรรคออกแล้วเทียบ)
+                    let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
+                    for(let car of sortedCars) {
+                        let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                        if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
                             matchedCar = car;
+                            bestMatchScore = 9999; 
+                            break;
                         }
                     }
+
+                    // 2. ค้นหาแบบกลุ่มคำ (กรณีเว้นวรรคผิด หรืออ่านเพี้ยนนิดหน่อย แต่บังคับว่าต้องเป็นกลุ่มเดียวกัน)
+                    if (!matchedCar && cleanText.length > 0) {
+                        let tokens = text.replace(/\n/g, ' ').split(/\s+/).filter(t => t.length > 0);
+                        let searchPhrases = [];
+                        
+                        for(let i=0; i<tokens.length; i++) {
+                            searchPhrases.push(tokens[i]);
+                            if(i < tokens.length - 1) searchPhrases.push(tokens[i] + tokens[i+1]);
+                            if(i < tokens.length - 2) searchPhrases.push(tokens[i] + tokens[i+1] + tokens[i+2]);
+                        }
+
+                        for(let car of sortedCars) {
+                            let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                            if (cleanPlate.length < 3) continue;
+
+                            let maxTypos = cleanPlate.length >= 6 ? 2 : 1;
+                            
+                            for (let phrase of searchPhrases) {
+                                let cleanPhrase = phrase.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                                if (cleanPhrase.length === 0) continue;
+
+                                if (Math.abs(cleanPhrase.length - cleanPlate.length) <= 2) {
+                                    let dist = getLevenshteinDistance(cleanPhrase, cleanPlate);
+                                    if (dist <= maxTypos) {
+                                        let score = 100 - (dist * 20) + cleanPlate.length; 
+                                        if (score > bestMatchScore) {
+                                            bestMatchScore = score;
+                                            matchedCar = car;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!matchedCar) {
+                        statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่อ่านได้บางส่วน: ${text.substring(0, 40).replace(/\n/g, ' ')}...)</span>`;
+                        statusEl.style.color = "#ff4757";
+                        return;
+                    }
+
+                    if (matchedCar.status === 'busy') {
+                        statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
+                        statusEl.style.color = "#ff4757";
+                        return;
+                    }
+
+                    let autoEndTime = new Date();
+                    if (hours > 0 || mins > 0) {
+                        autoEndTime.setHours(autoEndTime.getHours() + hours);
+                        autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
+                    } else {
+                        autoEndTime.setDate(autoEndTime.getDate() + 1);
+                    }
+
+                    statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
+                    statusEl.style.color = "var(--summer-green)";
+
+                    setTimeout(() => {
+                        closeModal('ocrPasteModal');
+                        openRentModal(matchedCar.id, autoEndTime);
+                    }, 800);
+
+                } catch (err) {
+                    console.error(err);
+                    statusEl.innerText = "❌ เกิดข้อผิดพลาดในการประมวลผลรูปภาพ";
+                    statusEl.style.color = "#ff4757";
                 }
-            }
-
-            if (!matchedCar) {
-                statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่ระบบอ่านได้: ${text.substring(0, 30).replace(/\n/g, ' ')}...)</span>`;
-                statusEl.style.color = "#ff4757";
-                return;
-            }
-
-            if (matchedCar.status === 'busy') {
-                statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
-                statusEl.style.color = "#ff4757";
-                return;
-            }
-
-            let autoEndTime = new Date();
-            if (hours > 0 || mins > 0) {
-                autoEndTime.setHours(autoEndTime.getHours() + hours);
-                autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
-            } else {
-                autoEndTime.setDate(autoEndTime.getDate() + 1);
-            }
-
-            statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
-            statusEl.style.color = "var(--summer-green)";
-
-            setTimeout(() => {
-                closeModal('ocrPasteModal');
-                openRentModal(matchedCar.id, autoEndTime);
-            }, 800);
-
-        } catch (err) {
-            console.error(err);
-            statusEl.innerText = "❌ เกิดข้อผิดพลาดในการประมวลผลรูปภาพ";
-            statusEl.style.color = "#ff4757";
-        }
+            }, 'image/jpeg');
+        };
+        img.src = URL.createObjectURL(file);
     }
 
     function setOwnerFilter(filter) {
