@@ -182,6 +182,7 @@
     </h1>
     <div class="tab-menu">
         <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
+        <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
 </header>
 
@@ -195,19 +196,20 @@
         
         <div class="view-filters">
             <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปื</button>
-            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถaxis</button>
+            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
+            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
             
             <div style="border-left: 2px solid #333; height: 30px; margin: 0 10px;"></div>
             
             <button class="view-btn active" id="btnFilterAvailableAll" onclick="setAvailableFilter('all')">ดูรถทั้งหมด</button>
             <button class="view-btn" id="btnFilterAvailableOnly" onclick="setAvailableFilter('available')">เฉพาะรถว่าง 🟢</button>
 
-            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา) ถ้ายังไม่ล็อคอิน -->
+            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา / แคปรูป) ถ้ายังไม่ล็อคอิน -->
             <div id="adminActionButtons" style="margin-left: auto; display: none; gap: 10px;">
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
                 </button>
+                <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()" style="margin: 0;">📸 แคปรูปรถที่เหลือ</button>
             </div>
         </div>
 
@@ -235,6 +237,16 @@
                 <button class="btn btn-edit" style="background: transparent; color: #ff4757; border-color: #ff4757;" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
             </div>
 
+            <!-- โซน 0: ตั้งค่าข้อความหน้าเว็บ -->
+            <div class="controls" style="margin-bottom: 20px;">
+                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">⚙️ ตั้งค่าหัวเว็บ</h3>
+                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center;">
+                    <input type="text" id="settingSiteTitle" placeholder="ชื่อเว็บหลัก (เช่น 🌴 SUMMER CITY)" style="flex:1;">
+                    <input type="text" id="settingSiteSubtitle" placeholder="คำอธิบาย (เช่น | ปล่อยเช่ารถ)" style="flex:1;">
+                    <button class="btn btn-add" style="flex: none;" onclick="saveSiteSettings()">💾 บันทึก</button>
+                </div>
+            </div>
+
             <!-- โซน 1: แอดรถ -->
             <div class="controls">
                 <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">+ เพิ่มรถใหม่เข้าระบบ</h3>
@@ -247,8 +259,8 @@
                     <input type="text" id="newCarImg" placeholder="URL รูปภาพรถ (Link)" style="flex:2;">
                     
                     <select id="newCarOwnerType" style="flex:1;">
-                        <option value="owner">รถaxis</option>
-                        <option value="kapi">รถกะปื</option>
+                        <option value="owner">รถของเจ้าของ</option>
+                        <option value="kapi">รถของกะปิ</option>
                     </select>
                     <input type="text" id="newCarOwnerName" placeholder="ชื่อเจ้าของรถ (เช่น พี่เอ)" style="flex:1;">
 
@@ -289,6 +301,17 @@
                 <button class="btn btn-delete" style="flex: 1; background: linear-gradient(135deg, #900, #400);" onclick="clearCarsWithPIN()">🚗 ล้างข้อมูลรถทั้งหมด</button>
             </div>
         </div>
+    </div>
+
+    <!-- หน้า 3: สรุปผล -->
+    <div id="dashboardPage" class="page">
+        <div class="view-filters" style="margin-bottom: 30px;">
+            <button class="view-btn active" id="btnDashFilterAll" onclick="setDashFilter('all')">ดูรวมทั้งหมด</button>
+            <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดกะปิ</button>
+            <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดเจ้าของ</button>
+        </div>
+
+        <div id="overallDashboardContainer"></div>
     </div>
 </div>
 
@@ -334,9 +357,9 @@
         <div class="form-group">
             <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
             <select id="rentSplitType">
-                <option value="kapi">เข้ากะปื 100%</option>
+                <option value="kapi">เข้ากะปิ 100%</option>
                 <option value="owner">เข้าเจ้าของรถ 100%</option>
-                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปื)</option>
+                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปิ)</option>
             </select>
         </div>
 
@@ -378,8 +401,8 @@
             <div class="form-group" style="flex:1;">
                 <label>ประเภทเจ้าของ</label>
                 <select id="editCarOwnerType">
-                    <option value="owner">รถaxis</option>
-                    <option value="kapi">รถกะปื</option>
+                    <option value="owner">รถของเจ้าของ</option>
+                    <option value="kapi">รถของกะปิ</option>
                 </select>
             </div>
             <div class="form-group" style="flex:1;">
@@ -453,6 +476,7 @@
     let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
     let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
+    let siteSettings = JSON.parse(localStorage.getItem('summerSettings')) || { title: "🌴 SUMMER CITY", subtitle: "| ปล่อยเช่ารถ" };
 
     let currentOwnerFilter = 'all'; 
     let currentAvailableFilter = 'all'; 
@@ -466,6 +490,23 @@
         ownerName: c.ownerName || '',
         isHidden: c.isHidden || false
     }));
+
+    function applySiteSettings() {
+        document.getElementById('displaySiteTitle').innerText = siteSettings.title;
+        document.getElementById('displaySiteSubtitle').innerText = siteSettings.subtitle;
+        if(document.getElementById('settingSiteTitle')) {
+            document.getElementById('settingSiteTitle').value = siteSettings.title;
+            document.getElementById('settingSiteSubtitle').value = siteSettings.subtitle;
+        }
+    }
+
+    function saveSiteSettings() {
+        siteSettings.title = document.getElementById('settingSiteTitle').value;
+        siteSettings.subtitle = document.getElementById('settingSiteSubtitle').value;
+        localStorage.setItem('summerSettings', JSON.stringify(siteSettings));
+        applySiteSettings();
+        alert("✅ บันทึกข้อความหน้าเว็บเรียบร้อย!");
+    }
 
     function formatNumber(input) {
         let value = input.value.replace(/,/g, '').replace(/\D/g, '');
@@ -501,7 +542,7 @@
         if (event && event.target && event.target.classList.contains('tab-btn')) {
             event.target.classList.add('active');
         }
-        
+        if(pageId === 'dashboard') updateDashboard();
         if(pageId === 'manage') {
             if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                 document.getElementById('loginScreen').style.display = 'none';
@@ -546,3 +587,5 @@
             rentalHistory = [];
             saveDataLocally();
             alert("✅ ล้างประวัติรายได้ทั้งหมดเรียบร้อยแล้ว!");
+            if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
+  
