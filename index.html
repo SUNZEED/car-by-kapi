@@ -135,11 +135,6 @@
         .copy-btn { cursor: pointer; font-size: 14px; margin-left: 8px; opacity: 0.6; transition: 0.2s; }
         .copy-btn:hover { opacity: 1; transform: scale(1.1); }
 
-        .dashboard-section {
-            background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px;
-            border: 1px solid var(--border-color); box-shadow: 0 8px 25px rgba(0,0,0,0.3);
-        }
-        .dashboard-section h4 { margin-top: 0; color: var(--summer-orange); font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; font-weight: 800; }
         table { width: 100%; background: transparent; border-collapse: collapse; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 15px; color: #d0d0d0;}
         th { background: rgba(0,0,0,0.3); color: #888; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
@@ -182,7 +177,6 @@
     </h1>
     <div class="tab-menu">
         <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
-        <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
 </header>
 
@@ -196,20 +190,19 @@
         
         <div class="view-filters">
             <button class="view-btn active" id="btnFilterAll" onclick="setOwnerFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปิ</button>
-            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถเจ้าของ</button>
+            <button class="view-btn" id="btnFilterKapi" onclick="setOwnerFilter('kapi')">ดูเฉพาะรถกะปื</button>
+            <button class="view-btn" id="btnFilterOwner" onclick="setOwnerFilter('owner')">ดูเฉพาะรถaxis</button>
             
             <div style="border-left: 2px solid #333; height: 30px; margin: 0 10px;"></div>
             
             <button class="view-btn active" id="btnFilterAvailableAll" onclick="setAvailableFilter('all')">ดูรถทั้งหมด</button>
             <button class="view-btn" id="btnFilterAvailableOnly" onclick="setAvailableFilter('available')">เฉพาะรถว่าง 🟢</button>
 
-            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา / แคปรูป) ถ้ายังไม่ล็อคอิน -->
+            <!-- ซ่อนเมนูจัดการ (สแกนสัญญา) ถ้ายังไม่ล็อคอิน -->
             <div id="adminActionButtons" style="margin-left: auto; display: none; gap: 10px;">
                 <button class="btn btn-add" style="background: linear-gradient(135deg, #8e44ad, #9b59b6); padding: 12px 18px; margin: 0; font-size: 16px;" onclick="openOcrPasteModal()">
                     📄✨ สแกนสัญญา (Ctrl+V)
                 </button>
-                <button class="btn btn-add" id="captureBtn" onclick="captureAvailableCars()" style="margin: 0;">📸 แคปรูปรถที่เหลือ</button>
             </div>
         </div>
 
@@ -237,16 +230,6 @@
                 <button class="btn btn-edit" style="background: transparent; color: #ff4757; border-color: #ff4757;" onclick="logoutAdmin()">🚪 ออกจากระบบ</button>
             </div>
 
-            <!-- โซน 0: ตั้งค่าข้อความหน้าเว็บ -->
-            <div class="controls" style="margin-bottom: 20px;">
-                <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">⚙️ ตั้งค่าหัวเว็บ</h3>
-                <div style="display:flex; width:100%; gap:15px; flex-wrap:wrap; align-items:center;">
-                    <input type="text" id="settingSiteTitle" placeholder="ชื่อเว็บหลัก (เช่น 🌴 SUMMER CITY)" style="flex:1;">
-                    <input type="text" id="settingSiteSubtitle" placeholder="คำอธิบาย (เช่น | ปล่อยเช่ารถ)" style="flex:1;">
-                    <button class="btn btn-add" style="flex: none;" onclick="saveSiteSettings()">💾 บันทึก</button>
-                </div>
-            </div>
-
             <!-- โซน 1: แอดรถ -->
             <div class="controls">
                 <h3 style="margin: 0; color: #fff; width: 100%; font-weight: 800;">+ เพิ่มรถใหม่เข้าระบบ</h3>
@@ -259,8 +242,8 @@
                     <input type="text" id="newCarImg" placeholder="URL รูปภาพรถ (Link)" style="flex:2;">
                     
                     <select id="newCarOwnerType" style="flex:1;">
-                        <option value="owner">รถของเจ้าของ</option>
-                        <option value="kapi">รถของกะปิ</option>
+                        <option value="owner">รถaxis</option>
+                        <option value="kapi">รถกะปื</option>
                     </select>
                     <input type="text" id="newCarOwnerName" placeholder="ชื่อเจ้าของรถ (เช่น พี่เอ)" style="flex:1;">
 
@@ -301,17 +284,6 @@
                 <button class="btn btn-delete" style="flex: 1; background: linear-gradient(135deg, #900, #400);" onclick="clearCarsWithPIN()">🚗 ล้างข้อมูลรถทั้งหมด</button>
             </div>
         </div>
-    </div>
-
-    <!-- หน้า 3: สรุปผล -->
-    <div id="dashboardPage" class="page">
-        <div class="view-filters" style="margin-bottom: 30px;">
-            <button class="view-btn active" id="btnDashFilterAll" onclick="setDashFilter('all')">ดูรวมทั้งหมด</button>
-            <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดกะปิ</button>
-            <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดเจ้าของ</button>
-        </div>
-
-        <div id="overallDashboardContainer"></div>
     </div>
 </div>
 
@@ -357,9 +329,9 @@
         <div class="form-group">
             <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
             <select id="rentSplitType">
-                <option value="kapi">เข้ากะปิ 100%</option>
+                <option value="kapi">เข้ากะปื 100%</option>
                 <option value="owner">เข้าเจ้าของรถ 100%</option>
-                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปิ)</option>
+                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปื)</option>
             </select>
         </div>
 
@@ -401,8 +373,8 @@
             <div class="form-group" style="flex:1;">
                 <label>ประเภทเจ้าของ</label>
                 <select id="editCarOwnerType">
-                    <option value="owner">รถของเจ้าของ</option>
-                    <option value="kapi">รถของกะปิ</option>
+                    <option value="owner">รถaxis</option>
+                    <option value="kapi">รถกะปื</option>
                 </select>
             </div>
             <div class="form-group" style="flex:1;">
@@ -435,9 +407,9 @@
         const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
         const adminControls = document.getElementById('adminActionButtons');
         if (adminControls) {
-            adminControls.style.display = isLoggedIn ? 'flex' : 'none'; // ซ่อนปุ่มด้านบนถ้าไม่ล็อคอิน
+            adminControls.style.display = isLoggedIn ? 'flex' : 'none';
         }
-        renderCars(); // รีโหลดการแสดงผลรถ เพื่อซ่อน/แสดงปุ่ม "ลงทะเบียนสัญญา"
+        renderCars();
     }
     
     // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ ---
@@ -476,11 +448,9 @@
     let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
     let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
-    let siteSettings = JSON.parse(localStorage.getItem('summerSettings')) || { title: "🌴 SUMMER CITY", subtitle: "| ปล่อยเช่ารถ" };
 
     let currentOwnerFilter = 'all'; 
     let currentAvailableFilter = 'all'; 
-    let currentDashFilter = 'all';
 
     cars = cars.map(c => ({
         ...c,
@@ -490,23 +460,6 @@
         ownerName: c.ownerName || '',
         isHidden: c.isHidden || false
     }));
-
-    function applySiteSettings() {
-        document.getElementById('displaySiteTitle').innerText = siteSettings.title;
-        document.getElementById('displaySiteSubtitle').innerText = siteSettings.subtitle;
-        if(document.getElementById('settingSiteTitle')) {
-            document.getElementById('settingSiteTitle').value = siteSettings.title;
-            document.getElementById('settingSiteSubtitle').value = siteSettings.subtitle;
-        }
-    }
-
-    function saveSiteSettings() {
-        siteSettings.title = document.getElementById('settingSiteTitle').value;
-        siteSettings.subtitle = document.getElementById('settingSiteSubtitle').value;
-        localStorage.setItem('summerSettings', JSON.stringify(siteSettings));
-        applySiteSettings();
-        alert("✅ บันทึกข้อความหน้าเว็บเรียบร้อย!");
-    }
 
     function formatNumber(input) {
         let value = input.value.replace(/,/g, '').replace(/\D/g, '');
@@ -542,7 +495,6 @@
         if (event && event.target && event.target.classList.contains('tab-btn')) {
             event.target.classList.add('active');
         }
-        if(pageId === 'dashboard') updateDashboard();
         if(pageId === 'manage') {
             if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                 document.getElementById('loginScreen').style.display = 'none';
@@ -559,7 +511,7 @@
     function checkLogin() {
         if (document.getElementById('adminUser').value === ADMIN_USER && document.getElementById('adminPass').value === ADMIN_PASS) {
             sessionStorage.setItem('isAdminLoggedIn', 'true');
-            updateAuthUI(); // อัปเดตให้โชว์ปุ่มทั้งหมด
+            updateAuthUI();
             switchPage('manage');
         } else {
             alert("❌ ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง!");
@@ -568,7 +520,7 @@
     
     function logoutAdmin() {
         sessionStorage.removeItem('isAdminLoggedIn');
-        updateAuthUI(); // ซ่อนปุ่มทั้งหมดทันทีที่ออก
+        updateAuthUI();
         switchPage('cars');
         alert("🚪 ออกจากระบบเรียบร้อยแล้ว (คุณอยู่ในโหมดดูได้อย่างเดียว)");
     }
@@ -587,7 +539,6 @@
             rentalHistory = [];
             saveDataLocally();
             alert("✅ ล้างประวัติรายได้ทั้งหมดเรียบร้อยแล้ว!");
-            if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
         });
     }
 
@@ -736,7 +687,6 @@
             let hours = hMatch ? parseInt(hMatch[1]) : 0;
             let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
-            // Normalize O->0, I->1 (รองรับภาษาไทย)
             let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
             let matchedCar = null;
             let minDistance = 999;
@@ -849,24 +799,11 @@
         renderCars();
     }
 
-    function setDashFilter(filter) {
-        currentDashFilter = filter;
-        document.getElementById('btnDashFilterAll').classList.remove('active');
-        document.getElementById('btnDashFilterKapi').classList.remove('active');
-        document.getElementById('btnDashFilterOwner').classList.remove('active');
-
-        if(filter === 'all') document.getElementById('btnDashFilterAll').classList.add('active');
-        if(filter === 'kapi') document.getElementById('btnDashFilterKapi').classList.add('active');
-        if(filter === 'owner') document.getElementById('btnDashFilterOwner').classList.add('active');
-
-        updateDashboard();
-    }
-
     function renderCars() {
         const grid = document.getElementById('carGrid');
         const searchTerm = document.getElementById('searchInput').value.toLowerCase();
         const catFilter = document.getElementById('categoryFilter').value;
-        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true'; // เช็คการล็อคอินที่นี่ด้วย
+        const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
         grid.innerHTML = '';
 
         let filtered = cars.filter(c => 
@@ -890,7 +827,7 @@
             const isBusy = car.status === 'busy';
             const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
             
-            let ownerText = car.ownerType === 'kapi' ? 'รถของกะปิ' : 'รถของเจ้าของ';
+            let ownerText = car.ownerType === 'kapi' ? 'รถกะปื' : 'รถaxis';
             if (car.ownerName && car.ownerName.trim() !== '') {
                 ownerText += ` (${car.ownerName})`;
             }
@@ -923,7 +860,6 @@
                     </div></div>`; 
             } else {
                 html += `</div>`;
-                // เงื่อนไข: ถ้าล็อคอินแล้ว ถึงจะโชว์ปุ่ม "ลงทะเบียนสัญญา" ให้กด
                 if (isLoggedIn) {
                     html += `
                         <div class="card-actions">
@@ -1166,7 +1102,7 @@
         sortedCars.forEach(car => {
             const statusText = car.status === 'busy' ? '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>' : '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
             
-            let ownerText = car.ownerType === 'kapi' ? 'กะปิ' : 'เจ้าของ';
+            let ownerText = car.ownerType === 'kapi' ? 'กะปื' : 'axis';
             if (car.ownerName && car.ownerName.trim() !== '') ownerText += ` (${car.ownerName})`;
             const ownerBadge = car.ownerType === 'kapi' ? `<span class="tag-kapi">${ownerText}</span>` : `<span class="tag-owner">${ownerText}</span>`;
             
@@ -1243,198 +1179,9 @@
         }
     }
 
-    function updateDashboard() {
-        const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
-
-        let totalRentals = 0;
-        let totalIncome = 0;
-        const carGroups = {};
-
-        const now = new Date();
-        const day = now.getDay();
-        const diff = now.getDate() - day + (day === 0 ? -6 : 1);
-        
-        const thisMonday = new Date(now);
-        thisMonday.setDate(diff);
-        thisMonday.setHours(0,0,0,0);
-
-        const thisSunday = new Date(thisMonday);
-        thisSunday.setDate(thisSunday.getDate() + 6);
-        thisSunday.setHours(23,59,59,999);
-
-        const lastMonday = new Date(thisMonday);
-        lastMonday.setDate(lastMonday.getDate() - 7);
-
-        const lastSunday = new Date(thisMonday);
-        lastSunday.setDate(lastSunday.getDate() - 1);
-        lastSunday.setHours(23,59,59,999);
-
-        let thisWeekRentals = 0; let thisWeekIncome = 0;
-        let lastWeekRentals = 0; let lastWeekIncome = 0;
-
-        filteredHistory.forEach(r => {
-            if(!carGroups[r.plate]) {
-                carGroups[r.plate] = { carName: r.carName, count: 0, income: 0, logs: [] };
-            }
-            
-            let incomeToAdd = 0;
-            if (currentDashFilter === 'kapi') incomeToAdd = r.kapiIncome || 0;
-            else if (currentDashFilter === 'owner') incomeToAdd = r.ownerIncome || 0;
-            else incomeToAdd = r.price || 0;
-
-            carGroups[r.plate].count += 1;
-            carGroups[r.plate].income += incomeToAdd;
-            
-            const rTime = r.dateTimestamp;
-            if (rTime >= thisMonday.getTime() && rTime <= thisSunday.getTime()) {
-                thisWeekRentals++;
-                thisWeekIncome += incomeToAdd;
-            } else if (rTime >= lastMonday.getTime() && rTime <= lastSunday.getTime()) {
-                lastWeekRentals++;
-                lastWeekIncome += incomeToAdd;
-            }
-
-            const d = new Date(r.dateTimestamp);
-            const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()} เวลา ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')} น.`;
-            
-            carGroups[r.plate].logs.push({ date: dateStr, income: incomeToAdd });
-
-            totalRentals += 1;
-            totalIncome += incomeToAdd;
-        });
-
-        let html = `
-            <div style="display: flex; gap: 20px; margin-bottom: 20px;">
-                <div style="flex: 1; background: rgba(0, 210, 255, 0.1); border: 1px solid var(--summer-blue); padding: 20px; border-radius: 12px; text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #fff;">📉 สัปดาห์ที่แล้ว</h4>
-                    <div style="font-size: 20px; font-weight: 800; color: var(--summer-blue);">
-                        ${lastWeekRentals} ครั้ง<br>${lastWeekIncome.toLocaleString()} sm
-                    </div>
-                </div>
-                <div style="flex: 1; background: rgba(0, 230, 118, 0.1); border: 1px solid var(--summer-green); padding: 20px; border-radius: 12px; text-align: center;">
-                    <h4 style="margin: 0 0 10px 0; color: #fff;">📈 สัปดาห์นี้</h4>
-                    <div style="font-size: 20px; font-weight: 800; color: var(--summer-green);">
-                        ${thisWeekRentals} ครั้ง<br>${thisWeekIncome.toLocaleString()} sm
-                    </div>
-                </div>
-            </div>
-
-            <div style="background: rgba(255, 94, 58, 0.1); border: 1px solid var(--summer-orange); padding: 20px; border-radius: 12px; margin-bottom: 30px; text-align: center;">
-                <h3 style="margin: 0; color: #fff;">📊 สรุปรวมยอดการเช่าทั้งหมด (ตลอดกาล)</h3>
-                <div style="font-size: 24px; font-weight: 800; color: var(--summer-orange); margin-top: 10px;">
-                    ปล่อยเช่ารวม: ${totalRentals} ครั้ง <br>
-                    รายได้รวม: ${totalIncome.toLocaleString()} sm
-                </div>
-            </div>
-        `;
-
-        if(Object.keys(carGroups).length === 0) {
-            html += '<p style="color:#888; text-align: center; font-size: 16px;">ยังไม่มีประวัติการเช่าในหมวดหมู่นี้ครับ</p>';
-        } else {
-            for(let plate in carGroups) {
-                const group = carGroups[plate];
-                html += `
-                    <div class="dashboard-section">
-                        <h4 style="color: var(--summer-blue); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px;">
-                            <span>🚗 ${group.carName} (ทะเบียน: ${plate})</span>
-                            <span style="font-size: 14px; background: rgba(0, 210, 255, 0.1); padding: 6px 12px; border-radius: 8px;">เช่าไปแล้ว ${group.count} ครั้ง</span>
-                        </h4>
-                        <p style="color: var(--summer-orange); font-weight: bold; font-size: 16px;">รายได้ที่สร้างให้ร้าน: ${group.income.toLocaleString()} sm</p>
-                        
-                        <table style="margin-top: 10px; width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr>
-                                    <th style="padding: 10px; border-bottom: 1px solid #333; color: #888;">วันที่ และ เวลาที่ทำสัญญา</th>
-                                    <th style="padding: 10px; border-bottom: 1px solid #333; text-align: right; color: #888;">ยอดเงิน (sm)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${group.logs.map(log => `
-                                    <tr>
-                                        <td style="padding: 10px; border-bottom: 1px solid #222; color: #ccc;">🕒 ${log.date}</td>
-                                        <td style="padding: 10px; border-bottom: 1px solid #222; text-align: right; color: #fff; font-weight: 600;">+${log.income.toLocaleString()}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }
-        }
-
-        document.getElementById('overallDashboardContainer').innerHTML = html;
-    }
-
-    async function captureAvailableCars() {
-        const availableCars = cars.filter(c => c.status === 'available' && !c.isHidden);
-        if(availableCars.length === 0) return alert("ไม่มีรถว่างสำหรับแคปรูปภาพครับ!");
-
-        const captureBtn = document.getElementById('captureBtn');
-        const originalBtnText = captureBtn.innerText;
-        captureBtn.innerText = "⏳ กำลังดึงรูปรถ...";
-        captureBtn.style.pointerEvents = "none";
-
-        const target = document.createElement('div');
-        target.style.position = "absolute";
-        target.style.left = "-9999px";
-        target.style.top = "0";
-        target.style.width = "1000px";
-        target.style.backgroundColor = "#0B0B0E";
-        target.style.padding = "40px";
-        target.style.display = "grid";
-        target.style.gridTemplateColumns = "repeat(3, 1fr)";
-        target.style.gap = "20px";
-        document.body.appendChild(target);
-
-        async function toDataURL(url) {
-            try {
-                const response = await fetch(url);
-                const blob = await response.blob();
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.readAsDataURL(blob);
-                });
-            } catch (e) { return 'https://via.placeholder.com/600x400?text=Load+Failed'; }
-        }
-
-        let htmlContent = "";
-        for (const car of availableCars) {
-            const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
-            const base64Img = await toDataURL(imgUrl);
-            htmlContent += `
-                <div style="background: #16161C; border-radius: 12px; overflow: hidden; border: 1px solid #262630;">
-                    <img src="${base64Img}" style="width: 100%; height: 200px; object-fit: cover; display: block;">
-                    <div style="padding: 15px; font-size: 20px; font-weight: 800; color: #fff; text-align: center; font-family: 'Kanit', sans-serif;">
-                        ${car.name} ${car.isTurbo ? '🚀' : ''}
-                    </div>
-                </div>
-            `;
-        }
-        target.innerHTML = htmlContent;
-
-        captureBtn.innerText = "📸 กำลังประมวลผล...";
-
-        setTimeout(() => {
-            html2canvas(target, { 
-                backgroundColor: '#0B0B0E', 
-                scale: 2 
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = `Available_Cars_${Date.now()}.png`;
-                link.href = canvas.toDataURL("image/png");
-                link.click();
-                target.remove();
-                captureBtn.innerText = originalBtnText;
-                captureBtn.style.pointerEvents = "auto";
-            });
-        }, 500);
-    }
-
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     // Init
-    applySiteSettings();
     renderCategoryDropdowns();
 </script>
 
