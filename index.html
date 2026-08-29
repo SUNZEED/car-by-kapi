@@ -672,18 +672,6 @@
         }
     });
 
-    function getLevenshteinDistance(a, b) {
-        const tmp = [];
-        for (let i = 0; i <= a.length; i++) tmp[i] = [i];
-        for (let j = 0; j <= b.length; j++) tmp[0][j] = j;
-        for (let i = 1; i <= a.length; i++) {
-            for (let j = 1; j <= b.length; j++) {
-                tmp[i][j] = Math.min(tmp[i - 1][j] + 1, tmp[i][j - 1] + 1, tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-            }
-        }
-        return tmp[a.length][b.length];
-    }
-
     async function processPastedImage(file) {
         const statusEl = document.getElementById('ocrPasteStatus');
         const pasteArea = document.getElementById('pasteArea');
@@ -710,56 +698,40 @@
 
             let matchedCar = null;
 
-            // 1. ค้นหาแบบตรงตัว (Exact Match) เพื่อความชัวร์แบบ 100%
-            let lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+            // เรียงลำดับรถจากทะเบียนยาวไปสั้น ป้องกันทะเบียนสั้นไปซ้อนในทะเบียนยาว
             let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
 
+            // 1. ค้นหาแบบเป๊ะๆ (เว้นวรรคตรงกัน)
             for(let car of sortedCars) {
-                let cPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                if (cPlate.length === 0) continue;
-
-                for (let line of lines) {
-                    let cLine = line.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                    if (cLine.includes(cPlate)) {
-                        matchedCar = car;
-                        break;
-                    }
+                if (text.includes(car.plate.toUpperCase())) {
+                    matchedCar = car; break;
                 }
-                if (matchedCar) break;
             }
 
-            // 2. ค้นหาแบบยืดหยุ่น (Fuzzy Match) โดยเช็คเป็น "คำต่อคำ" ป้องกันการลากเลขวันที่มามั่วผสม
+            // 2. ค้นหาแบบตัดการเว้นวรรคทิ้งทั้งหมด
             if (!matchedCar) {
-                let tokens = text.split(/\s+/).filter(t => t.length > 0);
-                let bigrams = [];
-                for(let i=0; i<tokens.length-1; i++) bigrams.push(tokens[i] + tokens[i+1]);
-                let trigrams = [];
-                for(let i=0; i<tokens.length-2; i++) trigrams.push(tokens[i] + tokens[i+1] + tokens[i+2]);
-                
-                let allTokens = [...tokens, ...bigrams, ...trigrams];
-                let minDistance = 3; // ระยะยอมรับคำเพี้ยน (ห้ามเกิน 2 ตัวอักษร)
-
+                let textNoSpace = text.replace(/\s+/g, '');
                 for(let car of sortedCars) {
-                    let cPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                    if(cPlate.length < 3) continue;
+                    let plateNoSpace = car.plate.toUpperCase().replace(/\s+/g, '');
+                    if (textNoSpace.includes(plateNoSpace)) {
+                        matchedCar = car; break;
+                    }
+                }
+            }
 
-                    for(let token of allTokens) {
-                        let cToken = token.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                        
-                        // เทียบเฉพาะคำที่มีความยาวไล่เลี่ยกัน (ความยาวต่างกันไม่เกิน 2 ตัวอักษร)
-                        if (Math.abs(cPlate.length - cToken.length) <= 2) {
-                            const dist = getLevenshteinDistance(cPlate, cToken);
-                            if (dist < minDistance) {
-                                minDistance = dist;
-                                matchedCar = car;
-                            }
-                        }
+            // 3. ค้นหาแบบแปลง O เป็น 0, I เป็น 1 (เผื่อ AI อ่านตัวเลขเป็นตัวอักษร หรืออ่านสัญลักษณ์พิเศษติดมา)
+            if (!matchedCar) {
+                let normText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
+                for(let car of sortedCars) {
+                    let normPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                    if (normPlate.length > 0 && normText.includes(normPlate)) {
+                        matchedCar = car; break;
                     }
                 }
             }
 
             if (!matchedCar) {
-                statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (AI อ่านไม่ชัดเจน หรือไม่มีรถในสต็อก)`;
+                statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (อ่านข้อมูลได้ไม่ชัดเจน หรือไม่มีรถในสต็อก)`;
                 statusEl.style.color = "#ff4757";
                 return;
             }
