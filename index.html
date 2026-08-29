@@ -1,8 +1,3 @@
-**จัดให้ตามคำขอครับ!** นี่คือโค้ดฉบับสมบูรณ์ที่ผ่านการแก้ไขเรียบร้อยแล้ว (ลบหน้าสรุปรายงาน, ลบตั้งค่าหัวเว็บ, ลบปุ่มแคปรูป, และเปลี่ยนชื่อประเภทรถเป็น รถaxis/รถกะปื)
-
-คุณสามารถคัดลอกโค้ดทั้งหมดในกล่องด้านล่างนี้ ไปวางทับไฟล์เดิมตั้งแต่บรรทัดแรกสุดจนถึงบรรทัดสุดท้าย แล้วใช้งานได้เลยทันทีครับ:
-
-```html
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -140,6 +135,12 @@
         .copy-btn { cursor: pointer; font-size: 14px; margin-left: 8px; opacity: 0.6; transition: 0.2s; }
         .copy-btn:hover { opacity: 1; transform: scale(1.1); }
 
+        .dashboard-section {
+            background: var(--card-bg); padding: 25px; border-radius: 12px; margin-bottom: 25px;
+            border: 1px solid var(--border-color); box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .dashboard-section h4 { margin-top: 0; color: var(--summer-orange); font-size: 18px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; font-weight: 800; }
+
         table { width: 100%; background: transparent; border-collapse: collapse; }
         th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 15px; color: #d0d0d0;}
         th { background: rgba(0,0,0,0.3); color: #888; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 1px;}
@@ -182,6 +183,7 @@
     </h1>
     <div class="tab-menu">
         <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
+        <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
 </header>
 
@@ -289,6 +291,17 @@
                 <button class="btn btn-delete" style="flex: 1; background: linear-gradient(135deg, #900, #400);" onclick="clearCarsWithPIN()">🚗 ล้างข้อมูลรถทั้งหมด</button>
             </div>
         </div>
+    </div>
+    
+    <!-- หน้า 3: สรุปผล -->
+    <div id="dashboardPage" class="page">
+        <div class="view-filters" style="margin-bottom: 30px;">
+            <button class="view-btn active" id="btnDashFilterAll" onclick="setDashFilter('all')">ดูรวมทั้งหมด</button>
+            <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดรถกะปื</button>
+            <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดรถaxis</button>
+        </div>
+
+        <div id="overallDashboardContainer"></div>
     </div>
 </div>
 
@@ -456,6 +469,7 @@
 
     let currentOwnerFilter = 'all'; 
     let currentAvailableFilter = 'all'; 
+    let currentDashFilter = 'all'; 
 
     cars = cars.map(c => ({
         ...c,
@@ -500,6 +514,7 @@
         if (event && event.target && event.target.classList.contains('tab-btn')) {
             event.target.classList.add('active');
         }
+        if(pageId === 'dashboard') updateDashboard();
         if(pageId === 'manage') {
             if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                 document.getElementById('loginScreen').style.display = 'none';
@@ -544,6 +559,7 @@
             rentalHistory = [];
             saveDataLocally();
             alert("✅ ล้างประวัติรายได้ทั้งหมดเรียบร้อยแล้ว!");
+            if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
         });
     }
 
@@ -694,37 +710,21 @@
 
             let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
             let matchedCar = null;
-            let minDistance = 999;
 
-            for(let car of cars) {
+            // 1. ให้ความสำคัญกับการตรงกันแบบเป๊ะๆ ของป้ายทะเบียนก่อน (เรียงจากทะเบียนยาวสุด)
+            let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
+            for(let car of sortedCars) {
                 const cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                
-                if (cleanText.includes(cleanPlate)) {
+                if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
                     matchedCar = car;
                     break;
                 }
-                
-                if (cleanText.length >= cleanPlate.length) {
-                    for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
-                        const sub = cleanText.substring(i, i + cleanPlate.length);
-                        const dist = getLevenshteinDistance(sub, cleanPlate);
-                        if (dist <= 2 && dist < minDistance) {
-                            minDistance = dist;
-                            matchedCar = car;
-                        }
-                    }
-                } else {
-                    const dist = getLevenshteinDistance(cleanText, cleanPlate);
-                    if (dist <= 2 && dist < minDistance) {
-                        minDistance = dist;
-                        matchedCar = car;
-                    }
-                }
             }
 
+            // 2. ถ้าไม่เจอกันแบบตรงเป๊ะ ให้ดึงเฉพาะตัวเลขมาเช็ค (กัน AI อ่านตัวอักษรเพี้ยน)
             if (!matchedCar) {
                 const numberText = cleanText.replace(/[^0-9]/g, ''); 
-                if (numberText.length > 0) {
+                if (numberText.length >= 2) {
                     let possibleCars = cars.filter(c => {
                         const numberPlate = c.plate.replace(/[^0-9]/g, '');
                         return numberPlate.length >= 2 && numberText.includes(numberPlate);
@@ -732,17 +732,39 @@
 
                     if (possibleCars.length > 0) {
                         possibleCars.sort((a, b) => {
-                            if (a.status === 'available' && b.status === 'busy') return -1;
-                            if (b.status === 'available' && a.status === 'busy') return 1;
-                            const aNum = a.plate.replace(/[^0-9]/g, '');
-                            const bNum = b.plate.replace(/[^0-9]/g, '');
-                            if (bNum.length !== aNum.length) return bNum.length - aNum.length;
-                            const aChars = a.plate.replace(/[^A-Zก-ฮ]/g, '');
-                            const bChars = b.plate.replace(/[^A-Zก-ฮ]/g, '');
-                            const countMatches = (chars) => chars.split('').filter(char => cleanText.includes(char)).length;
+                            const aChars = a.plate.replace(/[^A-Zก-ฮ]/g, '').toUpperCase();
+                            const bChars = b.plate.replace(/[^A-Zก-ฮ]/g, '').toUpperCase();
+                            const cleanLetters = text.replace(/[^A-Zก-ฮ]/g, '').toUpperCase();
+                            
+                            const countMatches = (chars) => {
+                                if(chars.length === 0) return 0;
+                                let count = 0;
+                                chars.split('').forEach(char => {
+                                    if(cleanLetters.includes(char)) count++;
+                                });
+                                return count;
+                            };
                             return countMatches(bChars) - countMatches(aChars);
                         });
                         matchedCar = possibleCars[0];
+                    }
+                }
+            }
+
+            // 3. ป้องกันหลุดขั้นสุดท้ายด้วย Levenshtein (บีบความแม่นยำให้ยอมเพี้ยนได้แค่ 1 ตัว)
+            if (!matchedCar) {
+                let minDistance = 2; 
+                for(let car of cars) {
+                    const cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                    if (cleanPlate.length >= 3 && cleanText.length >= cleanPlate.length) {
+                        for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
+                            const sub = cleanText.substring(i, i + cleanPlate.length);
+                            const dist = getLevenshteinDistance(sub, cleanPlate);
+                            if (dist < minDistance) {
+                                minDistance = dist;
+                                matchedCar = car;
+                            }
+                        }
                     }
                 }
             }
@@ -802,6 +824,19 @@
         if(filter === 'all') document.getElementById('btnFilterAvailableAll').classList.add('active');
         if(filter === 'available') document.getElementById('btnFilterAvailableOnly').classList.add('active');
         renderCars();
+    }
+    
+    function setDashFilter(filter) {
+        currentDashFilter = filter;
+        document.getElementById('btnDashFilterAll').classList.remove('active');
+        document.getElementById('btnDashFilterKapi').classList.remove('active');
+        document.getElementById('btnDashFilterOwner').classList.remove('active');
+
+        if(filter === 'all') document.getElementById('btnDashFilterAll').classList.add('active');
+        if(filter === 'kapi') document.getElementById('btnDashFilterKapi').classList.add('active');
+        if(filter === 'owner') document.getElementById('btnDashFilterOwner').classList.add('active');
+
+        updateDashboard();
     }
 
     function renderCars() {
@@ -1183,6 +1218,68 @@
             renderCars();
         }
     }
+    
+    function updateDashboard() {
+        const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
+        const carGroups = {};
+
+        filteredHistory.forEach(r => {
+            if(!carGroups[r.plate]) {
+                carGroups[r.plate] = { carName: r.carName, count: 0, income: 0, logs: [] };
+            }
+            
+            let incomeToAdd = 0;
+            if (currentDashFilter === 'kapi') incomeToAdd = r.kapiIncome || 0;
+            else if (currentDashFilter === 'owner') incomeToAdd = r.ownerIncome || 0;
+            else incomeToAdd = r.price || 0;
+
+            carGroups[r.plate].count += 1;
+            carGroups[r.plate].income += incomeToAdd;
+            
+            const d = new Date(r.dateTimestamp);
+            const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()} เวลา ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')} น.`;
+            
+            carGroups[r.plate].logs.push({ date: dateStr, income: incomeToAdd });
+        });
+
+        let html = '';
+
+        if(Object.keys(carGroups).length === 0) {
+            html += '<p style="color:#888; text-align: center; font-size: 16px;">ยังไม่มีประวัติการเช่าครับ</p>';
+        } else {
+            for(let plate in carGroups) {
+                const group = carGroups[plate];
+                html += `
+                    <div class="dashboard-section">
+                        <h4 style="color: var(--summer-blue); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; padding-bottom: 10px;">
+                            <span>🚗 ${group.carName} (ทะเบียน: ${plate})</span>
+                            <span style="font-size: 14px; background: rgba(0, 210, 255, 0.1); padding: 6px 12px; border-radius: 8px;">เช่าไปแล้ว ${group.count} ครั้ง</span>
+                        </h4>
+                        <p style="color: var(--summer-orange); font-weight: bold; font-size: 16px;">รายได้ที่สร้างให้ร้าน: ${group.income.toLocaleString()} sm</p>
+                        
+                        <table style="margin-top: 10px; width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr>
+                                    <th style="padding: 10px; border-bottom: 1px solid #333; color: #888;">วันที่ และ เวลาที่ทำสัญญา</th>
+                                    <th style="padding: 10px; border-bottom: 1px solid #333; text-align: right; color: #888;">ยอดเงิน (sm)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${group.logs.map(log => `
+                                    <tr>
+                                        <td style="padding: 10px; border-bottom: 1px solid #222; color: #ccc;">🕒 ${log.date}</td>
+                                        <td style="padding: 10px; border-bottom: 1px solid #222; text-align: right; color: #fff; font-weight: 600;">+${log.income.toLocaleString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('overallDashboardContainer').innerHTML = html;
+    }
 
     function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
@@ -1192,5 +1289,3 @@
 
 </body>
 </html>
-
-```
