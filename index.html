@@ -672,6 +672,18 @@
         }
     });
 
+    function getLevenshteinDistance(a, b) {
+        const tmp = [];
+        for (let i = 0; i <= a.length; i++) tmp[i] = [i];
+        for (let j = 0; j <= b.length; j++) tmp[0][j] = j;
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                tmp[i][j] = Math.min(tmp[i - 1][j] + 1, tmp[i][j - 1] + 1, tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+            }
+        }
+        return tmp[a.length][b.length];
+    }
+
     async function processPastedImage(file) {
         const statusEl = document.getElementById('ocrPasteStatus');
         const pasteArea = document.getElementById('pasteArea');
@@ -697,41 +709,43 @@
             let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
             let matchedCar = null;
-
-            // เรียงลำดับรถจากทะเบียนยาวไปสั้น ป้องกันทะเบียนสั้นไปซ้อนในทะเบียนยาว
             let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
+            
+            // Clean string of everything except letters and numbers
+            let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
 
-            // 1. ค้นหาแบบเป๊ะๆ (เว้นวรรคตรงกัน)
+            // 1. หาแบบเป๊ะๆ 100% (ลบเว้นวรรคออกแล้วเทียบ)
             for(let car of sortedCars) {
-                if (text.includes(car.plate.toUpperCase())) {
-                    matchedCar = car; break;
+                let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
+                    matchedCar = car;
+                    break;
                 }
             }
 
-            // 2. ค้นหาแบบตัดการเว้นวรรคทิ้งทั้งหมด
-            if (!matchedCar) {
-                let textNoSpace = text.replace(/\s+/g, '');
+            // 2. ถ้ายกเว้นวรรคแล้วยังหาไม่เจอ อนุญาตให้อ่านเพี้ยนได้แค่ 1-2 ตัวอักษร (ฉลาดขึ้น ไม่เอาเลขมารวมมั่วๆ)
+            if (!matchedCar && cleanText.length > 0) {
+                let minDist = 999;
                 for(let car of sortedCars) {
-                    let plateNoSpace = car.plate.toUpperCase().replace(/\s+/g, '');
-                    if (textNoSpace.includes(plateNoSpace)) {
-                        matchedCar = car; break;
+                    let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                    if (cleanPlate.length < 3) continue; // ถ้าทะเบียนสั้นเกินไป ไม่ให้เดา ป้องกันมั่ว
+                    
+                    // กำหนดโควต้าตัวอักษรที่อ่านเพี้ยนได้ (ถ้าทะเบียน 6 ตัวขึ้นไปยอมให้เพี้ยนได้ 2 ตัว)
+                    let maxTypos = cleanPlate.length >= 6 ? 2 : 1;
+
+                    for(let i = 0; i <= cleanText.length - cleanPlate.length; i++) {
+                        let subText = cleanText.substring(i, i + cleanPlate.length);
+                        let dist = getLevenshteinDistance(subText, cleanPlate);
+                        if (dist <= maxTypos && dist < minDist) {
+                            minDist = dist;
+                            matchedCar = car;
+                        }
                     }
                 }
             }
 
-            // 3. ค้นหาแบบแปลง O เป็น 0, I เป็น 1 (เผื่อ AI อ่านตัวเลขเป็นตัวอักษร หรืออ่านสัญลักษณ์พิเศษติดมา)
             if (!matchedCar) {
-                let normText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
-                for(let car of sortedCars) {
-                    let normPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                    if (normPlate.length > 0 && normText.includes(normPlate)) {
-                        matchedCar = car; break;
-                    }
-                }
-            }
-
-            if (!matchedCar) {
-                statusEl.innerText = `❌ ไม่พบป้ายทะเบียนในระบบ (อ่านข้อมูลได้ไม่ชัดเจน หรือไม่มีรถในสต็อก)`;
+                statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่ระบบอ่านได้: ${text.substring(0, 30).replace(/\n/g, ' ')}...)</span>`;
                 statusEl.style.color = "#ff4757";
                 return;
             }
