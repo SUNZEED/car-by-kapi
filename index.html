@@ -344,6 +344,15 @@
             <input type="text" id="rentPrice" placeholder="ระบุจำนวนเงิน (เช่น 1,000)" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);" oninput="formatNumber(this)">
         </div>
 
+        <div class="form-group">
+            <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
+            <select id="rentSplitType">
+                <option value="kapi">เข้ากะปื 100%</option>
+                <option value="owner">เข้าเจ้าของรถ 100%</option>
+                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปื)</option>
+            </select>
+        </div>
+
         <div class="modal-actions">
             <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('rentModal')">CANCEL</button>
             <button class="btn btn-rent" onclick="confirmRent()">CONFIRM</button>
@@ -411,6 +420,7 @@
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
 
+    // --- ฟังก์ชันสำหรับซ่อน/แสดงปุ่มต่างๆ ตามสถานะการล็อคอิน ---
     function updateAuthUI() {
         const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
         const adminControls = document.getElementById('adminActionButtons');
@@ -420,6 +430,7 @@
         renderCars();
     }
     
+    // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ ---
     function fetchLatestCars() {
         fetch(scriptURL)
             .then(res => res.json())
@@ -438,13 +449,16 @@
             .catch(err => console.log('Sync Error:', err));
     }
 
+    // ดึงข้อมูลครั้งแรกที่เปิดเว็บ และอัปเดตหน้าตาปุ่มล็อคอิน
     window.addEventListener('DOMContentLoaded', () => {
         updateAuthUI();
         fetchLatestCars();
     });
     
+    // ซิงค์อัตโนมัติทุกๆ 10 วิ
     setInterval(fetchLatestCars, 10000); 
 
+    // ตั้งค่าตัวแปร
     const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCars = [];
@@ -680,87 +694,50 @@
         };
         reader.readAsDataURL(file);
 
-        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (เจาะจงเฉพาะภาษาอังกฤษและตัวเลข)...";
+        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับภาพให้ชัดขึ้น)...";
         statusEl.style.color = "var(--summer-orange)";
 
         const img = new Image();
         img.onload = async () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
-            // ขยาย 3 เท่าและปรับคอนทราสต์ เพื่อให้อ่านชัดเจนที่สุด
-            canvas.width = img.width * 3;
-            canvas.height = img.height * 3;
+            // ขยายภาพ 2.5 เท่า เพื่อให้ AI อ่านตัวอักษรเล็กๆ ออกได้อย่างชัดเจน
+            canvas.width = img.width * 2.5;
+            canvas.height = img.height * 2.5;
             ctx.imageSmoothingEnabled = false; 
-            ctx.filter = 'grayscale(100%) contrast(250%)'; 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
             canvas.toBlob(async (blob) => {
                 try {
-                    // ใช้ eng+tha เพื่อให้อ่านวัน/เวลาออก แต่วิธีการเช็คทะเบียนด้านล่างจะตัดภาษาไทยทิ้งทั้งหมด
-                    const worker = await Tesseract.createWorker('eng+tha');
+                    const worker = await Tesseract.createWorker('tha+eng');
                     const ret = await worker.recognize(blob);
-                    let rawText = ret.data.text;
-                    let text = rawText.toUpperCase();
+                    let text = ret.data.text.toUpperCase();
                     await worker.terminate();
 
-                    let autoEndTime = new Date(); 
-                    let isTimeFound = false;
-
-                    const dateRegex = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})\s+(\d{1,2})\s*[:.]\s*(\d{1,2})/;
-                    const dateMatch = rawText.match(dateRegex) || text.match(dateRegex);
-
-                    if (dateMatch) {
-                        let day = parseInt(dateMatch[1]);
-                        let month = parseInt(dateMatch[2]) - 1; 
-                        let year = parseInt(dateMatch[3]);
-                        if (year > 2500) year -= 543; 
-                        let hours = parseInt(dateMatch[4]);
-                        let mins = parseInt(dateMatch[5]);
-                        
-                        autoEndTime = new Date(year, month, day, hours, mins, 0);
-                        isTimeFound = true;
-                    } else {
-                        const hMatch = text.match(/(\d+)\s*(ชม|ช|H|HR)/);
-                        const mMatch = text.match(/(\d+)\s*(นาที|น|M|MIN)/);
-                        let hours = hMatch ? parseInt(hMatch[1]) : 0;
-                        let mins = mMatch ? parseInt(mMatch[1]) : 0;
-
-                        if (hours > 0 || mins > 0) {
-                            autoEndTime.setHours(autoEndTime.getHours() + hours);
-                            autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
-                            isTimeFound = true;
-                        } else {
-                            autoEndTime.setDate(autoEndTime.getDate() + 1); 
-                        }
-                    }
-
-                    // ลบตัวเลขวันที่/เวลาออก และอนุญาตแค่ [A-Z] และ [0-9] เท่านั้น (ตัดภาษาไทยทิ้ง 100%)
-                    let safeTextForPlate = text.replace(/\d{1,2}\s*[\/\-]\s*\d{1,2}\s*[\/\-]\s*\d{4}/g, '').replace(/\d{1,2}\s*[:.]\s*\d{1,2}/g, '');
-                    let cleanText = safeTextForPlate.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/I/g, '1');
+                    const hMatch = text.match(/(\d+)\s*[ชซ]/);
+                    const mMatch = text.match(/(\d+)\s*[นิม]/);
+                    let hours = hMatch ? parseInt(hMatch[1]) : 0;
+                    let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
                     let matchedCar = null;
                     let bestMatchScore = -1;
 
-                    // เตรียมฐานข้อมูลทะเบียนรถ (อนุญาตแค่ A-Z และ 0-9)
-                    let normPlates = cars.map(car => ({
-                        car: car,
-                        clean: car.plate.toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/I/g, '1')
-                    })).filter(x => x.clean.length > 0).sort((a,b) => b.clean.length - a.clean.length);
+                    let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
 
-                    // 1. ค้นหาแบบเป๊ะๆ 100%
-                    for(let plateObj of normPlates) {
-                        if (cleanText.includes(plateObj.clean)) {
-                            matchedCar = plateObj.car;
+                    // 1. ค้นหาแบบเป๊ะๆ 100% (ลบเว้นวรรคออกแล้วเทียบ)
+                    let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
+                    for(let car of sortedCars) {
+                        let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                        if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
+                            matchedCar = car;
                             bestMatchScore = 9999; 
                             break;
                         }
                     }
 
-                    // 2. ค้นหาแบบกลุ่มคำ (เผื่อตัวหนังสือเพี้ยน 1-2 ตัว)
+                    // 2. ค้นหาแบบกลุ่มคำ (กรณีเว้นวรรคผิด หรืออ่านเพี้ยนนิดหน่อย แต่บังคับว่าต้องเป็นกลุ่มเดียวกัน)
                     if (!matchedCar && cleanText.length > 0) {
-                        // ดึงเฉพาะกลุ่มที่เป็นภาษาอังกฤษหรือตัวเลขล้วนๆ
-                        let tokens = safeTextForPlate.toUpperCase().replace(/[^A-Z0-9]/g, ' ').split(/\s+/).filter(t => t.length > 0);
+                        let tokens = text.replace(/\n/g, ' ').split(/\s+/).filter(t => t.length > 0);
                         let searchPhrases = [];
                         
                         for(let i=0; i<tokens.length; i++) {
@@ -768,16 +745,15 @@
                             if(i < tokens.length - 1) searchPhrases.push(tokens[i] + tokens[i+1]);
                             if(i < tokens.length - 2) searchPhrases.push(tokens[i] + tokens[i+1] + tokens[i+2]);
                         }
-                        searchPhrases.push(cleanText); // เพิ่มแบบจับติดกันทั้งหมดเผื่อไว้
 
-                        for(let plateObj of normPlates) {
-                            let cleanPlate = plateObj.clean;
+                        for(let car of sortedCars) {
+                            let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
                             if (cleanPlate.length < 3) continue;
 
-                            let maxTypos = cleanPlate.length >= 5 ? 2 : 1;
+                            let maxTypos = cleanPlate.length >= 6 ? 2 : 1;
                             
                             for (let phrase of searchPhrases) {
-                                let cleanPhrase = phrase.replace(/O/g, '0').replace(/I/g, '1');
+                                let cleanPhrase = phrase.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
                                 if (cleanPhrase.length === 0) continue;
 
                                 if (Math.abs(cleanPhrase.length - cleanPlate.length) <= 2) {
@@ -786,7 +762,7 @@
                                         let score = 100 - (dist * 20) + cleanPlate.length; 
                                         if (score > bestMatchScore) {
                                             bestMatchScore = score;
-                                            matchedCar = plateObj.car;
+                                            matchedCar = car;
                                         }
                                     }
                                 }
@@ -795,7 +771,7 @@
                     }
 
                     if (!matchedCar) {
-                        statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความ ENG/NUM ที่อ่านได้: ${cleanText.substring(0, 20)}...)</span>`;
+                        statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่อ่านได้บางส่วน: ${text.substring(0, 40).replace(/\n/g, ' ')}...)</span>`;
                         statusEl.style.color = "#ff4757";
                         return;
                     }
@@ -806,11 +782,15 @@
                         return;
                     }
 
-                    if (isTimeFound) {
-                        statusEl.innerHTML = `✅ ตรวจพบรถ: <b>${matchedCar.plate}</b><br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ดึงเวลาหมดสัญญาสำเร็จ)</span>`;
+                    let autoEndTime = new Date();
+                    if (hours > 0 || mins > 0) {
+                        autoEndTime.setHours(autoEndTime.getHours() + hours);
+                        autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
                     } else {
-                        statusEl.innerHTML = `✅ ตรวจพบรถ: <b>${matchedCar.plate}</b><br><span style="font-size:13px; color:#ff4757; font-weight:normal;">(อ่านเวลาไม่ชัดเจน ใช้ค่าเริ่มต้น 24 ชม.)</span>`;
+                        autoEndTime.setDate(autoEndTime.getDate() + 1);
                     }
+
+                    statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
                     statusEl.style.color = "var(--summer-green)";
 
                     setTimeout(() => {
@@ -1008,6 +988,9 @@
         document.getElementById('rentCarId').value = car.id;
         document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
         document.getElementById('rentPrice').value = "";
+        
+        if (car.ownerType === 'kapi') { document.getElementById('rentSplitType').value = 'kapi'; }
+        else { document.getElementById('rentSplitType').value = 'split'; }
 
         if(autoEndTime) {
             autoEndTime.setMinutes(autoEndTime.getMinutes() - autoEndTime.getTimezoneOffset());
@@ -1025,6 +1008,7 @@
         const id = parseInt(document.getElementById('rentCarId').value);
         const price = parseInt(document.getElementById('rentPrice').value.replace(/,/g, ''));
         const endTimeValue = document.getElementById('rentEndTime').value;
+        const splitType = document.getElementById('rentSplitType').value;
 
         if (!price || price <= 0 || !endTimeValue) return alert("⚠️ กรุณาระบุยอดเงินและเวลาให้ครบ!");
 
@@ -1034,11 +1018,11 @@
         let kapiIncome = 0;
         let ownerIncome = 0;
 
-        // แบ่งรายได้ 100% ให้ตามประเภทเจ้าของรถอัตโนมัติ
-        if (car.ownerType === 'kapi') { 
-            kapiIncome = price; 
-        } else { 
-            ownerIncome = price; 
+        if (splitType === 'kapi') { kapiIncome = price; }
+        else if (splitType === 'owner') { ownerIncome = price; }
+        else if (splitType === 'split') {
+            ownerIncome = 200000; 
+            kapiIncome = price - 200000;
         }
 
         car.status = "busy";
