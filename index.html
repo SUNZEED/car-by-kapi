@@ -420,7 +420,6 @@
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
 
-    // --- ฟังก์ชันสำหรับซ่อน/แสดงปุ่มต่างๆ ตามสถานะการล็อคอิน ---
     function updateAuthUI() {
         const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
         const adminControls = document.getElementById('adminActionButtons');
@@ -430,7 +429,6 @@
         renderCars();
     }
     
-    // --- ฟังก์ชันดึงข้อมูลจาก Cloud มาโชว์ ---
     function fetchLatestCars() {
         fetch(scriptURL)
             .then(res => res.json())
@@ -449,16 +447,13 @@
             .catch(err => console.log('Sync Error:', err));
     }
 
-    // ดึงข้อมูลครั้งแรกที่เปิดเว็บ และอัปเดตหน้าตาปุ่มล็อคอิน
     window.addEventListener('DOMContentLoaded', () => {
         updateAuthUI();
         fetchLatestCars();
     });
     
-    // ซิงค์อัตโนมัติทุกๆ 10 วิ
     setInterval(fetchLatestCars, 10000); 
 
-    // ตั้งค่าตัวแปร
     const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCars = [];
@@ -694,7 +689,7 @@
         };
         reader.readAsDataURL(file);
 
-        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับคอนทราสต์ภาพ)...";
+        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI...";
         statusEl.style.color = "var(--summer-orange)";
 
         const img = new Image();
@@ -702,19 +697,16 @@
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             
-            // ขยายภาพ 3 เท่า
-            canvas.width = img.width * 3;
-            canvas.height = img.height * 3;
-            ctx.imageSmoothingEnabled = false; 
-            
-            // ใส่ฟิลเตอร์ ขาว-ดำ และเร่งคอนทราสต์ เพื่อให้ตัวอักษรตัดกับพื้นหลังชัดเจนที่สุด
-            // ป้องกัน AI มองเห็นเงาหรือความเบลอแล้วแปลงเป็นภาษาไทยมั่วๆ (เช่น 2TYL เป็น วาาเง)
-            ctx.filter = 'grayscale(100%) contrast(150%)';
+            // ขยายภาพแค่ 2 เท่าพอให้อ่านชัด และใช้แค่ Grayscale ไม่เร่ง Contrast จนภาพเพี้ยน
+            canvas.width = img.width * 2;
+            canvas.height = img.height * 2;
+            ctx.imageSmoothingEnabled = true; 
+            ctx.filter = 'grayscale(100%)'; 
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
             canvas.toBlob(async (blob) => {
                 try {
-                    // *** สำคัญ: ให้ความสำคัญกับ eng (ภาษาอังกฤษ) ก่อน tha (ภาษาไทย) ***
+                    // ใช้ eng+tha เพื่อบังคับให้อ่าน A-Z และตัวเลขเป็นหลัก (ลดปัญหา 2TYL อ่านเป็น วาาเง)
                     const worker = await Tesseract.createWorker('eng+tha');
                     const ret = await worker.recognize(blob);
                     let rawText = ret.data.text;
@@ -722,46 +714,48 @@
                     await worker.terminate();
 
                     let autoEndTime = new Date(); 
+                    let isTimeFound = false;
 
-                    // ค้นหาวันที่หมดเวลาแบบเป๊ะๆ (เช่น 2/9/2569 10:32)
-                    const dateRegex = /(\d{1,2})\s*\/\s*(\d{1,2})\s*\/\s*(\d{4})\s+(\d{1,2})\s*:\s*(\d{1,2})/;
-                    const dateMatch = rawText.match(dateRegex);
+                    // ค้นหาวันที่หมดเวลาแบบเป๊ะๆ
+                    const dateRegex = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})\s+(\d{1,2})\s*[:.]\s*(\d{1,2})/;
+                    const dateMatch = rawText.match(dateRegex) || text.match(dateRegex);
 
                     if (dateMatch) {
                         let day = parseInt(dateMatch[1]);
                         let month = parseInt(dateMatch[2]) - 1; 
                         let year = parseInt(dateMatch[3]);
-                        if (year > 2500) year -= 543; // แปลง พ.ศ. เป็น ค.ศ.
+                        if (year > 2500) year -= 543; 
                         let hours = parseInt(dateMatch[4]);
                         let mins = parseInt(dateMatch[5]);
                         
                         autoEndTime = new Date(year, month, day, hours, mins, 0);
+                        isTimeFound = true;
                     } else {
-                        // สำรองไว้เผื่อใช้แบบ "เหลือ xx ชม."
-                        const hMatch = text.match(/(\d+)\s*[ชซHh]/); // เพิ่ม Hh เผื่ออ่านเป็นภาษาอังกฤษ
-                        const mMatch = text.match(/(\d+)\s*[นิมMm]/);
+                        const hMatch = text.match(/(\d+)\s*(ชม|ช|H|HR)/);
+                        const mMatch = text.match(/(\d+)\s*(นาที|น|M|MIN)/);
                         let hours = hMatch ? parseInt(hMatch[1]) : 0;
                         let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
                         if (hours > 0 || mins > 0) {
                             autoEndTime.setHours(autoEndTime.getHours() + hours);
                             autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
+                            isTimeFound = true;
                         } else {
                             autoEndTime.setDate(autoEndTime.getDate() + 1); 
                         }
                     }
 
-                    // ป้องกันการเอาเลขวันที่/เวลามาจับเป็นป้ายทะเบียน โดยการลบมันทิ้งก่อน
-                    let safeTextForPlate = text.replace(/\d{1,2}\s*\/\s*\d{1,2}\s*\/\s*\d{4}/g, '').replace(/\d{1,2}\s*:\s*\d{1,2}/g, '');
-                    let cleanText = safeTextForPlate.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
+                    // ลบตัวเลขวันที่/เวลาออก ป้องกันการจับคู่ทะเบียนมั่ว
+                    let safeTextForPlate = text.replace(/\d{1,2}\s*[\/\-]\s*\d{1,2}\s*[\/\-]\s*\d{4}/g, '').replace(/\d{1,2}\s*[:.]\s*\d{1,2}/g, '');
+                    let cleanText = safeTextForPlate.replace(/[^A-Z0-9ก-ฮ]/g, '');
 
                     let matchedCar = null;
                     let bestMatchScore = -1;
                     let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
 
-                    // 1. ค้นหาแบบเป๊ะๆ 100%
+                    // 1. ค้นหาแบบ 100%
                     for(let car of sortedCars) {
-                        let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                        let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase();
                         if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
                             matchedCar = car;
                             bestMatchScore = 9999; 
@@ -769,7 +763,7 @@
                         }
                     }
 
-                    // 2. ค้นหาแบบกลุ่มคำ (เผื่อตัวหนังสือเพี้ยนนิดหน่อย แต่ยังเป็นกลุ่มคำเดียวกัน)
+                    // 2. ค้นหาแบบกลุ่มคำ (ยอมเพี้ยนได้ 1-2 ตัวอักษร)
                     if (!matchedCar && cleanText.length > 0) {
                         let tokens = safeTextForPlate.replace(/\n/g, ' ').split(/\s+/).filter(t => t.length > 0);
                         let searchPhrases = [];
@@ -781,13 +775,13 @@
                         }
 
                         for(let car of sortedCars) {
-                            let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                            let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase();
                             if (cleanPlate.length < 3) continue;
 
                             let maxTypos = cleanPlate.length >= 6 ? 2 : 1;
                             
                             for (let phrase of searchPhrases) {
-                                let cleanPhrase = phrase.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
+                                let cleanPhrase = phrase.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase();
                                 if (cleanPhrase.length === 0) continue;
 
                                 if (Math.abs(cleanPhrase.length - cleanPlate.length) <= 2) {
@@ -816,7 +810,11 @@
                         return;
                     }
 
-                    statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
+                    if (isTimeFound) {
+                        statusEl.innerHTML = `✅ ตรวจพบรถ: <b>${matchedCar.plate}</b><br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ดึงเวลาหมดสัญญาสำเร็จ)</span>`;
+                    } else {
+                        statusEl.innerHTML = `✅ ตรวจพบรถ: <b>${matchedCar.plate}</b><br><span style="font-size:13px; color:#ff4757; font-weight:normal;">(อ่านเวลาไม่ชัดเจน ใช้ค่าเริ่มต้น 24 ชม.)</span>`;
+                    }
                     statusEl.style.color = "var(--summer-green)";
 
                     setTimeout(() => {
