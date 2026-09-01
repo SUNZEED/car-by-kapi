@@ -344,15 +344,6 @@
             <input type="text" id="rentPrice" placeholder="ระบุจำนวนเงิน (เช่น 1,000)" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);" oninput="formatNumber(this)">
         </div>
 
-        <div class="form-group">
-            <label>รูปแบบการคำนวณเงิน (ส่วนแบ่ง)</label>
-            <select id="rentSplitType">
-                <option value="kapi">เข้ากะปื 100%</option>
-                <option value="owner">เข้าเจ้าของรถ 100%</option>
-                <option value="split">หาร (หัก 200,000 เข้าเจ้าของ, ที่เหลือเข้ากะปื)</option>
-            </select>
-        </div>
-
         <div class="modal-actions">
             <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('rentModal')">CANCEL</button>
             <button class="btn btn-rent" onclick="confirmRent()">CONFIRM</button>
@@ -989,9 +980,6 @@
         document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
         document.getElementById('rentPrice').value = "";
         
-        if (car.ownerType === 'kapi') { document.getElementById('rentSplitType').value = 'kapi'; }
-        else { document.getElementById('rentSplitType').value = 'split'; }
-
         if(autoEndTime) {
             autoEndTime.setMinutes(autoEndTime.getMinutes() - autoEndTime.getTimezoneOffset());
             document.getElementById('rentEndTime').value = autoEndTime.toISOString().slice(0, 16);
@@ -1008,7 +996,6 @@
         const id = parseInt(document.getElementById('rentCarId').value);
         const price = parseInt(document.getElementById('rentPrice').value.replace(/,/g, ''));
         const endTimeValue = document.getElementById('rentEndTime').value;
-        const splitType = document.getElementById('rentSplitType').value;
 
         if (!price || price <= 0 || !endTimeValue) return alert("⚠️ กรุณาระบุยอดเงินและเวลาให้ครบ!");
 
@@ -1018,11 +1005,13 @@
         let kapiIncome = 0;
         let ownerIncome = 0;
 
-        if (splitType === 'kapi') { kapiIncome = price; }
-        else if (splitType === 'owner') { ownerIncome = price; }
-        else if (splitType === 'split') {
+        // คำนวณส่วนแบ่งอัตโนมัติจากประเภทของรถ
+        if (car.ownerType === 'kapi') { 
+            kapiIncome = price; 
+            ownerIncome = 0;
+        } else { 
             ownerIncome = 200000; 
-            kapiIncome = price - 200000;
+            kapiIncome = price > 200000 ? price - 200000 : 0; 
         }
 
         car.status = "busy";
