@@ -694,21 +694,28 @@
         };
         reader.readAsDataURL(file);
 
-        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ขยายและปรับภาพ)...";
+        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับคอนทราสต์ภาพ)...";
         statusEl.style.color = "var(--summer-orange)";
 
         const img = new Image();
         img.onload = async () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            canvas.width = img.width * 2.5;
-            canvas.height = img.height * 2.5;
+            
+            // ขยายภาพ 3 เท่า
+            canvas.width = img.width * 3;
+            canvas.height = img.height * 3;
             ctx.imageSmoothingEnabled = false; 
+            
+            // ใส่ฟิลเตอร์ ขาว-ดำ และเร่งคอนทราสต์ เพื่อให้ตัวอักษรตัดกับพื้นหลังชัดเจนที่สุด
+            // ป้องกัน AI มองเห็นเงาหรือความเบลอแล้วแปลงเป็นภาษาไทยมั่วๆ (เช่น 2TYL เป็น วาาเง)
+            ctx.filter = 'grayscale(100%) contrast(150%)';
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
             canvas.toBlob(async (blob) => {
                 try {
-                    const worker = await Tesseract.createWorker('tha+eng');
+                    // *** สำคัญ: ให้ความสำคัญกับ eng (ภาษาอังกฤษ) ก่อน tha (ภาษาไทย) ***
+                    const worker = await Tesseract.createWorker('eng+tha');
                     const ret = await worker.recognize(blob);
                     let rawText = ret.data.text;
                     let text = rawText.toUpperCase();
@@ -731,8 +738,8 @@
                         autoEndTime = new Date(year, month, day, hours, mins, 0);
                     } else {
                         // สำรองไว้เผื่อใช้แบบ "เหลือ xx ชม."
-                        const hMatch = text.match(/(\d+)\s*[ชซ]/);
-                        const mMatch = text.match(/(\d+)\s*[นิม]/);
+                        const hMatch = text.match(/(\d+)\s*[ชซHh]/); // เพิ่ม Hh เผื่ออ่านเป็นภาษาอังกฤษ
+                        const mMatch = text.match(/(\d+)\s*[นิมMm]/);
                         let hours = hMatch ? parseInt(hMatch[1]) : 0;
                         let mins = mMatch ? parseInt(mMatch[1]) : 0;
 
@@ -798,7 +805,7 @@
                     }
 
                     if (!matchedCar) {
-                        statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่อ่านได้: ${text.substring(0, 40).replace(/\n/g, ' ')}...)</span>`;
+                        statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่อ่านได้: ${rawText.substring(0, 40).replace(/\n/g, ' ')}...)</span>`;
                         statusEl.style.color = "#ff4757";
                         return;
                     }
