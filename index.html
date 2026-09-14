@@ -46,12 +46,6 @@
         .btn-return:hover { background: rgba(255, 179, 0, 0.1); box-shadow: 0 0 15px rgba(255, 179, 0, 0.3); }
         .btn-edit { background: #2A2A35; color: #fff; border: 1px solid #444; }
         .btn-delete { background: linear-gradient(135deg, #ff4757, #c0392b); color: #fff; box-shadow: 0 4px 15px rgba(255, 71, 87, 0.4); }
-        
-        /* ปุ่มจองและยกเลิกจอง */
-        .btn-book { background: transparent; color: var(--summer-blue); border: 2px solid var(--summer-blue); box-sizing: border-box; }
-        .btn-book:hover { background: rgba(0, 210, 255, 0.1); box-shadow: 0 0 15px var(--summer-blue-glow); }
-        .btn-cancel-book { background: transparent; color: #ff4757; border: 2px solid #ff4757; box-sizing: border-box; }
-        .btn-cancel-book:hover { background: rgba(255, 71, 87, 0.1); box-shadow: 0 0 15px rgba(255, 71, 87, 0.3); }
 
         /* Grid 6 แถว */
         .car-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
@@ -62,18 +56,12 @@
         .car-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; border: 1px solid var(--border-color); position: relative; transition: all 0.3s ease; }
         .car-card:hover { transform: translateY(-5px); border-color: #444; box-shadow: 0 15px 40px rgba(0,0,0,0.7); }
         .car-card.busy { border-color: #ff4757; opacity: 0.8; }
-        .car-card.booked { border-color: var(--summer-blue); }
         
         .car-image-container { position: relative; width: 100%; height: 180px; background: #000; }
         .car-image { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
         .car-card.busy .car-image { filter: grayscale(100%) brightness(40%); }
-        .car-card.booked .car-image { filter: brightness(40%); }
         
         .cross-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 80px; color: rgba(255, 71, 87, 0.8); text-shadow: 0 0 20px #000; pointer-events: none; }
-        
-        /* วงกลมสถานะติดจอง */
-        .book-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85px; height: 85px; background: rgba(0, 210, 255, 0.85); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #fff; font-size: 16px; font-weight: 800; box-shadow: 0 0 25px var(--summer-blue-glow); border: 2px solid #fff; pointer-events: none; z-index: 10; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .book-overlay span { font-size: 11px; font-weight: 600; margin-bottom: 2px; }
 
         .tags-container { position: absolute; top: 10px; left: 10px; display: flex; gap: 5px; flex-wrap: wrap; z-index: 5; }
         .tag-turbo { background: #ff0055; color: white; padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; box-shadow: 0 2px 10px rgba(255,0,85,0.5); }
@@ -104,9 +92,21 @@
         .manage-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.4); border: 1px solid var(--border-color); }
         .manage-table th, .manage-table td { padding: 18px 20px; border-bottom: 1px solid var(--border-color); text-align: left; }
         .manage-table th { background: rgba(0,0,0,0.5); color: var(--summer-orange); font-weight: 800; text-transform: uppercase; font-size: 14px; letter-spacing: 0.5px; }
+        
         .cat-badge-edit { display: inline-flex; align-items: center; gap: 8px; background: #222; padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #444; font-weight: 600; }
+        .cat-edit-btn { background: none; border: none; color: #f39c12; font-weight: bold; cursor: pointer; padding: 2px 6px; font-size: 14px; transition: 0.2s; }
+        .cat-edit-btn:hover { color: #fff; background: #f39c12; border-radius: 50%; }
         .cat-del-btn { background: none; border: none; color: #ff4757; font-weight: bold; cursor: pointer; padding: 2px 6px; font-size: 16px; transition: 0.2s; }
         .cat-del-btn:hover { color: #fff; background: #ff4757; border-radius: 50%; }
+
+        /* สไตล์สำหรับหน้ารวมรูปรถว่าง */
+        .cat-filter-label { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 20px; cursor: pointer; display: flex; align-items: center; gap: 5px; border: 1px solid #444; transition: 0.2s; font-size: 14px; }
+        .cat-filter-label:hover { background: rgba(255,255,255,0.1); }
+        .cat-filter-label.active-cat { border-color: var(--summer-orange); color: var(--summer-orange); background: rgba(255, 94, 58, 0.1); box-shadow: 0 0 10px rgba(255, 94, 58, 0.2); font-weight: bold; }
+        
+        .capture-card { width: 220px; background: #1A1A24; border-radius: 12px; overflow: hidden; border: 1px solid #333; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .capture-img { width: 100%; height: 130px; object-fit: cover; border-bottom: 2px solid var(--summer-orange); }
+        .capture-info { padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; font-weight: 800; font-size: 15px; color: #fff; }
     </style>
 </head>
 <body>
@@ -118,6 +118,7 @@
     </h1>
     <div class="tab-menu">
         <button class="tab-btn active" onclick="switchPage('cars')">🚗 ปล่อยเช่ารถ</button>
+        <button class="tab-btn" onclick="switchPage('capture')">📸 แคปรถว่าง</button>
         <button class="tab-btn" onclick="switchPage('dashboard')">📊 สรุปรายงาน</button>
     </div>
 </header>
@@ -142,6 +143,28 @@
             </div>
         </div>
         <div class="car-grid" id="carGrid"></div>
+    </div>
+
+    <div id="capturePage" class="page">
+        <div class="controls" style="justify-content: space-between; align-items: center;">
+            <div id="captureCatFilters" style="display: flex; gap: 10px; flex-wrap: wrap; flex: 1;">
+                <!-- Checkboxes for categories generated via JS -->
+            </div>
+            <button class="btn btn-add" style="background: linear-gradient(135deg, #FF5E3A, #FF2A00); padding: 12px 25px; box-shadow: 0 4px 15px var(--summer-orange-glow); font-size: 15px; margin-left: 15px;" onclick="copyAvailableCarsImage()" id="copyCaptureBtn">
+                📋 คัดลอกรูปภาพไปส่ง
+            </button>
+        </div>
+        
+        <div style="text-align: center; overflow-x: auto; padding-bottom: 20px;">
+            <div id="captureContainer" style="display: inline-block; text-align: center; background: var(--bg-dark); padding: 30px 40px; border-radius: 16px; border: 1px solid var(--border-color); min-width: 350px;">
+                <div style="margin-bottom: 25px;">
+                    <p style="color: var(--summer-orange); margin: 5px 0; font-size: 24px; font-weight: 800; text-shadow: 0 0 15px var(--summer-orange-glow);">🌴 รถว่างปล่อยเช่า</p>
+                </div>
+                <div id="captureGrid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 1200px;">
+                    <!-- Content via JS -->
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="managePage" class="page">
@@ -312,26 +335,26 @@
     </div>
 </div>
 
-<div class="modal" id="bookModal">
-    <div class="modal-content">
-        <h2 style="color: var(--summer-blue); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">⏱️ ลงคิวจองรถ</h2>
-        <input type="hidden" id="bookCarId">
-        <div class="form-group">
-            <label>ระบุเวลาที่จอง (เช่น 20:30)</label>
-            <input type="time" id="bookTime" required style="border-color: var(--summer-blue); box-shadow: 0 0 10px rgba(0, 210, 255, 0.2);">
-        </div>
-        <div class="modal-actions">
-            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('bookModal')">CANCEL</button>
-            <button class="btn btn-add" onclick="confirmBook()">ยืนยันจอง</button>
-        </div>
-    </div>
-</div>
-
 <script>
     const scriptURL = 'https://script.google.com/macros/s/AKfycbyWc9mJjcXlw2y09ObQgJnwwkrtoquRpyVVcmdeq1cNtWeVINteg4nLDWoGxR1RsgId/exec';
     
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
+
+    // ฟังก์ชันแปลงคำว่า TOPDO, ตัวท็อป ให้เป็นมาตรฐานเดียวกันหมดป้องกันระบบรวน
+    function normalizeCars(carList) {
+        if (!carList || !Array.isArray(carList)) return [];
+        return carList.map(c => ({
+            ...c,
+            category: (c.category === "ตัวท็อป" || c.category === "TOPDO" || c.category === "topdo") ? "Topdo" : c.category,
+            imageUrl: c.imageUrl || '',
+            isTurbo: c.isTurbo || false,
+            ownerType: c.ownerType || 'owner',
+            ownerName: c.ownerName || '',
+            isHidden: c.isHidden || false,
+            bookTime: c.bookTime || null
+        }));
+    }
 
     function updateAuthUI() {
         const isLoggedIn = sessionStorage.getItem('isAdminLoggedIn') === 'true';
@@ -347,12 +370,16 @@
             .then(res => res.json())
             .then(data => {
                 if (data.cars && data.cars.length > 0) {
-                    if (JSON.stringify(cars) !== JSON.stringify(data.cars)) {
-                        cars = data.cars;
+                    let fetchedCars = normalizeCars(data.cars);
+                    if (JSON.stringify(cars) !== JSON.stringify(fetchedCars)) {
+                        cars = fetchedCars;
                         localStorage.setItem('summerCars', JSON.stringify(cars));
                         renderCars();
                         if (document.getElementById('managePage').classList.contains('active')) {
                             renderManageCars();
+                        }
+                        if (document.getElementById('capturePage').classList.contains('active')) {
+                            renderCaptureCars();
                         }
                     }
                 }
@@ -367,27 +394,24 @@
     
     setInterval(fetchLatestCars, 10000); 
 
-    const customCategoryOrder = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
-    let defaultCategories = ["ประมูล", "TOPDO", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
+    const customCategoryOrder = ["ประมูล", "Topdo", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
+    let defaultCategories = ["ประมูล", "Topdo", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
     let defaultCars = [];
     
-    let cars = JSON.parse(localStorage.getItem('summerCars')) || defaultCars;
+    let localCars = JSON.parse(localStorage.getItem('summerCars'));
+    let cars = localCars ? normalizeCars(localCars) : defaultCars;
+
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
     let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
+
+    // ระบบจัดหมวดหมู่ใหม่กันการซ้ำซ้อน
+    categories = categories.map(c => (c === "ตัวท็อป" || c === "TOPDO" || c === "topdo") ? "Topdo" : c);
+    categories = [...new Set(categories)];
 
     let currentOwnerFilter = 'all'; 
     let currentAvailableFilter = 'all'; 
     let currentDashFilter = 'all'; 
-
-    cars = cars.map(c => ({
-        ...c,
-        imageUrl: c.imageUrl || '',
-        isTurbo: c.isTurbo || false,
-        ownerType: c.ownerType || 'owner',
-        ownerName: c.ownerName || '',
-        isHidden: c.isHidden || false,
-        bookTime: c.bookTime || null
-    }));
+    let captureSelectedCategories = new Set(categories);
 
     function formatNumber(input) {
         let value = input.value.replace(/,/g, '').replace(/\D/g, '');
@@ -424,6 +448,9 @@
             event.target.classList.add('active');
         }
         if(pageId === 'dashboard') updateDashboard();
+        if(pageId === 'capture') {
+            renderCaptureCategories();
+        }
         if(pageId === 'manage') {
             if (sessionStorage.getItem('isAdminLoggedIn') === 'true') {
                 document.getElementById('loginScreen').style.display = 'none';
@@ -498,7 +525,7 @@
             try {
                 const imported = JSON.parse(e.target.result);
                 if(Array.isArray(imported)) {
-                    cars = imported;
+                    cars = normalizeCars(imported);
                     saveDataLocally();
                     renderManageCars();
                     renderCars();
@@ -532,6 +559,7 @@
             catList.innerHTML += `
                 <div class="cat-badge-edit">
                     ${c} 
+                    <button class="cat-edit-btn" onclick="editCategory('${c}')" title="แก้ไขชื่อหมวดหมู่">✏️</button>
                     <button class="cat-del-btn" onclick="deleteCategory('${c}')" title="ลบหมวดหมู่นี้">×</button>
                 </div>
             `;
@@ -545,6 +573,7 @@
         if(categories.includes(newCat)) return alert("หมวดหมู่นี้มีอยู่แล้ว!");
         
         categories.push(newCat);
+        captureSelectedCategories.add(newCat);
         saveDataLocally();
         input.value = "";
         renderCategoryManager();
@@ -552,9 +581,45 @@
         renderCars();
     }
 
+    function editCategory(oldCat) {
+        const newCat = prompt(`แก้ไขชื่อหมวดหมู่ "${oldCat}" เป็น:`, oldCat);
+        if (newCat === null) return; 
+        
+        const trimmedCat = newCat.trim();
+        if (!trimmedCat) return alert("ชื่อหมวดหมู่ว่างเปล่าไม่ได้ครับ");
+        if (trimmedCat === oldCat) return; 
+        if (categories.includes(trimmedCat)) return alert("หมวดหมู่นี้มีอยู่แล้ว!");
+
+        // 1. อัปเดตใน Array หมวดหมู่หลัก
+        const catIndex = categories.indexOf(oldCat);
+        if (catIndex !== -1) {
+            categories[catIndex] = trimmedCat;
+        }
+
+        // 2. อัปเดตในตัวกรองหน้าแคปรถว่าง
+        if (captureSelectedCategories.has(oldCat)) {
+            captureSelectedCategories.delete(oldCat);
+            captureSelectedCategories.add(trimmedCat);
+        }
+
+        // 3. อัปเดตรถทุกคันที่ใช้หมวดหมู่นี้อยู่ให้เป็นชื่อใหม่ทั้งหมด
+        cars.forEach(c => {
+            if (c.category === oldCat) {
+                c.category = trimmedCat;
+            }
+        });
+
+        saveDataLocally();
+        renderCategoryManager();
+        renderCategoryDropdowns();
+        renderCars();
+        alert(`✅ เปลี่ยนชื่อหมวดหมู่ "${oldCat}" เป็น "${trimmedCat}" เรียบร้อยแล้ว (อัปเดตสต็อกรถให้อัตโนมัติ)`);
+    }
+
     function deleteCategory(catName) {
         if(confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบหมวดหมู่ "${catName}"?\n(รถที่ใช้หมวดหมู่นี้อยู่จะยังคงอยู่ แต่ไม่สามารถเลือกเพิ่มได้อีก)`)) {
             categories = categories.filter(c => c !== catName);
+            captureSelectedCategories.delete(catName);
             saveDataLocally();
             renderCategoryManager();
             renderCategoryDropdowns();
@@ -775,7 +840,6 @@
 
         filtered.forEach(car => {
             const isBusy = car.status === 'busy';
-            const isBooked = car.status === 'booked';
             const imgUrl = car.imageUrl || 'https://via.placeholder.com/600x400?text=No+Image';
             
             let ownerText = car.ownerType === 'kapi' ? 'รถกะปื' : 'รถaxis';
@@ -784,11 +848,10 @@
             }
 
             let html = `
-                <div class="car-card ${isBusy ? 'busy' : ''} ${isBooked ? 'booked' : ''}">
+                <div class="car-card ${isBusy ? 'busy' : ''}">
                     <div class="car-image-container">
                         <img src="${imgUrl}" class="car-image" alt="car">
                         ${isBusy ? `<div class="cross-overlay">❌</div>` : ''}
-                        ${isBooked ? `<div class="book-overlay"><span>ติดจอง</span>${car.bookTime}</div>` : ''}
                         <div class="tags-container">
                             ${car.ownerType === 'kapi' ? `<span class="tag-kapi">${ownerText}</span>` : `<span class="tag-owner">${ownerText}</span>`}
                             ${car.isTurbo ? '<span class="tag-turbo">🚀 TURBO</span>' : ''}
@@ -810,21 +873,11 @@
                         <span style="color: #FFB300; font-weight: 600;">💰 ยอดเช่า: ${car.price.toLocaleString()} sm</span>
                         <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green); line-height: 1.5;">โหลดเวลา...</div>
                     </div></div>`; 
-            } else if (isBooked) {
-                html += `</div>`;
-                if (isLoggedIn) {
-                    html += `
-                        <div class="card-actions">
-                            <button class="btn btn-cancel-book" style="flex: 1; font-size: 13px;" onclick="cancelBook(${car.id})">ยกเลิกจอง</button>
-                            <button class="btn btn-rent" style="flex: 1; font-size: 13px;" onclick="openRentModal(${car.id})">สัญญาเช่า</button>
-                        </div>`;
-                }
             } else {
                 html += `</div>`;
                 if (isLoggedIn) {
                     html += `
                         <div class="card-actions">
-                            <button class="btn btn-book" style="flex: 1; font-size: 13px;" onclick="openBookModal(${car.id})">จองคิว</button>
                             <button class="btn btn-rent" style="flex: 1; font-size: 13px;" onclick="openRentModal(${car.id})">ปล่อยเช่า</button>
                         </div>`;
                 }
@@ -832,6 +885,119 @@
             grid.innerHTML += html;
         });
     }
+
+    // ================= ฟังก์ชันสำหรับหน้ารวมรูปรถว่าง =================
+    function renderCaptureCategories() {
+        const container = document.getElementById('captureCatFilters');
+        if(!container) return;
+        container.innerHTML = '';
+        
+        if(captureSelectedCategories.size === 0 && categories.length > 0) {
+            categories.forEach(c => captureSelectedCategories.add(c));
+        }
+        
+        categories.forEach(c => {
+            const isChecked = captureSelectedCategories.has(c) ? 'checked' : '';
+            container.innerHTML += `
+                <label class="cat-filter-label ${isChecked ? 'active-cat' : ''}">
+                    <input type="checkbox" value="${c}" ${isChecked} onchange="toggleCaptureCategory(this)" style="display:none;">
+                    ${c}
+                </label>
+            `;
+        });
+        renderCaptureCars();
+    }
+
+    function toggleCaptureCategory(checkbox) {
+        if(checkbox.checked) {
+            captureSelectedCategories.add(checkbox.value);
+            checkbox.parentElement.classList.add('active-cat');
+        } else {
+            captureSelectedCategories.delete(checkbox.value);
+            checkbox.parentElement.classList.remove('active-cat');
+        }
+        renderCaptureCars();
+    }
+
+    function renderCaptureCars() {
+        const grid = document.getElementById('captureGrid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        
+        let availableCars = cars.filter(c => c.status === 'available' && !c.isHidden && captureSelectedCategories.has(c.category));
+        
+        availableCars.sort((a, b) => {
+            let catIndexA = customCategoryOrder.findIndex(c => c.toLowerCase() === (a.category || '').toLowerCase());
+            let catIndexB = customCategoryOrder.findIndex(c => c.toLowerCase() === (b.category || '').toLowerCase());
+            if(catIndexA === -1) catIndexA = 999;
+            if(catIndexB === -1) catIndexB = 999;
+            if (catIndexA !== catIndexB) return catIndexA - catIndexB;
+            return a.name.localeCompare(b.name, 'th', { sensitivity: 'base' });
+        });
+        
+        if(availableCars.length === 0) {
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #888; padding: 40px; font-size: 16px;">ไม่มีรถว่างในหมวดหมู่ที่คุณเลือก</div>`;
+            return;
+        }
+
+        availableCars.forEach(car => {
+            const imgUrl = car.imageUrl || 'https://via.placeholder.com/300x200?text=No+Image';
+            const turboBadge = car.isTurbo ? '<div style="color:#ff0055; font-size: 12px; background: rgba(255,0,85,0.1); padding: 3px 8px; border-radius: 20px; border: 1px solid rgba(255,0,85,0.3);">🚀 เทอร์โบ</div>' : '';
+            grid.innerHTML += `
+                <div class="capture-card">
+                    <img src="${imgUrl}" class="capture-img" crossorigin="anonymous" alt="car">
+                    <div class="capture-info">
+                        <div>${car.name}</div>
+                        ${turboBadge}
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    async function copyAvailableCarsImage() {
+        const btn = document.getElementById('copyCaptureBtn');
+        const target = document.getElementById('captureContainer');
+        
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '⏳ กำลังสร้างรูปภาพ...';
+        btn.disabled = true;
+        
+        try {
+            const canvas = await html2canvas(target, {
+                backgroundColor: '#0B0B0E',
+                scale: 2, 
+                useCORS: true, 
+            });
+            
+            canvas.toBlob(async (blob) => {
+                try {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    await navigator.clipboard.write([item]);
+                    btn.innerHTML = '✅ คัดลอกรูปลงเครื่องแล้ว (Ctrl+V ส่งได้เลย)!';
+                } catch (err) {
+                    console.error('Clipboard error:', err);
+                    alert('บราวเซอร์ของคุณไม่รองรับการคัดลอกรูปภาพอัตโนมัติ\nระบบจะทำการ "ดาวน์โหลด" รูปภาพให้แทนครับ');
+                    const link = document.createElement('a');
+                    link.download = `available_cars_${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    btn.innerHTML = '✅ บันทึกรูปลงเครื่องแล้ว!';
+                }
+            }, 'image/png');
+            
+        } catch (error) {
+            console.error(error);
+            alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ');
+            btn.innerHTML = '❌ ผิดพลาด';
+        }
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }, 3000);
+    }
+    // ==============================================================
 
     setInterval(() => {
         const nowTime = new Date().getTime();
@@ -867,6 +1033,9 @@
             renderCars();
             if (document.getElementById('managePage').classList.contains('active')) {
                 renderManageCars();
+            }
+            if (document.getElementById('capturePage').classList.contains('active')) {
+                renderCaptureCars();
             }
         }
     }, 1000); 
@@ -919,38 +1088,6 @@
         calculateDuration();
     }
 
-    function openBookModal(id) {
-        document.getElementById('bookCarId').value = id;
-        document.getElementById('bookTime').value = "";
-        document.getElementById('bookModal').style.display = "flex";
-    }
-
-    function confirmBook() {
-        const id = parseInt(document.getElementById('bookCarId').value);
-        const time = document.getElementById('bookTime').value;
-        if (!time) return alert("⚠️ กรุณาระบุเวลาจองให้ครบถ้วน!");
-
-        const carIndex = cars.findIndex(c => c.id === id);
-        cars[carIndex].status = "booked";
-        cars[carIndex].bookTime = time;
-
-        saveDataLocally(true);
-        closeModal('bookModal');
-        renderCars();
-        if(document.getElementById('managePage').classList.contains('active')) renderManageCars();
-    }
-
-    function cancelBook(id) {
-        if(confirm("ต้องการยกเลิกการจองรถคันนี้ใช่หรือไม่?")) {
-            const carIndex = cars.findIndex(c => c.id === id);
-            cars[carIndex].status = "available";
-            cars[carIndex].bookTime = null;
-            saveDataLocally(true);
-            renderCars();
-            if(document.getElementById('managePage').classList.contains('active')) renderManageCars();
-        }
-    }
-
     function confirmRent() {
         const id = parseInt(document.getElementById('rentCarId').value);
         const price = parseInt(document.getElementById('rentPrice').value.replace(/,/g, ''));
@@ -975,7 +1112,7 @@
         car.status = "busy";
         car.price = price;
         car.endTime = new Date(endTimeValue).getTime();
-        car.bookTime = null; // เคลียร์เวลาจองเมื่อปล่อยเช่า
+        car.bookTime = null;
 
         rentalHistory.push({
             id: Date.now(),
@@ -1100,8 +1237,6 @@
             let statusText = '';
             if (car.status === 'busy') {
                 statusText = '<span style="color:#ff4757; font-weight:600;">ถูกเช่า</span>';
-            } else if (car.status === 'booked') {
-                statusText = '<span style="color:var(--summer-blue); font-weight:600;">ติดจอง</span>';
             } else {
                 statusText = '<span style="color:var(--summer-green); font-weight:600;">ว่าง</span>';
             }
