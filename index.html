@@ -107,6 +107,12 @@
         .capture-card { width: 220px; background: #1A1A24; border-radius: 12px; overflow: hidden; border: 1px solid #333; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .capture-img { width: 100%; height: 130px; object-fit: cover; border-bottom: 2px solid var(--summer-orange); }
         .capture-info { padding: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; font-weight: 800; font-size: 15px; color: #fff; }
+        
+        /* ปุ่มจัดการเวลา */
+        .time-adjust-btn { background: #2A2A35; color: #aaa; border: 1px solid #444; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+        .time-adjust-btn:hover { background: var(--summer-blue); color: #000; border-color: var(--summer-blue); }
+        .time-adjust-btn.negative { border-color: rgba(255, 71, 87, 0.5); }
+        .time-adjust-btn.negative:hover { background: #ff4757; color: #fff; border-color: #ff4757; }
     </style>
 </head>
 <body>
@@ -273,6 +279,12 @@
         <div class="form-group">
             <label>ระยะเวลาสิ้นสุดสัญญา</label>
             <input type="datetime-local" id="rentEndTime" required oninput="calculateDuration()" onchange="calculateDuration()">
+            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="time-adjust-btn" onclick="adjustRentTime(1, 'hours')">+1 ชม.</button>
+                <button type="button" class="time-adjust-btn" onclick="adjustRentTime(12, 'hours')">+12 ชม.</button>
+                <button type="button" class="time-adjust-btn" onclick="adjustRentTime(1, 'days')">+1 วัน</button>
+                <button type="button" class="time-adjust-btn negative" onclick="adjustRentTime(-1, 'hours')">-1 ชม.</button>
+            </div>
         </div>
         <div class="form-group">
             <label>
@@ -341,7 +353,6 @@
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
 
-    // ฟังก์ชันแปลงคำว่า TOPDO, ตัวท็อป ให้เป็นมาตรฐานเดียวกันหมดป้องกันระบบรวน
     function normalizeCars(carList) {
         if (!carList || !Array.isArray(carList)) return [];
         return carList.map(c => ({
@@ -404,7 +415,6 @@
     let rentalHistory = JSON.parse(localStorage.getItem('summerHistory')) || [];
     let categories = JSON.parse(localStorage.getItem('summerCategories')) || defaultCategories;
 
-    // ระบบจัดหมวดหมู่ใหม่กันการซ้ำซ้อน
     categories = categories.map(c => (c === "ตัวท็อป" || c === "TOPDO" || c === "topdo") ? "Topdo" : c);
     categories = [...new Set(categories)];
 
@@ -590,19 +600,16 @@
         if (trimmedCat === oldCat) return; 
         if (categories.includes(trimmedCat)) return alert("หมวดหมู่นี้มีอยู่แล้ว!");
 
-        // 1. อัปเดตใน Array หมวดหมู่หลัก
         const catIndex = categories.indexOf(oldCat);
         if (catIndex !== -1) {
             categories[catIndex] = trimmedCat;
         }
 
-        // 2. อัปเดตในตัวกรองหน้าแคปรถว่าง
         if (captureSelectedCategories.has(oldCat)) {
             captureSelectedCategories.delete(oldCat);
             captureSelectedCategories.add(trimmedCat);
         }
 
-        // 3. อัปเดตรถทุกคันที่ใช้หมวดหมู่นี้อยู่ให้เป็นชื่อใหม่ทั้งหมด
         cars.forEach(c => {
             if (c.category === oldCat) {
                 c.category = trimmedCat;
@@ -668,7 +675,7 @@
         };
         reader.readAsDataURL(file);
 
-        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับภาพให้ชัดขึ้น)...";
+        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับระบบให้แม่นยำขึ้น)...";
         statusEl.style.color = "var(--summer-orange)";
 
         const img = new Image();
@@ -687,56 +694,51 @@
                     let text = ret.data.text.toUpperCase();
                     await worker.terminate();
 
-                    const hMatch = text.match(/(\d+)\s*[ชซ]/);
-                    const mMatch = text.match(/(\d+)\s*[นิม]/);
-                    let hours = hMatch ? parseInt(hMatch[1]) : 0;
-                    let mins = mMatch ? parseInt(mMatch[1]) : 0;
+                    // --- 1. ระบบค้นหาป้ายทะเบียนแบบใหม่ (แม่นยำสูง ทนต่อการอ่านผิดของ OCR) ---
+                    // ฟังก์ชันจำลองข้อผิดพลาดทั่วไปของ OCR (เช่น G สลับกับ C, S สลับกับ 8)
+                    function normalizeForOCR(s) {
+                        return s.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase()
+                                .replace(/[OQ]/g, '0')
+                                .replace(/[IL]/g, '1')
+                                .replace(/[S5B]/g, '8') // เลข 5, 8, S, B ชอบสลับกัน
+                                .replace(/[G]/g, 'C')   // G และ C ชอบสลับกัน
+                                .replace(/[Z]/g, '2');
+                    }
 
+                    let normalizedText = normalizeForOCR(text);
                     let matchedCar = null;
                     let bestMatchScore = -1;
 
-                    let cleanText = text.replace(/[^A-Z0-9ก-ฮ]/g, '').replace(/O/g, '0').replace(/I/g, '1');
-
                     let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
-                    for(let car of sortedCars) {
-                        let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                        if (cleanPlate.length > 0 && cleanText.includes(cleanPlate)) {
+
+                    for (let car of sortedCars) {
+                        let normPlate = normalizeForOCR(car.plate);
+                        if (normPlate.length < 2) continue;
+
+                        // ตรวจสอบแบบค้นหาตรงๆ หลังจาก Normalize แล้ว (ทำให้เจอง่ายขึ้นมาก)
+                        if (normalizedText.includes(normPlate)) {
                             matchedCar = car;
-                            bestMatchScore = 9999; 
-                            break;
-                        }
-                    }
-
-                    if (!matchedCar && cleanText.length > 0) {
-                        let tokens = text.replace(/\n/g, ' ').split(/\s+/).filter(t => t.length > 0);
-                        let searchPhrases = [];
-                        
-                        for(let i=0; i<tokens.length; i++) {
-                            searchPhrases.push(tokens[i]);
-                            if(i < tokens.length - 1) searchPhrases.push(tokens[i] + tokens[i+1]);
-                            if(i < tokens.length - 2) searchPhrases.push(tokens[i] + tokens[i+1] + tokens[i+2]);
+                            bestMatchScore = 10000;
+                            break; 
                         }
 
-                        for(let car of sortedCars) {
-                            let cleanPlate = car.plate.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                            if (cleanPlate.length < 3) continue;
+                        // ค้นหาแบบยืดหยุ่นเพิ่มเติมเผื่อผิดเพี้ยนตัวอื่นๆ อีก (Sliding Window Fuzzy Search)
+                        let dist = 999;
+                        for (let i = 0; i <= normalizedText.length - normPlate.length; i++) {
+                            for (let len = Math.max(1, normPlate.length - 1); len <= normPlate.length + 1; len++) {
+                                if (i + len > normalizedText.length) continue;
+                                let sub = normalizedText.substring(i, i + len);
+                                let d = getLevenshteinDistance(sub, normPlate);
+                                if (d < dist) dist = d;
+                            }
+                        }
 
-                            let maxTypos = cleanPlate.length >= 6 ? 2 : 1;
-                            
-                            for (let phrase of searchPhrases) {
-                                let cleanPhrase = phrase.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase().replace(/O/g, '0').replace(/I/g, '1');
-                                if (cleanPhrase.length === 0) continue;
-
-                                if (Math.abs(cleanPhrase.length - cleanPlate.length) <= 2) {
-                                    let dist = getLevenshteinDistance(cleanPhrase, cleanPlate);
-                                    if (dist <= maxTypos) {
-                                        let score = 100 - (dist * 20) + cleanPlate.length; 
-                                        if (score > bestMatchScore) {
-                                            bestMatchScore = score;
-                                            matchedCar = car;
-                                        }
-                                    }
-                                }
+                        let maxTypos = normPlate.length >= 6 ? 2 : 1; 
+                        if (dist <= maxTypos) {
+                            let score = 100 - dist + normPlate.length; 
+                            if (score > bestMatchScore) {
+                                bestMatchScore = score;
+                                matchedCar = car;
                             }
                         }
                     }
@@ -753,11 +755,53 @@
                         return;
                     }
 
+                    // --- 2. ระบบดึงเวลา (ผูกวันที่และเวลาเข้าด้วยกันเสมอ เพื่อกันดึงเวลา HUD นาฬิกาเพี้ยนๆ) ---
                     let autoEndTime = new Date();
-                    if (hours > 0 || mins > 0) {
-                        autoEndTime.setHours(autoEndTime.getHours() + hours);
-                        autoEndTime.setMinutes(autoEndTime.getMinutes() + mins);
-                    } else {
+                    let exactDateFound = false;
+
+                    // ค้นหา วัน/เดือน/ปี และ ชั่วโมง:นาที ที่อยู่ติดกันเสมอ
+                    const exactDateTimeRegex = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})(?:[^\d]{1,12})?(\d{1,2})\s*[:\.]\s*(\d{2})(?:\s*[:\.]\s*\d{2})?\s*([AP]\.?M\.?)?/i;
+                    const dtMatch = text.match(exactDateTimeRegex);
+
+                    if (dtMatch) {
+                        let day = parseInt(dtMatch[1]);
+                        let month = parseInt(dtMatch[2]) - 1; // ระบบเดือนของโค้ดเริ่มที่ 0
+                        let year = parseInt(dtMatch[3]);
+                        
+                        if (year < 100) year += 2000;
+                        else if (year > 2500) year -= 543; // แปลงพ.ศ.เป็นค.ศ.
+
+                        let hr = parseInt(dtMatch[4]);
+                        let min = parseInt(dtMatch[5]);
+                        let ampm = dtMatch[6] ? dtMatch[6].toUpperCase().replace(/\./g, '') : null;
+
+                        if (ampm === 'PM' && hr < 12) hr += 12;
+                        else if (ampm === 'AM' && hr === 12) hr = 0;
+
+                        autoEndTime = new Date(year, month, day, hr, min, 0);
+                        exactDateFound = true;
+                    }
+
+                    // แผนสำรอง: ค้นหาคำว่า เหลือ x วัน y ชม (ถ้าไม่เจอวันที่ตรงๆ)
+                    if (!exactDateFound) {
+                        const rDayMatch = text.match(/(\d+)\s*วัน/);
+                        const rHrMatch = text.match(/(\d+)\s*[ชซ]/);
+                        const rMinMatch = text.match(/(\d+)\s*[นิม]/);
+
+                        if (rDayMatch || rHrMatch || rMinMatch) {
+                            let addDays = rDayMatch ? parseInt(rDayMatch[1]) : 0;
+                            let addHrs = rHrMatch ? parseInt(rHrMatch[1]) : 0;
+                            let addMins = rMinMatch ? parseInt(rMinMatch[1]) : 0;
+
+                            autoEndTime.setDate(autoEndTime.getDate() + addDays);
+                            autoEndTime.setHours(autoEndTime.getHours() + addHrs);
+                            autoEndTime.setMinutes(autoEndTime.getMinutes() + addMins);
+                            exactDateFound = true;
+                        }
+                    }
+
+                    // ถ้าหาทั้ง 2 แบบไม่เจอเลย ให้บวก 1 วันไปก่อนเผื่อพลาด
+                    if (!exactDateFound) {
                         autoEndTime.setDate(autoEndTime.getDate() + 1);
                     }
 
@@ -886,7 +930,6 @@
         });
     }
 
-    // ================= ฟังก์ชันสำหรับหน้ารวมรูปรถว่าง =================
     function renderCaptureCategories() {
         const container = document.getElementById('captureCatFilters');
         if(!container) return;
@@ -997,7 +1040,6 @@
             btn.disabled = false;
         }, 3000);
     }
-    // ==============================================================
 
     setInterval(() => {
         const nowTime = new Date().getTime();
@@ -1068,6 +1110,18 @@
             previewEl.innerText = text;
             previewEl.style.color = "var(--summer-green)";
         }
+    }
+
+    function adjustRentTime(amount, unit) {
+        const input = document.getElementById('rentEndTime');
+        let date = input.value ? new Date(input.value) : new Date();
+
+        if (unit === 'hours') date.setHours(date.getHours() + amount);
+        if (unit === 'days') date.setDate(date.getDate() + amount);
+
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        input.value = date.toISOString().slice(0, 16);
+        calculateDuration();
     }
 
     function openRentModal(id, autoEndTime = null) {
