@@ -675,150 +675,215 @@
         };
         reader.readAsDataURL(file);
 
-        statusEl.innerText = "⏳ กำลังสแกนสัญญาผ่าน AI (ปรับระบบให้แม่นยำขึ้น)...";
+        statusEl.innerText = "⏳ เตรียมภาพ: สร้างขอบป้องกันครอป & แปลงสี (Invert)...";
         statusEl.style.color = "var(--summer-orange)";
 
         const img = new Image();
         img.onload = async () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            canvas.width = img.width * 2.5;
-            canvas.height = img.height * 2.5;
-            ctx.imageSmoothingEnabled = false; 
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            try {
+                const scale = 2;
+                const pad = 50; // เพิ่มขอบ 50px ป้องกัน Tesseract เอ๋อเวลาครอปภาพมาชิดขอบเกินไป
 
-            canvas.toBlob(async (blob) => {
-                try {
-                    const worker = await Tesseract.createWorker('tha+eng');
-                    const ret = await worker.recognize(blob);
-                    let text = ret.data.text.toUpperCase();
-                    await worker.terminate();
+                // ภาพที่ 1: สีปกติ + เพิ่มขอบ
+                const cvs1 = document.createElement('canvas');
+                const ctx1 = cvs1.getContext('2d');
+                cvs1.width = (img.width * scale) + (pad * 2);
+                cvs1.height = (img.height * scale) + (pad * 2);
+                ctx1.fillStyle = '#1E1E24'; 
+                ctx1.fillRect(0, 0, cvs1.width, cvs1.height);
+                ctx1.imageSmoothingEnabled = false;
+                ctx1.drawImage(img, pad, pad, img.width * scale, img.height * scale);
+                const blob1 = await new Promise(r => cvs1.toBlob(r, 'image/jpeg'));
 
-                    // --- 1. ระบบค้นหาป้ายทะเบียนแบบใหม่ (แม่นยำสูง ทนต่อการอ่านผิดของ OCR) ---
-                    // ฟังก์ชันจำลองข้อผิดพลาดทั่วไปของ OCR (เช่น G สลับกับ C, S สลับกับ 8)
-                    function normalizeForOCR(s) {
-                        return s.replace(/[^A-Z0-9ก-ฮ]/g, '').toUpperCase()
-                                .replace(/[OQ]/g, '0')
-                                .replace(/[IL]/g, '1')
-                                .replace(/[S5B]/g, '8') // เลข 5, 8, S, B ชอบสลับกัน
-                                .replace(/[G]/g, 'C')   // G และ C ชอบสลับกัน
-                                .replace(/[Z]/g, '2');
-                    }
+                // ภาพที่ 2: กลับสี (พื้นขาว ตัวอักษรดำ) + เพิ่มขอบ เพื่อเพิ่มความแม่นยำให้หน้าต่างสายมืด
+                const cvs2 = document.createElement('canvas');
+                const ctx2 = cvs2.getContext('2d');
+                cvs2.width = cvs1.width;
+                cvs2.height = cvs1.height;
+                ctx2.fillStyle = '#FFFFFF'; 
+                ctx2.fillRect(0, 0, cvs2.width, cvs2.height);
+                ctx2.imageSmoothingEnabled = false;
+                ctx2.filter = 'grayscale(100%) invert(100%) contrast(120%)';
+                ctx2.drawImage(img, pad, pad, img.width * scale, img.height * scale);
+                const blob2 = await new Promise(r => cvs2.toBlob(r, 'image/jpeg'));
 
-                    let normalizedText = normalizeForOCR(text);
-                    let matchedCar = null;
-                    let bestMatchScore = -1;
+                statusEl.innerText = "⏳ สแกน 1/4 (ดึงทะเบียนจากภาพปกติ)...";
+                const workerEng = await Tesseract.createWorker('eng');
+                const retEng1 = await workerEng.recognize(blob1);
 
-                    let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
+                statusEl.innerText = "⏳ สแกน 2/4 (ดึงเวลาจากภาพปกติ)...";
+                const workerTha = await Tesseract.createWorker('tha+eng');
+                const retTha1 = await workerTha.recognize(blob1);
 
-                    for (let car of sortedCars) {
-                        let normPlate = normalizeForOCR(car.plate);
-                        if (normPlate.length < 2) continue;
+                statusEl.innerText = "⏳ สแกน 3/4 (ดึงทะเบียนจากภาพกลับสี)...";
+                const retEng2 = await workerEng.recognize(blob2);
 
-                        // ตรวจสอบแบบค้นหาตรงๆ หลังจาก Normalize แล้ว (ทำให้เจอง่ายขึ้นมาก)
-                        if (normalizedText.includes(normPlate)) {
-                            matchedCar = car;
-                            bestMatchScore = 10000;
-                            break; 
+                statusEl.innerText = "⏳ สแกน 4/4 (ดึงเวลาจากภาพกลับสี)...";
+                const retTha2 = await workerTha.recognize(blob2);
+
+                await workerEng.terminate();
+                await workerTha.terminate();
+
+                let combinedText = [retEng1.data.text, retTha1.data.text, retEng2.data.text, retTha2.data.text].join(" \n ").toUpperCase();
+
+                // ==========================================
+                // 1. ระบบค้นหาป้ายทะเบียนแบบใหม่ (Strict Token Match Mode)
+                // ==========================================
+                let matchedCar = null;
+                let bestMatchScore = -1;
+
+                function normalizeStrict(str) {
+                    return str.replace(/[OQ0]/g, '0')
+                              .replace(/[IL1]/g, '1')
+                              .replace(/[Z2]/g, '2')
+                              .replace(/[B8]/g, '8')
+                              .replace(/[S5]/g, '5')
+                              .replace(/[GC]/g, 'C')
+                              .replace(/[A4]/g, 'A');
+                }
+
+                let cleanTextForTokens = combinedText.replace(/[^A-Z0-9\s]/g, ' ');
+                let tokens = cleanTextForTokens.split(/\s+/).filter(t => t.length >= 2);
+
+                let searchPhrases = [];
+                for (let i = 0; i < tokens.length; i++) {
+                    searchPhrases.push(tokens[i]);
+                    if (i < tokens.length - 1) searchPhrases.push(tokens[i] + tokens[i+1]);
+                    if (i < tokens.length - 2) searchPhrases.push(tokens[i] + tokens[i+1] + tokens[i+2]);
+                }
+
+                let sortedCars = [...cars].sort((a,b) => b.plate.length - a.plate.length);
+
+                for (let car of sortedCars) {
+                    let rawPlate = car.plate.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                    if (rawPlate.length < 2) continue;
+
+                    let normPlate = normalizeStrict(rawPlate);
+                    let found = false;
+                    let localScore = -1;
+
+                    for (let phrase of searchPhrases) {
+                        let rawPhrase = phrase.replace(/[^A-Z0-9]/g, '');
+                        let normPhrase = normalizeStrict(rawPhrase);
+
+                        if (rawPhrase === rawPlate) {
+                            found = true;
+                            localScore = 10000;
+                            break;
                         }
-
-                        // ค้นหาแบบยืดหยุ่นเพิ่มเติมเผื่อผิดเพี้ยนตัวอื่นๆ อีก (Sliding Window Fuzzy Search)
-                        let dist = 999;
-                        for (let i = 0; i <= normalizedText.length - normPlate.length; i++) {
-                            for (let len = Math.max(1, normPlate.length - 1); len <= normPlate.length + 1; len++) {
-                                if (i + len > normalizedText.length) continue;
-                                let sub = normalizedText.substring(i, i + len);
-                                let d = getLevenshteinDistance(sub, normPlate);
-                                if (d < dist) dist = d;
-                            }
-                        }
-
-                        let maxTypos = normPlate.length >= 6 ? 2 : 1; 
-                        if (dist <= maxTypos) {
-                            let score = 100 - dist + normPlate.length; 
-                            if (score > bestMatchScore) {
-                                bestMatchScore = score;
-                                matchedCar = car;
-                            }
-                        }
-                    }
-
-                    if (!matchedCar) {
-                        statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(ข้อความที่อ่านได้บางส่วน: ${text.substring(0, 40).replace(/\n/g, ' ')}...)</span>`;
-                        statusEl.style.color = "#ff4757";
-                        return;
-                    }
-
-                    if (matchedCar.status === 'busy') {
-                        statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
-                        statusEl.style.color = "#ff4757";
-                        return;
-                    }
-
-                    // --- 2. ระบบดึงเวลา (ผูกวันที่และเวลาเข้าด้วยกันเสมอ เพื่อกันดึงเวลา HUD นาฬิกาเพี้ยนๆ) ---
-                    let autoEndTime = new Date();
-                    let exactDateFound = false;
-
-                    // ค้นหา วัน/เดือน/ปี และ ชั่วโมง:นาที ที่อยู่ติดกันเสมอ
-                    const exactDateTimeRegex = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})(?:[^\d]{1,12})?(\d{1,2})\s*[:\.]\s*(\d{2})(?:\s*[:\.]\s*\d{2})?\s*([AP]\.?M\.?)?/i;
-                    const dtMatch = text.match(exactDateTimeRegex);
-
-                    if (dtMatch) {
-                        let day = parseInt(dtMatch[1]);
-                        let month = parseInt(dtMatch[2]) - 1; // ระบบเดือนของโค้ดเริ่มที่ 0
-                        let year = parseInt(dtMatch[3]);
                         
-                        if (year < 100) year += 2000;
-                        else if (year > 2500) year -= 543; // แปลงพ.ศ.เป็นค.ศ.
+                        if (normPhrase === normPlate) {
+                            found = true;
+                            localScore = 9000;
+                            break;
+                        }
+                        
+                        if (Math.abs(normPhrase.length - normPlate.length) <= 1) {
+                            let dist = getLevenshteinDistance(normPhrase, normPlate);
+                            let maxTypos = normPlate.length >= 6 ? 2 : (normPlate.length >= 4 ? 1 : 0);
+                            
+                            if (dist <= maxTypos) {
+                                let score = 100 - (dist * 10) + normPlate.length;
+                                if (score > localScore) {
+                                    localScore = score;
+                                    found = true;
+                                }
+                            }
+                        }
+                    }
 
-                        let hr = parseInt(dtMatch[4]);
-                        let min = parseInt(dtMatch[5]);
-                        let ampm = dtMatch[6] ? dtMatch[6].toUpperCase().replace(/\./g, '') : null;
+                    if (!found) {
+                        let textNoSpaces = combinedText.replace(/[^A-Z0-9]/g, '');
+                        let normTextNoSpaces = normalizeStrict(textNoSpaces);
+                        if (textNoSpaces.includes(rawPlate)) {
+                            found = true;
+                            localScore = 5000 + rawPlate.length;
+                        } else if (normTextNoSpaces.includes(normPlate)) {
+                            found = true;
+                            localScore = 4000 + rawPlate.length;
+                        }
+                    }
 
-                        if (ampm === 'PM' && hr < 12) hr += 12;
-                        else if (ampm === 'AM' && hr === 12) hr = 0;
+                    if (found && localScore > bestMatchScore) {
+                        bestMatchScore = localScore;
+                        matchedCar = car;
+                    }
+                }
 
-                        autoEndTime = new Date(year, month, day, hr, min, 0);
+                if (!matchedCar) {
+                    statusEl.innerHTML = `❌ ไม่พบป้ายทะเบียนในระบบ<br><span style="font-size:13px; color:#aaa; font-weight:normal;">(พยายามอ่านข้อมูลแล้วแต่ไม่ตรงกับสต็อกรถ)</span>`;
+                    statusEl.style.color = "#ff4757";
+                    return;
+                }
+
+                if (matchedCar.status === 'busy') {
+                    statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
+                    statusEl.style.color = "#ff4757";
+                    return;
+                }
+
+                // ==========================================
+                // 2. ระบบดึงเวลาหมดสัญญา 
+                // ==========================================
+                let autoEndTime = new Date();
+                let exactDateFound = false;
+
+                const exactDateTimeRegex = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})(?:[^\d]{1,12})?(\d{1,2})\s*[:\.]\s*(\d{2})(?:\s*[:\.]\s*\d{2})?\s*([AP]\.?M\.?)?/i;
+                const dtMatch = combinedText.match(exactDateTimeRegex);
+
+                if (dtMatch) {
+                    let day = parseInt(dtMatch[1]);
+                    let month = parseInt(dtMatch[2]) - 1; 
+                    let year = parseInt(dtMatch[3]);
+                    
+                    if (year < 100) year += 2000;
+                    else if (year > 2500) year -= 543;
+
+                    let hr = parseInt(dtMatch[4]);
+                    let min = parseInt(dtMatch[5]);
+                    let ampm = dtMatch[6] ? dtMatch[6].toUpperCase().replace(/\./g, '') : null;
+
+                    if (ampm === 'PM' && hr < 12) hr += 12;
+                    else if (ampm === 'AM' && hr === 12) hr = 0;
+
+                    autoEndTime = new Date(year, month, day, hr, min, 0);
+                    exactDateFound = true;
+                }
+
+                if (!exactDateFound) {
+                    const rDayMatch = combinedText.match(/(\d+)\s*วัน/);
+                    const rHrMatch = combinedText.match(/(\d+)\s*[ชซ]/);
+                    const rMinMatch = combinedText.match(/(\d+)\s*[นิม]/);
+
+                    if (rDayMatch || rHrMatch || rMinMatch) {
+                        let addDays = rDayMatch ? parseInt(rDayMatch[1]) : 0;
+                        let addHrs = rHrMatch ? parseInt(rHrMatch[1]) : 0;
+                        let addMins = rMinMatch ? parseInt(rMinMatch[1]) : 0;
+
+                        autoEndTime.setDate(autoEndTime.getDate() + addDays);
+                        autoEndTime.setHours(autoEndTime.getHours() + addHrs);
+                        autoEndTime.setMinutes(autoEndTime.getMinutes() + addMins);
                         exactDateFound = true;
                     }
-
-                    // แผนสำรอง: ค้นหาคำว่า เหลือ x วัน y ชม (ถ้าไม่เจอวันที่ตรงๆ)
-                    if (!exactDateFound) {
-                        const rDayMatch = text.match(/(\d+)\s*วัน/);
-                        const rHrMatch = text.match(/(\d+)\s*[ชซ]/);
-                        const rMinMatch = text.match(/(\d+)\s*[นิม]/);
-
-                        if (rDayMatch || rHrMatch || rMinMatch) {
-                            let addDays = rDayMatch ? parseInt(rDayMatch[1]) : 0;
-                            let addHrs = rHrMatch ? parseInt(rHrMatch[1]) : 0;
-                            let addMins = rMinMatch ? parseInt(rMinMatch[1]) : 0;
-
-                            autoEndTime.setDate(autoEndTime.getDate() + addDays);
-                            autoEndTime.setHours(autoEndTime.getHours() + addHrs);
-                            autoEndTime.setMinutes(autoEndTime.getMinutes() + addMins);
-                            exactDateFound = true;
-                        }
-                    }
-
-                    // ถ้าหาทั้ง 2 แบบไม่เจอเลย ให้บวก 1 วันไปก่อนเผื่อพลาด
-                    if (!exactDateFound) {
-                        autoEndTime.setDate(autoEndTime.getDate() + 1);
-                    }
-
-                    statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
-                    statusEl.style.color = "var(--summer-green)";
-
-                    setTimeout(() => {
-                        closeModal('ocrPasteModal');
-                        openRentModal(matchedCar.id, autoEndTime);
-                    }, 800);
-
-                } catch (err) {
-                    console.error(err);
-                    statusEl.innerText = "❌ เกิดข้อผิดพลาดในการประมวลผลรูปภาพ";
-                    statusEl.style.color = "#ff4757";
                 }
-            }, 'image/jpeg');
+
+                if (!exactDateFound) {
+                    autoEndTime.setDate(autoEndTime.getDate() + 1);
+                }
+
+                statusEl.innerText = `✅ ตรวจพบรถ: ${matchedCar.plate} สำเร็จ!`;
+                statusEl.style.color = "var(--summer-green)";
+
+                setTimeout(() => {
+                    closeModal('ocrPasteModal');
+                    openRentModal(matchedCar.id, autoEndTime);
+                }, 800);
+
+            } catch (err) {
+                console.error(err);
+                statusEl.innerText = "❌ เกิดข้อผิดพลาดในการประมวลผลรูปภาพ";
+                statusEl.style.color = "#ff4757";
+            }
         };
         img.src = URL.createObjectURL(file);
     }
