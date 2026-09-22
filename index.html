@@ -1195,12 +1195,12 @@
                     if(el) {
                         const h = Math.floor(distance / (1000 * 60 * 60));
                         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-                        const s = Math.floor((distance % (1000 * 60)) / 1000);
                         
                         const endDate = new Date(car.endTime);
                         const returnTimeStr = `${endDate.getHours().toString().padStart(2,'0')}:${endDate.getMinutes().toString().padStart(2,'0')} น.`;
 
-                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที ${s} วิ<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
+                        // แสดงผลเฉพาะ ชั่วโมง กับ นาที
+                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
                     }
                 }
             }
