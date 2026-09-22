@@ -113,9 +113,30 @@
         .time-adjust-btn:hover { background: var(--summer-blue); color: #000; border-color: var(--summer-blue); }
         .time-adjust-btn.negative { border-color: rgba(255, 71, 87, 0.5); }
         .time-adjust-btn.negative:hover { background: #ff4757; color: #fff; border-color: #ff4757; }
+
+        /* ระบบโหลดข้อมูล (Loading Overlay) */
+        #loadingOverlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(11, 11, 14, 0.95); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            backdrop-filter: blur(10px); transition: opacity 0.3s ease;
+        }
+        .spinner {
+            width: 60px; height: 60px; border: 6px solid rgba(255, 94, 58, 0.1);
+            border-top-color: var(--summer-orange); border-radius: 50%;
+            animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
+
+<!-- หน้าจอ Loading ตอนเข้าเว็บ -->
+<div id="loadingOverlay">
+    <div class="spinner"></div>
+    <h2 style="color: var(--summer-orange); margin: 0; text-shadow: 0 0 15px var(--summer-orange-glow); letter-spacing: 1px;">🌴 กำลังเชื่อมต่อฐานข้อมูล...</h2>
+    <p style="color: #888; margin-top: 10px;">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูลรถ</p>
+</div>
 
 <header>
     <h1 onclick="switchPage('manage')" title="แอบเข้าหน้าจัดการ">
@@ -385,6 +406,8 @@
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
 
+    let isFirstLoad = true; // ตัวแปรเช็คว่าโหลดครั้งแรกอยู่หรือเปล่า
+
     function normalizeCars(carList) {
         if (!carList || !Array.isArray(carList)) return [];
         return carList.map(c => ({
@@ -426,8 +449,24 @@
                         }
                     }
                 }
+                
+                // ถ้านี่คือการโหลดครั้งแรก ให้ปิดหน้าจอโหลด
+                if (isFirstLoad) {
+                    document.getElementById('loadingOverlay').style.opacity = '0';
+                    setTimeout(() => { document.getElementById('loadingOverlay').style.display = 'none'; }, 300);
+                    isFirstLoad = false;
+                }
             })
-            .catch(err => console.log('Sync Error:', err));
+            .catch(err => {
+                console.log('Sync Error:', err);
+                
+                // กรณีเน็ตหลุดหรือมีปัญหา ให้ปิดหน้าจอโหลดไปเลยจะได้ไม่ค้าง
+                if (isFirstLoad) {
+                    document.getElementById('loadingOverlay').style.opacity = '0';
+                    setTimeout(() => { document.getElementById('loadingOverlay').style.display = 'none'; }, 300);
+                    isFirstLoad = false;
+                }
+            });
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -714,9 +753,8 @@
         img.onload = async () => {
             try {
                 const scale = 2;
-                const pad = 50; // เพิ่มขอบ 50px ป้องกัน Tesseract เอ๋อเวลาครอปภาพมาชิดขอบเกินไป
+                const pad = 50; 
 
-                // ภาพที่ 1: สีปกติ + เพิ่มขอบ
                 const cvs1 = document.createElement('canvas');
                 const ctx1 = cvs1.getContext('2d');
                 cvs1.width = (img.width * scale) + (pad * 2);
@@ -727,7 +765,6 @@
                 ctx1.drawImage(img, pad, pad, img.width * scale, img.height * scale);
                 const blob1 = await new Promise(r => cvs1.toBlob(r, 'image/jpeg'));
 
-                // ภาพที่ 2: กลับสี (พื้นขาว ตัวอักษรดำ) + เพิ่มขอบ เพื่อเพิ่มความแม่นยำให้หน้าต่างสายมืด
                 const cvs2 = document.createElement('canvas');
                 const ctx2 = cvs2.getContext('2d');
                 cvs2.width = cvs1.width;
@@ -758,9 +795,6 @@
 
                 let combinedText = [retEng1.data.text, retTha1.data.text, retEng2.data.text, retTha2.data.text].join(" \n ").toUpperCase();
 
-                // ==========================================
-                // 1. ระบบค้นหาป้ายทะเบียนแบบใหม่ (Strict Token Match Mode)
-                // ==========================================
                 let matchedCar = null;
                 let bestMatchScore = -1;
 
@@ -854,9 +888,6 @@
                     return;
                 }
 
-                // ==========================================
-                // 2. ระบบดึงเวลาหมดสัญญา 
-                // ==========================================
                 let autoEndTime = new Date();
                 let exactDateFound = false;
 
@@ -1015,7 +1046,6 @@
                         <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green); line-height: 1.5;">โหลดเวลา...</div>
                     </div>`;
                 
-                // แสดงปุ่มต่อเวลาเฉพาะแอดมินที่ล็อกอิน
                 if (isLoggedIn) {
                     html += `
                     <div class="card-actions" style="border-top: none; background: transparent; padding-top: 10px;">
