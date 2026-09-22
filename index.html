@@ -300,6 +300,38 @@
     </div>
 </div>
 
+<div class="modal" id="extendModal">
+    <div class="modal-content">
+        <h2 style="color: var(--summer-blue); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">⏳ ต่อเวลา / เพิ่มยอดเงิน</h2>
+        <input type="hidden" id="extendCarId">
+        <div class="form-group">
+            <label>ทะเบียนรถ</label>
+            <input type="text" id="extendCarName" disabled style="color: var(--summer-blue); background: rgba(0, 210, 255, 0.05); font-weight: bold;">
+        </div>
+        <div class="form-group">
+            <label>แก้ไขเวลาสิ้นสุดสัญญา (เวลาใหม่)</label>
+            <input type="datetime-local" id="extendEndTime" required oninput="calculateExtendDuration()" onchange="calculateExtendDuration()">
+            <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="time-adjust-btn" onclick="adjustExtendTime(1, 'hours')">+1 ชม.</button>
+                <button type="button" class="time-adjust-btn" onclick="adjustExtendTime(12, 'hours')">+12 ชม.</button>
+                <button type="button" class="time-adjust-btn" onclick="adjustExtendTime(1, 'days')">+1 วัน</button>
+                <button type="button" class="time-adjust-btn negative" onclick="adjustExtendTime(-1, 'hours')">-1 ชม.</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>
+                ยอดเงินที่รับเพิ่ม (sm)
+                <span id="extendDurationPreview" style="color: var(--summer-green); margin-left: 10px; font-weight: normal;"></span>
+            </label>
+            <input type="text" id="extendPrice" placeholder="ระบุจำนวนเงินที่เพิ่ม (ถ้าไม่มีให้ปล่อยว่าง)" style="border-color: var(--summer-green); box-shadow: 0 0 10px rgba(0, 230, 118, 0.2);" oninput="formatNumber(this)">
+        </div>
+        <div class="modal-actions">
+            <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('extendModal')">CANCEL</button>
+            <button class="btn btn-add" style="background: linear-gradient(135deg, #00C9FF, #0082FF);" onclick="confirmExtend()">CONFIRM</button>
+        </div>
+    </div>
+</div>
+
 <div class="modal" id="editModal">
     <div class="modal-content">
         <h2 style="color: var(--summer-blue); margin-top: 0; border-bottom: 1px solid #333; padding-bottom: 15px;">✏️ แก้ไขข้อมูลรถ</h2>
@@ -981,7 +1013,16 @@
                     <div class="rental-info">
                         <span style="color: #FFB300; font-weight: 600;">💰 ยอดเช่า: ${car.price.toLocaleString()} sm</span>
                         <div class="countdown" id="cd-${car.id}" style="margin-top: 10px; font-weight: 600; color:var(--summer-green); line-height: 1.5;">โหลดเวลา...</div>
-                    </div></div>`; 
+                    </div>`;
+                
+                // แสดงปุ่มต่อเวลาเฉพาะแอดมินที่ล็อกอิน
+                if (isLoggedIn) {
+                    html += `
+                    <div class="card-actions" style="border-top: none; background: transparent; padding-top: 10px;">
+                        <button class="btn" style="flex: 1; font-size: 13px; background: rgba(0, 210, 255, 0.1); color: var(--summer-blue); border: 1px solid var(--summer-blue);" onclick="openExtendModal(${car.id})">⏳ ต่อเวลา / เพิ่มยอด</button>
+                    </div>`;
+                }
+                html += `</div>`;
             } else {
                 html += `</div>`;
                 if (isLoggedIn) {
@@ -1262,6 +1303,105 @@
         if(document.getElementById('managePage').classList.contains('active')) {
             renderManageCars();
         }
+    }
+
+    function openExtendModal(id) {
+        const car = cars.find(c => c.id === id);
+        document.getElementById('extendCarId').value = car.id;
+        document.getElementById('extendCarName').value = `${car.plate} (${car.name})`;
+        document.getElementById('extendPrice').value = "";
+        
+        let currentEndTime = new Date(car.endTime);
+        currentEndTime.setMinutes(currentEndTime.getMinutes() - currentEndTime.getTimezoneOffset());
+        document.getElementById('extendEndTime').value = currentEndTime.toISOString().slice(0, 16);
+        
+        document.getElementById('extendModal').style.display = "flex";
+        calculateExtendDuration();
+    }
+
+    function adjustExtendTime(amount, unit) {
+        const input = document.getElementById('extendEndTime');
+        let date = input.value ? new Date(input.value) : new Date();
+        if (unit === 'hours') date.setHours(date.getHours() + amount);
+        if (unit === 'days') date.setDate(date.getDate() + amount);
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        input.value = date.toISOString().slice(0, 16);
+        calculateExtendDuration();
+    }
+
+    function calculateExtendDuration() {
+        const endTimeVal = document.getElementById('extendEndTime').value;
+        const previewEl = document.getElementById('extendDurationPreview');
+        if (!endTimeVal) { previewEl.innerText = ""; return; }
+        
+        const endTime = new Date(endTimeVal).getTime();
+        const nowTime = new Date().getTime();
+        const diff = endTime - nowTime;
+
+        if (diff <= 0) {
+            previewEl.innerText = "(เวลาไม่ถูกต้อง)";
+            previewEl.style.color = "#ff4757";
+        } else {
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            let text = "(เวลาคงเหลือใหม่: ";
+            if (d > 0) text += `${d} วัน `;
+            if (h > 0) text += `${h} ชม. `;
+            text += `${m} นาที)`;
+            previewEl.innerText = text;
+            previewEl.style.color = "var(--summer-green)";
+        }
+    }
+
+    function confirmExtend() {
+        const id = parseInt(document.getElementById('extendCarId').value);
+        const priceStr = document.getElementById('extendPrice').value.replace(/,/g, '');
+        const addedPrice = priceStr ? parseInt(priceStr) : 0;
+        const endTimeValue = document.getElementById('extendEndTime').value;
+
+        if (!endTimeValue) return alert("⚠️ กรุณาระบุเวลาสิ้นสุดใหม่!");
+
+        const carIndex = cars.findIndex(c => c.id === id);
+        const car = cars[carIndex];
+        
+        car.price += addedPrice;
+        car.endTime = new Date(endTimeValue).getTime();
+
+        if (addedPrice > 0) {
+            let kapiIncome = addedPrice;
+            let ownerIncome = 0;
+
+            rentalHistory.push({
+                id: Date.now(),
+                dateTimestamp: new Date().getTime(),
+                plate: car.plate,
+                carName: car.name + " (ต่อเวลา)",
+                ownerType: car.ownerType,
+                price: addedPrice,
+                kapiIncome: kapiIncome,
+                ownerIncome: ownerIncome
+            });
+            
+            fetch(scriptURL, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action: 'rent',
+                    item: `ต่อเวลา ${car.name} (${car.plate})`,
+                    income: addedPrice,
+                    expense: 0,
+                    cars: cars
+                })
+            }).catch(e => console.error('Sheet Sync Error:', e));
+        }
+
+        saveDataLocally(true); 
+        closeModal('extendModal');
+        renderCars();
+        if(document.getElementById('managePage').classList.contains('active')) renderManageCars();
+        if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
+        
+        alert("✅ ต่อเวลา / เพิ่มยอดเรียบร้อยแล้ว!");
     }
 
     function returnCar(id) {
