@@ -1182,26 +1182,31 @@
         let stateChanged = false;
 
         cars.forEach(car => {
-            if(car.status === 'busy' && car.endTime) {
-                const distance = car.endTime - nowTime;
+            if(car.status === 'busy') {
+                const el = document.getElementById(`cd-${car.id}`);
                 
-                if (distance <= 0) {
-                    car.status = "available";
-                    car.price = 0;
-                    car.endTime = null;
-                    stateChanged = true;
-                } else {
-                    const el = document.getElementById(`cd-${car.id}`);
-                    if(el) {
-                        const h = Math.floor(distance / (1000 * 60 * 60));
+                if (car.endTime) {
+                    const distance = car.endTime - nowTime;
+                    
+                    if (distance <= 0) {
+                        car.status = "available";
+                        car.price = 0;
+                        car.endTime = null;
+                        stateChanged = true;
+                    } else if (el) {
+                        const d = Math.floor(distance / (1000 * 60 * 60 * 24));
+                        const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
                         
                         const endDate = new Date(car.endTime);
                         const returnTimeStr = `${endDate.getHours().toString().padStart(2,'0')}:${endDate.getMinutes().toString().padStart(2,'0')} น.`;
 
-                        // ⚠️ โค้ดแสดงผลแค่ ชม. นาที (ตัดวินาทีออก)[cite: 4]
-                        el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
+                        let timeLeftText = d > 0 ? `เหลือเวลา: ${d} วัน ${h} ชม. ${m} นาที` : `เหลือเวลา: ${h} ชม. ${m} นาที`;
+
+                        el.innerHTML = `${timeLeftText}<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
                     }
+                } else if (el) {
+                    el.innerHTML = `<span style="color:#ff4757;">⚠️ ไม่มีข้อมูลเวลา</span><br><span style="font-size: 12px; color: #aaa;">(กรุณากด "ต่อเวลา" เพื่อตั้งเวลาใหม่)</span>`;
                 }
             }
         });
