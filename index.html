@@ -185,7 +185,7 @@
         <div style="text-align: center; overflow-x: auto; padding-bottom: 20px;">
             <div id="captureContainer" style="display: inline-block; text-align: center; background: var(--bg-dark); padding: 30px 40px; border-radius: 16px; border: 1px solid var(--border-color); min-width: 350px;">
                 <div style="margin-bottom: 25px;">
-                    <p style="color: var(--summer-orange); margin: 5px 0; font-size: 24px; font-weight: 800; text-shadow: 0 0 15px var(--summer-orange-glow);">🌴 รถว่างปล่อยเช่า</p>
+                    <p style="color: var(--summer-orange); margin: 5px 0; font-size: 24px; font-weight: 800; text-shadow: 0 0 15px var(--summer-orange-glow); letter-spacing: 1px;">🌴 รถว่างปล่อยเช่า</p>
                 </div>
                 <div id="captureGrid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; max-width: 1200px;">
                     <!-- Content via JS -->
@@ -401,12 +401,15 @@
 </div>
 
 <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyWc9mJjcXlw2y09ObQgJnwwkrtoquRpyVVcmdeq1cNtWeVINteg4nLDWoGxR1RsgId/exec';
+    // -------------------------------------------------------------------------
+    // ⚠️ เอาลิงก์ Web App ที่เพิ่ง Deploy เวอร์ชันใหม่ล่าสุด มาวางทับตรงนี้ด้วยนะครับ ⚠️
+    // -------------------------------------------------------------------------
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbzm7-FEW7ruXCsBr2mT6EXKo6dYEboAGPxqIk2_2KUfU3Bf_K_tryLBN_fvYTWqYHcJ/exec';
     
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
 
-    let isFirstLoad = true; // ตัวแปรเช็คว่าโหลดครั้งแรกอยู่หรือเปล่า
+    let isFirstLoad = true; 
 
     function normalizeCars(carList) {
         if (!carList || !Array.isArray(carList)) return [];
@@ -450,7 +453,6 @@
                     }
                 }
                 
-                // ถ้านี่คือการโหลดครั้งแรก ให้ปิดหน้าจอโหลด
                 if (isFirstLoad) {
                     document.getElementById('loadingOverlay').style.opacity = '0';
                     setTimeout(() => { document.getElementById('loadingOverlay').style.display = 'none'; }, 300);
@@ -459,8 +461,6 @@
             })
             .catch(err => {
                 console.log('Sync Error:', err);
-                
-                // กรณีเน็ตหลุดหรือมีปัญหา ให้ปิดหน้าจอโหลดไปเลยจะได้ไม่ค้าง
                 if (isFirstLoad) {
                     document.getElementById('loadingOverlay').style.opacity = '0';
                     setTimeout(() => { document.getElementById('loadingOverlay').style.display = 'none'; }, 300);
@@ -1199,7 +1199,7 @@
                         const endDate = new Date(car.endTime);
                         const returnTimeStr = `${endDate.getHours().toString().padStart(2,'0')}:${endDate.getMinutes().toString().padStart(2,'0')} น.`;
 
-                        // แสดงผลเฉพาะ ชั่วโมง กับ นาที
+                        // ⚠️ โค้ดแสดงผลแค่ ชม. นาที (ตัดวินาทีออก)[cite: 4]
                         el.innerHTML = `เหลือเวลา: ${h} ชม. ${m} นาที<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
                     }
                 }
