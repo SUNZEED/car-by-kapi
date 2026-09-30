@@ -298,7 +298,9 @@
             <input type="text" id="rentCarName" disabled style="color: var(--summer-orange); background: rgba(255, 94, 58, 0.05); font-weight: bold;">
         </div>
         <div class="form-group">
-            <label>ระยะเวลาสิ้นสุดสัญญา</label>
+            <label>ระยะเวลาสิ้นสุดสัญญา
+                <span id="timeOcrStatus" style="float:right; font-size: 12px; color: var(--summer-blue); font-weight: normal;">💡 กด Ctrl+V วางรูปลงหน้านี้เพื่อสแกนเวลาได้เลย!</span>
+            </label>
             <input type="datetime-local" id="rentEndTime" required oninput="calculateDuration()" onchange="calculateDuration()">
             <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                 <button type="button" class="time-adjust-btn" onclick="adjustRentTime(1, 'hours')">+1 ชม.</button>
@@ -316,7 +318,7 @@
         </div>
         <div class="modal-actions">
             <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('rentModal')">CANCEL</button>
-            <button class="btn btn-rent" onclick="confirmRent()">CONFIRM</button>
+            <button class="btn btn-rent" id="btnConfirmRent" onclick="confirmRent()">CONFIRM</button>
         </div>
     </div>
 </div>
@@ -330,7 +332,9 @@
             <input type="text" id="extendCarName" disabled style="color: var(--summer-blue); background: rgba(0, 210, 255, 0.05); font-weight: bold;">
         </div>
         <div class="form-group">
-            <label>แก้ไขเวลาสิ้นสุดสัญญา (เวลาใหม่)</label>
+            <label>แก้ไขเวลาสิ้นสุดสัญญา (เวลาใหม่)
+                <span id="extendTimeOcrStatus" style="float:right; font-size: 12px; color: var(--summer-blue); font-weight: normal;">💡 กด Ctrl+V วางรูปลงหน้านี้เพื่อสแกนเวลาได้เลย!</span>
+            </label>
             <input type="datetime-local" id="extendEndTime" required oninput="calculateExtendDuration()" onchange="calculateExtendDuration()">
             <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
                 <button type="button" class="time-adjust-btn" onclick="adjustExtendTime(1, 'hours')">+1 ชม.</button>
@@ -348,7 +352,7 @@
         </div>
         <div class="modal-actions">
             <button class="btn" style="background: transparent; border: 1px solid #444; color:#888" onclick="closeModal('extendModal')">CANCEL</button>
-            <button class="btn btn-add" style="background: linear-gradient(135deg, #00C9FF, #0082FF);" onclick="confirmExtend()">CONFIRM</button>
+            <button class="btn btn-add" id="btnConfirmExtend" style="background: linear-gradient(135deg, #00C9FF, #0082FF);" onclick="confirmExtend()">CONFIRM</button>
         </div>
     </div>
 </div>
@@ -404,12 +408,13 @@
     // -------------------------------------------------------------------------
     // ⚠️ เอาลิงก์ Web App ที่เพิ่ง Deploy เวอร์ชันใหม่ล่าสุด มาวางทับตรงนี้ด้วยนะครับ ⚠️
     // -------------------------------------------------------------------------
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbzm7-FEW7ruXCsBr2mT6EXKo6dYEboAGPxqIk2_2KUfU3Bf_K_tryLBN_fvYTWqYHcJ/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbx-xvagjFm6iFCi-JJ5LXc0b3tHPB_PBW-RiIzs9pNQW8h73GPCagClcJmviAl55Uoy/exec';
     
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
 
     let isFirstLoad = true; 
+    let isUpdating = false;
 
     function normalizeCars(carList) {
         if (!carList || !Array.isArray(carList)) return [];
@@ -435,6 +440,7 @@
     }
     
     function fetchLatestCars() {
+        if (isUpdating) return;
         fetch(scriptURL)
             .then(res => res.json())
             .then(data => {
@@ -505,10 +511,16 @@
         localStorage.setItem('summerCategories', JSON.stringify(categories));
 
         if (!skipCloudSync) {
+            isUpdating = true;
             fetch(scriptURL, {
                 method: 'POST',
                 body: JSON.stringify({ action: 'syncCars', cars: cars })
-            }).catch(e => console.log('Sync Error:', e));
+            }).then(() => {
+                isUpdating = false;
+            }).catch(e => {
+                console.log('Sync Error:', e);
+                isUpdating = false;
+            });
         }
     }
 
@@ -712,15 +724,23 @@
     }
 
     window.addEventListener('paste', e => {
-        if (document.getElementById('ocrPasteModal').style.display === 'flex') {
-            const items = e.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    const blob = items[i].getAsFile();
-                    processPastedImage(blob);
-                    break;
-                }
+        const items = e.clipboardData.items;
+        let imageBlob = null;
+        for (let i = 0; i < items.length; i++) {
+            if (items[i].type.indexOf('image') !== -1) {
+                imageBlob = items[i].getAsFile();
+                break;
             }
+        }
+        
+        if (!imageBlob) return;
+
+        if (document.getElementById('ocrPasteModal').style.display === 'flex') {
+            processPastedImage(imageBlob);
+        } else if (document.getElementById('rentModal').style.display === 'flex') {
+            processTimeOnlyImage(imageBlob, 'rentEndTime', 'timeOcrStatus');
+        } else if (document.getElementById('extendModal').style.display === 'flex') {
+            processTimeOnlyImage(imageBlob, 'extendEndTime', 'extendTimeOcrStatus');
         }
     });
 
@@ -736,6 +756,99 @@
         return tmp[a.length][b.length];
     }
 
+    // สแกนเฉพาะเวลา (สำหรับหน้าต่างปล่อยเช่า / ต่อเวลา)
+    async function processTimeOnlyImage(file, inputId, statusId) {
+        const statusEl = document.getElementById(statusId);
+        statusEl.innerText = "⏳ กำลังสแกนเวลา...";
+        statusEl.style.color = "var(--summer-orange)";
+
+        const img = new Image();
+        img.onload = async () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.width * 2.5;
+            canvas.height = img.height * 2.5;
+            ctx.imageSmoothingEnabled = false; 
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+            canvas.toBlob(async (blob) => {
+                try {
+                    const worker = await Tesseract.createWorker('tha+eng');
+                    const ret = await worker.recognize(blob);
+                    let combinedText = ret.data.text.toUpperCase();
+                    await worker.terminate();
+
+                    let autoEndTime = new Date();
+                    let exactDateFound = false;
+
+                    const exactDateTimeRegex = /(\d{1,2})\s*[\/\-]\s*(\d{1,2})\s*[\/\-]\s*(\d{4})(?:[^\d]{1,12})?(\d{1,2})\s*[:\.]\s*(\d{2})(?:\s*[:\.]\s*\d{2})?\s*([AP]\.?M\.?)?/i;
+                    const dtMatch = combinedText.match(exactDateTimeRegex);
+
+                    if (dtMatch) {
+                        let day = parseInt(dtMatch[1]);
+                        let month = parseInt(dtMatch[2]) - 1; 
+                        let year = parseInt(dtMatch[3]);
+                        
+                        if (year < 100) year += 2000;
+                        else if (year > 2500) year -= 543;
+
+                        let hr = parseInt(dtMatch[4]);
+                        let min = parseInt(dtMatch[5]);
+                        let ampm = dtMatch[6] ? dtMatch[6].toUpperCase().replace(/\./g, '') : null;
+
+                        if (ampm === 'PM' && hr < 12) hr += 12;
+                        else if (ampm === 'AM' && hr === 12) hr = 0;
+
+                        autoEndTime = new Date(year, month, day, hr, min, 0);
+                        exactDateFound = true;
+                    }
+
+                    if (!exactDateFound) {
+                        const rDayMatch = combinedText.match(/(\d+)\s*วัน/);
+                        const rHrMatch = combinedText.match(/(\d+)\s*[ชซ]/);
+                        const rMinMatch = combinedText.match(/(\d+)\s*[นิม]/);
+
+                        if (rDayMatch || rHrMatch || rMinMatch) {
+                            let addDays = rDayMatch ? parseInt(rDayMatch[1]) : 0;
+                            let addHrs = rHrMatch ? parseInt(rHrMatch[1]) : 0;
+                            let addMins = rMinMatch ? parseInt(rMinMatch[1]) : 0;
+
+                            autoEndTime.setDate(autoEndTime.getDate() + addDays);
+                            autoEndTime.setHours(autoEndTime.getHours() + addHrs);
+                            autoEndTime.setMinutes(autoEndTime.getMinutes() + addMins);
+                            exactDateFound = true;
+                        }
+                    }
+
+                    if (exactDateFound) {
+                        autoEndTime.setMinutes(autoEndTime.getMinutes() - autoEndTime.getTimezoneOffset());
+                        document.getElementById(inputId).value = autoEndTime.toISOString().slice(0, 16);
+                        if(inputId === 'rentEndTime') calculateDuration();
+                        else calculateExtendDuration();
+
+                        statusEl.innerText = "✅ ดึงเวลาสำเร็จ!";
+                        statusEl.style.color = "var(--summer-green)";
+                        
+                        setTimeout(() => {
+                            statusEl.innerHTML = "💡 กด Ctrl+V วางรูปลงหน้านี้เพื่อสแกนเวลาได้เลย!";
+                            statusEl.style.color = "var(--summer-blue)";
+                        }, 3000);
+                    } else {
+                        statusEl.innerText = "❌ หาเวลาไม่เจอ (หรือภาพไม่ชัด)";
+                        statusEl.style.color = "#ff4757";
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    statusEl.innerText = "❌ เกิดข้อผิดพลาดในระบบสแกน";
+                    statusEl.style.color = "#ff4757";
+                }
+            }, 'image/jpeg');
+        };
+        img.src = URL.createObjectURL(file);
+    }
+
+    // สแกนเต็มรูปแบบ (ดึงทะเบียน + เวลา) จากหน้าต่างรวม
     async function processPastedImage(file) {
         const statusEl = document.getElementById('ocrPasteStatus');
         const pasteArea = document.getElementById('pasteArea');
@@ -1056,6 +1169,7 @@
             } else {
                 html += `</div>`;
                 if (isLoggedIn) {
+                    // เอาปุ่มแก้ไข (✏️) ออกจากตรงนี้ตามคำขอ เหลือแค่ปุ่มปล่อยเช่าแบบเต็มๆ
                     html += `
                         <div class="card-actions">
                             <button class="btn btn-rent" style="flex: 1; font-size: 13px;" onclick="openRentModal(${car.id})">ปล่อยเช่า</button>
@@ -1197,11 +1311,12 @@
                         const d = Math.floor(distance / (1000 * 60 * 60 * 24));
                         const h = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                         const m = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        const s = Math.floor((distance % (1000 * 60)) / 1000);
                         
                         const endDate = new Date(car.endTime);
-                        const returnTimeStr = `${endDate.getHours().toString().padStart(2,'0')}:${endDate.getMinutes().toString().padStart(2,'0')} น.`;
+                        const returnTimeStr = endDate.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' น.';
 
-                        let timeLeftText = d > 0 ? `เหลือเวลา: ${d} วัน ${h} ชม. ${m} นาที` : `เหลือเวลา: ${h} ชม. ${m} นาที`;
+                        let timeLeftText = d > 0 ? `เหลือเวลา: ${d} วัน ${h} ชม. ${m} นาที` : `เหลือเวลา: ${h} ชม. ${m} นาที ${s} วิ`;
 
                         el.innerHTML = `${timeLeftText}<br><span style="font-size: 13px; color: #aaa; font-weight: 400;">(กลับเข้าอู่: ${returnTimeStr})</span>`;
                     }
@@ -1271,6 +1386,12 @@
         document.getElementById('rentCarName').value = `${car.plate} (${car.name})`;
         document.getElementById('rentPrice').value = "";
         
+        const statusEl = document.getElementById('timeOcrStatus');
+        if(statusEl) {
+            statusEl.innerHTML = "💡 กด Ctrl+V วางรูปลงหน้านี้เพื่อสแกนเวลาได้เลย!";
+            statusEl.style.color = "var(--summer-blue)";
+        }
+
         if(autoEndTime) {
             autoEndTime.setMinutes(autoEndTime.getMinutes() - autoEndTime.getTimezoneOffset());
             document.getElementById('rentEndTime').value = autoEndTime.toISOString().slice(0, 16);
@@ -1292,7 +1413,25 @@
 
         const carIndex = cars.findIndex(c => c.id === id);
         const car = cars[carIndex];
-        
+
+        // --- ระบบป้องกันคนลืมแล้วกดซ้ำภายใน 12 ชม. ---
+        const lastEntry = rentalHistory.slice().reverse().find(r => r.plate === car.plate);
+        if (lastEntry) {
+            const hoursDiff = (new Date().getTime() - lastEntry.dateTimestamp) / (1000 * 60 * 60);
+            if (hoursDiff < 12) {
+                const d = new Date(lastEntry.dateTimestamp);
+                const timeStr = d.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' น.';
+                const confirmMsg = `⚠️ แจ้งเตือนกันลืม (ระวังลงซ้ำ) ⚠️\n\nระบบพบว่าคุณเพิ่งลงบันทึกคันนี้ไปล่าสุดเมื่อ [ ${timeStr} ]\nยอดเงินรอบที่แล้ว: ${lastEntry.price.toLocaleString()} sm\n\nคุณแน่ใจหรือไม่ว่าต้องการลง "ยอดเช่าใหม่" ซ้ำอีกรอบ?`;
+                if (!confirm(confirmMsg)) return;
+            }
+        }
+        // ------------------------------------------
+
+        const btn = document.getElementById('btnConfirmRent');
+        btn.disabled = true;
+        btn.innerText = "⏳ กำลังบันทึก...";
+        isUpdating = true;
+
         let kapiIncome = 0;
         let ownerIncome = 0;
 
@@ -1329,12 +1468,23 @@
                 expense: 0,
                 cars: cars
             })
-        }).then(response => console.log('บันทึกลง Sheet สำเร็จ!'))
-          .catch(error => console.error('Error!', error.message));
+        }).then(response => {
+            console.log('บันทึกลง Sheet สำเร็จ!');
+            isUpdating = false;
+        }).catch(error => {
+            console.error('Error!', error.message);
+            isUpdating = false; 
+        });
 
         saveDataLocally(true); 
         closeModal('rentModal');
         renderCars();
+        
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerText = "CONFIRM";
+        }, 1500);
+
         if(document.getElementById('managePage').classList.contains('active')) {
             renderManageCars();
         }
@@ -1345,6 +1495,12 @@
         document.getElementById('extendCarId').value = car.id;
         document.getElementById('extendCarName').value = `${car.plate} (${car.name})`;
         document.getElementById('extendPrice').value = "";
+        
+        const statusEl = document.getElementById('extendTimeOcrStatus');
+        if(statusEl) {
+            statusEl.innerHTML = "💡 กด Ctrl+V วางรูปลงหน้านี้เพื่อสแกนเวลาได้เลย!";
+            statusEl.style.color = "var(--summer-blue)";
+        }
         
         let currentEndTime = new Date(car.endTime);
         currentEndTime.setMinutes(currentEndTime.getMinutes() - currentEndTime.getTimezoneOffset());
@@ -1399,6 +1555,26 @@
 
         const carIndex = cars.findIndex(c => c.id === id);
         const car = cars[carIndex];
+
+        // --- ระบบป้องกันคนลืมแล้วกดซ้ำภายใน 12 ชม. (สำหรับเติมเงิน) ---
+        if (addedPrice > 0) {
+            const lastEntry = rentalHistory.slice().reverse().find(r => r.plate === car.plate);
+            if (lastEntry) {
+                const hoursDiff = (new Date().getTime() - lastEntry.dateTimestamp) / (1000 * 60 * 60);
+                if (hoursDiff < 12) {
+                    const d = new Date(lastEntry.dateTimestamp);
+                    const timeStr = d.toLocaleString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false }) + ' น.';
+                    const confirmMsg = `⚠️ แจ้งเตือนกันลืม (ระวังบวกเงินซ้ำ) ⚠️\n\nระบบพบว่าคุณเพิ่งลงเงินคันนี้ไปล่าสุดเมื่อ [ ${timeStr} ]\n(ยอดเดิม ${lastEntry.price.toLocaleString()} sm)\n\nตอนนี้คุณกำลังจะ "บวกเงินเพิ่ม" อีก ${addedPrice.toLocaleString()} sm\nแน่ใจหรือไม่ว่าไม่ได้เผลอกดซ้ำ?`;
+                    if (!confirm(confirmMsg)) return;
+                }
+            }
+        }
+        // --------------------------------------------------------
+
+        const btn = document.getElementById('btnConfirmExtend');
+        btn.disabled = true;
+        btn.innerText = "⏳ กำลังบันทึก...";
+        isUpdating = true;
         
         car.price += addedPrice;
         car.endTime = new Date(endTimeValue).getTime();
@@ -1427,12 +1603,26 @@
                     expense: 0,
                     cars: cars
                 })
-            }).catch(e => console.error('Sheet Sync Error:', e));
+            }).then(() => {
+                isUpdating = false;
+            }).catch(e => {
+                console.error('Sheet Sync Error:', e);
+                isUpdating = false;
+            });
+        } else {
+            saveDataLocally();
+            isUpdating = false;
         }
 
         saveDataLocally(true); 
         closeModal('extendModal');
         renderCars();
+        
+        setTimeout(() => {
+            btn.disabled = false;
+            btn.innerText = "CONFIRM";
+        }, 1500);
+
         if(document.getElementById('managePage').classList.contains('active')) renderManageCars();
         if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
         
@@ -1634,7 +1824,11 @@
             carGroups[r.plate].income += incomeToAdd;
             
             const d = new Date(r.dateTimestamp);
-            const dateStr = `${d.getDate().toString().padStart(2,'0')}/${(d.getMonth()+1).toString().padStart(2,'0')}/${d.getFullYear()} เวลา ${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')} น.`;
+            
+            const dateStr = d.toLocaleString('en-GB', { 
+                day: '2-digit', month: '2-digit', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit', hour12: false 
+            }).replace(',', '') + ' น.';
             
             carGroups[r.plate].logs.push({ date: dateStr, income: incomeToAdd });
         });
