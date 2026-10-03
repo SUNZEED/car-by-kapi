@@ -127,6 +127,17 @@
             animation: spin 1s linear infinite; margin-bottom: 20px;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* สไตล์สำหรับ Dashboard กราฟสรุปเวลา */
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        @media (max-width: 1100px) { .summary-grid { grid-template-columns: 1fr; } }
+        .chart-card { background: rgba(22, 22, 28, 0.7); padding: 25px; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        .chart-card h4 { margin: 0 0 20px 0; color: #fff; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 15px; display: flex; align-items: center; gap: 8px;}
+        .chart-row { display: flex; align-items: center; margin-bottom: 12px; font-size: 13px; }
+        .chart-label { width: 75px; color: #aaa; }
+        .chart-bar-container { flex: 1; background: #0F0F13; border-radius: 6px; height: 12px; margin: 0 15px; overflow: hidden; position: relative; border: 1px solid #222; }
+        .chart-bar-fill { height: 100%; border-radius: 6px; transition: width 1s ease-in-out; }
+        .chart-value { width: 85px; text-align: right; font-weight: bold; color: #fff; }
     </style>
 </head>
 <body>
@@ -135,7 +146,7 @@
 <div id="loadingOverlay">
     <div class="spinner"></div>
     <h2 style="color: var(--summer-orange); margin: 0; text-shadow: 0 0 15px var(--summer-orange-glow); letter-spacing: 1px;">🌴 กำลังเชื่อมต่อฐานข้อมูล...</h2>
-    <p style="color: #888; margin-top: 10px;">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูลรถ</p>
+    <p style="color: #888; margin-top: 10px;">กรุณารอสักครู่ ระบบกำลังโหลดข้อมูล</p>
 </div>
 
 <header>
@@ -258,9 +269,9 @@
             </table>
 
             <div class="controls" style="background: rgba(255, 71, 87, 0.05); border: 1px solid rgba(255, 71, 87, 0.3); margin-top: 30px;">
-                <h3 style="margin: 0; color: #ff4757; width: 100%; font-weight: 800;">⚠️ โซนล้างข้อมูล (รหัส PIN: 1234)</h3>
-                <button class="btn btn-delete" style="flex: 1;" onclick="clearHistoryWithPIN()">🗑️ ล้างประวัติรายได้ทั้งหมด</button>
-                <button class="btn btn-delete" style="flex: 1; background: linear-gradient(135deg, #900, #400);" onclick="clearCarsWithPIN()">🚗 ล้างข้อมูลรถทั้งหมด</button>
+                <h3 style="margin: 0; color: #ff4757; width: 100%; font-weight: 800;">⚠️ โซนล้างข้อมูล</h3>
+                <button class="btn btn-delete" style="flex: 1;" onclick="clearHistoryWithPIN()">🗑️ วิธีล้างประวัติรายได้ทั้งหมด</button>
+                <button class="btn btn-delete" style="flex: 1; background: linear-gradient(135deg, #900, #400);" onclick="clearCarsWithPIN()">🚗 ล้างข้อมูลรถทั้งหมด (PIN)</button>
             </div>
         </div>
     </div>
@@ -271,6 +282,13 @@
             <button class="view-btn" id="btnDashFilterKapi" onclick="setDashFilter('kapi')">ดูเฉพาะยอดรถกะปื</button>
             <button class="view-btn" id="btnDashFilterOwner" onclick="setDashFilter('owner')">ดูเฉพาะยอดรถaxis</button>
         </div>
+        
+        <!-- ส่วนสรุปเวลา (รายวัน/รายสัปดาห์/รายเดือน) -->
+        <div id="timeSummaryContainer"></div>
+        
+        <hr style="border-top: 1px solid #333; margin: 40px 0 20px 0;">
+        <h3 style="color: var(--text-light); margin-top: 0; margin-bottom: 20px;">📋 สรุปรายได้แยกตามคัน</h3>
+        
         <div id="overallDashboardContainer"></div>
     </div>
 </div>
@@ -408,7 +426,7 @@
     // -------------------------------------------------------------------------
     // ⚠️ เอาลิงก์ Web App ที่เพิ่ง Deploy เวอร์ชันใหม่ล่าสุด มาวางทับตรงนี้ด้วยนะครับ ⚠️
     // -------------------------------------------------------------------------
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbx-xvagjFm6iFCi-JJ5LXc0b3tHPB_PBW-RiIzs9pNQW8h73GPCagClcJmviAl55Uoy/exec';
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbxrO0c2E0Z_ESQ611hgS5yRc-oQZ2gsh06zzmNUIS6dfVmrMR3Aum4J9R-q7tzipEFe/exec';
     
     const ADMIN_USER = "Kapi";
     const ADMIN_PASS = "worawich0625";
@@ -439,11 +457,13 @@
         renderCars();
     }
     
+    // --- ระบบ Fetch ข้อมูล (ดึงประวัติรายได้จาก Sheet ด้วย) ---
     function fetchLatestCars() {
         if (isUpdating) return;
         fetch(scriptURL)
             .then(res => res.json())
             .then(data => {
+                // --- 1. อัปเดตสต็อกรถ ---
                 if (data.cars && data.cars.length > 0) {
                     let fetchedCars = normalizeCars(data.cars);
                     if (JSON.stringify(cars) !== JSON.stringify(fetchedCars)) {
@@ -455,6 +475,86 @@
                         }
                         if (document.getElementById('capturePage').classList.contains('active')) {
                             renderCaptureCars();
+                        }
+                    }
+                }
+
+                // --- 2. อัปเดตประวัติการเช่า (ดึงจากชีทโดยตรง 100%) ---
+                if (data.history && Array.isArray(data.history)) {
+                    let newHistory = [];
+                    data.history.forEach(row => {
+                        let dateTimestamp = 0;
+                        if (row.dateStr) {
+                            let parts = row.dateStr.split(',');
+                            if (parts.length === 2) {
+                                let [d, m, y] = parts[0].trim().split('/');
+                                let [hr, min, sec] = parts[1].trim().split(':');
+                                dateTimestamp = new Date(y, m - 1, d, hr, min, sec).getTime();
+                            } else {
+                                dateTimestamp = new Date(row.dateStr).getTime();
+                            }
+                        }
+
+                        // สกัดเอาทะเบียน และ ชื่อรถออกมา
+                        let plate = "";
+                        let carName = row.item;
+                        let match = row.item.match(/\((.*?)\)/);
+                        if (match && match[1]) {
+                            plate = match[1].trim();
+                            carName = row.item.replace(/\(.*\)/, '').replace('ปล่อยเช่า', '').replace('ต่อเวลา', '').trim();
+                        }
+
+                        // หาสถานะว่าเป็นรถของใครจากสต็อกปัจจุบัน
+                        let ownerType = 'owner';
+                        let foundCar = cars.find(c => c.plate === plate);
+                        if (foundCar) ownerType = foundCar.ownerType;
+
+                        // แยกแยะรายได้ Axis / กะปื
+                        let price = row.income;
+                        let kapiIncome = 0;
+                        let ownerIncome = 0;
+
+                        if (ownerType === 'kapi') {
+                            kapiIncome = price;
+                        } else {
+                            if (row.item.includes('ต่อเวลา')) {
+                                kapiIncome = price;
+                            } else {
+                                ownerIncome = price >= 200000 ? 200000 : price; 
+                                kapiIncome = price > 200000 ? price - 200000 : 0;
+                            }
+                        }
+
+                        newHistory.push({
+                            id: row.id,
+                            dateTimestamp: dateTimestamp,
+                            plate: plate,
+                            carName: carName,
+                            ownerType: ownerType,
+                            price: price,
+                            kapiIncome: kapiIncome,
+                            ownerIncome: ownerIncome
+                        });
+                    });
+
+                    // ตรวจสอบว่าประวัติมีการเปลี่ยนแปลงไหม เพื่อป้องกันกราฟกระพริบ
+                    let historyChanged = false;
+                    if (rentalHistory.length !== newHistory.length) {
+                        historyChanged = true;
+                    } else {
+                        // เช็คข้อมูลบรรทัดสุดท้ายว่าตรงกันไหม
+                        let lastOld = rentalHistory[rentalHistory.length - 1];
+                        let lastNew = newHistory[newHistory.length - 1];
+                        if (lastOld && lastNew && (lastOld.price !== lastNew.price || lastOld.plate !== lastNew.plate)) {
+                            historyChanged = true;
+                        }
+                    }
+
+                    if (historyChanged) {
+                        rentalHistory = newHistory;
+                        localStorage.setItem('summerHistory', JSON.stringify(rentalHistory));
+                        if (document.getElementById('dashboardPage').classList.contains('active')) {
+                            updateDashboard(); // รีเฟรชกราฟ
                         }
                     }
                 }
@@ -575,7 +675,7 @@
     }
 
     function promptForPIN(callback) {
-        const pin = prompt("⚠️ คำเตือน: ข้อมูลที่ลบจะไม่สามารถกู้คืนได้\n\nกรุณาใส่รหัส PIN (1234) เพื่อยืนยันการลบ:");
+        const pin = prompt("⚠️️ คำเตือน: ข้อมูลที่ลบจะไม่สามารถกู้คืนได้\n\nกรุณาใส่รหัส PIN (1234) เพื่อยืนยันการลบ:");
         if (pin === "1234") {
             callback();
         } else if (pin !== null) {
@@ -584,12 +684,7 @@
     }
 
     function clearHistoryWithPIN() {
-        promptForPIN(() => {
-            rentalHistory = [];
-            saveDataLocally();
-            alert("✅ ล้างประวัติรายได้ทั้งหมดเรียบร้อยแล้ว!");
-            if(document.getElementById('dashboardPage').classList.contains('active')) updateDashboard();
-        });
+        alert("⚠️ ตอนนี้ระบบประวัติรายได้เชื่อมโยงกับ Google Sheet แบบเรียลไทม์แล้ว\n\nหากต้องการล้างข้อมูลรายได้ ให้คุณเข้าไปลบข้อมูลในชีท 'วันที่' (เริ่มจากแถวที่ 2 ลงมา) โดยตรงบน Google Sheet เลยครับ! \nหลังจากลบในชีท หน้าเว็บกราฟจะถูกล้างให้อัตโนมัติใน 10 วินาที");
     }
 
     function clearCarsWithPIN() {
@@ -756,7 +851,6 @@
         return tmp[a.length][b.length];
     }
 
-    // สแกนเฉพาะเวลา (สำหรับหน้าต่างปล่อยเช่า / ต่อเวลา)
     async function processTimeOnlyImage(file, inputId, statusId) {
         const statusEl = document.getElementById(statusId);
         statusEl.innerText = "⏳ กำลังสแกนเวลา...";
@@ -848,7 +942,6 @@
         img.src = URL.createObjectURL(file);
     }
 
-    // สแกนเต็มรูปแบบ (ดึงทะเบียน + เวลา) จากหน้าต่างรวม
     async function processPastedImage(file) {
         const statusEl = document.getElementById('ocrPasteStatus');
         const pasteArea = document.getElementById('pasteArea');
@@ -996,7 +1089,7 @@
                 }
 
                 if (matchedCar.status === 'busy') {
-                    statusEl.innerText = `⚠️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
+                    statusEl.innerText = `⚠️️ ข้ามการทำรายการ: รถทะเบียน ${matchedCar.plate} ถูกเช่าอยู่แล้วในระบบ`;
                     statusEl.style.color = "#ff4757";
                     return;
                 }
@@ -1169,7 +1262,6 @@
             } else {
                 html += `</div>`;
                 if (isLoggedIn) {
-                    // เอาปุ่มแก้ไข (✏️) ออกจากตรงนี้ตามคำขอ เหลือแค่ปุ่มปล่อยเช่าแบบเต็มๆ
                     html += `
                         <div class="card-actions">
                             <button class="btn btn-rent" style="flex: 1; font-size: 13px;" onclick="openRentModal(${car.id})">ปล่อยเช่า</button>
@@ -1306,6 +1398,7 @@
                         car.status = "available";
                         car.price = 0;
                         car.endTime = null;
+                        car.bookTime = null;
                         stateChanged = true;
                     } else if (el) {
                         const d = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -1630,15 +1723,10 @@
     }
 
     function returnCar(id) {
-        if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม? (ประวัติรายได้ล่าสุดของรถคันนี้จะถูกลบออกด้วย)")) {
+        if(confirm("ดึงรถกลับมาเรียบร้อยแล้วใช่ไหม? (ข้อมูลเวลาจะถูกเคลียร์และรถจะกลับมาว่าง)")) {
             const carIndex = cars.findIndex(c => c.id === id);
             const car = cars[carIndex];
             
-            const lastHistoryIndex = rentalHistory.map(r => r.plate).lastIndexOf(car.plate);
-            if (lastHistoryIndex !== -1) {
-                rentalHistory.splice(lastHistoryIndex, 1);
-            }
-
             car.status = "available";
             car.price = 0;
             car.endTime = null;
@@ -1806,10 +1894,111 @@
         }
     }
     
+    // -----------------------------------------------------
+    // ✅ ฟังก์ชันช่วยสร้างกราฟสรุปแบบแท่ง
+    // -----------------------------------------------------
+    function renderTimeSummary(history) {
+        const container = document.getElementById('timeSummaryContainer');
+        if(!container) return;
+
+        const getInc = (r) => {
+            if (currentDashFilter === 'kapi') return r.kapiIncome || 0;
+            if (currentDashFilter === 'owner') return r.ownerIncome || 0;
+            return r.price || 0;
+        };
+
+        const now = new Date();
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+        // --- 1. สรุปรายวัน (7 วันย้อนหลัง) ---
+        let dailyData = [];
+        let maxDaily = 0;
+        for(let i = 6; i >= 0; i--) {
+            let d = new Date(today);
+            d.setDate(d.getDate() - i);
+            let nextD = new Date(d);
+            nextD.setDate(nextD.getDate() + 1);
+
+            let sum = history.filter(r => r.dateTimestamp >= d.getTime() && r.dateTimestamp < nextD.getTime())
+                             .reduce((a, b) => a + getInc(b), 0);
+            if(sum > maxDaily) maxDaily = sum;
+            
+            let labelText = (i === 0) ? "วันนี้" : d.toLocaleDateString('th-TH', {day:'numeric', month:'short'});
+            dailyData.push({ label: labelText, sum });
+        }
+
+        // --- 2. สรุปรายสัปดาห์ (4 สัปดาห์ย้อนหลัง) ---
+        let weeklyData = [];
+        let maxWeekly = 0;
+        for(let i = 3; i >= 0; i--) {
+            let endD = new Date(today);
+            endD.setDate(endD.getDate() - (i * 7) + 1); 
+            let startD = new Date(today);
+            startD.setDate(startD.getDate() - ((i+1) * 7) + 1);
+
+            let sum = history.filter(r => r.dateTimestamp >= startD.getTime() && r.dateTimestamp < endD.getTime())
+                             .reduce((a, b) => a + getInc(b), 0);
+            if(sum > maxWeekly) maxWeekly = sum;
+
+            let label = i === 0 ? "สัปดาห์นี้" : `${i} วีคที่แล้ว`;
+            weeklyData.push({ label: label, sum });
+        }
+
+        // --- 3. สรุปรายเดือน (12 เดือนของปีนี้) ---
+        let monthlyData = [];
+        let maxMonthly = 0;
+        let currentYear = now.getFullYear();
+        let monthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+        for(let i = 0; i < 12; i++) {
+            let startM = new Date(currentYear, i, 1);
+            let endM = new Date(currentYear, i+1, 1);
+
+            let sum = history.filter(r => r.dateTimestamp >= startM.getTime() && r.dateTimestamp < endM.getTime())
+                             .reduce((a, b) => a + getInc(b), 0);
+            if(sum > maxMonthly) maxMonthly = sum;
+            monthlyData.push({ label: monthNames[i], sum });
+        }
+
+        const renderChart = (data, maxVal, color) => {
+            if(maxVal === 0) maxVal = 1; 
+            return data.map(d => {
+                let percent = (d.sum / maxVal) * 100;
+                return `
+                    <div class="chart-row">
+                        <div class="chart-label">${d.label}</div>
+                        <div class="chart-bar-container">
+                            <div class="chart-bar-fill" style="width: ${percent}%; background: ${color}; box-shadow: 0 0 10px ${color}88;"></div>
+                        </div>
+                        <div class="chart-value">${d.sum > 0 ? d.sum.toLocaleString() : '-'}</div>
+                    </div>
+                `;
+            }).join('');
+        };
+
+        container.innerHTML = `
+            <div class="summary-grid">
+                <div class="chart-card">
+                    <h4>📅 รายวัน <span style="font-size:12px; color:#888; font-weight:normal;">(7 วันย้อนหลัง)</span></h4>
+                    ${renderChart(dailyData, maxDaily, 'var(--summer-green)')}
+                </div>
+                <div class="chart-card">
+                    <h4>📆 รายสัปดาห์ <span style="font-size:12px; color:#888; font-weight:normal;">(4 วีคย้อนหลัง)</span></h4>
+                    ${renderChart(weeklyData, maxWeekly, 'var(--summer-blue)')}
+                </div>
+                <div class="chart-card">
+                    <h4>🗓️ รายเดือน <span style="font-size:12px; color:#888; font-weight:normal;">(ปีปัจจุบัน)</span></h4>
+                    ${renderChart(monthlyData, maxMonthly, 'var(--summer-orange)')}
+                </div>
+            </div>
+        `;
+    }
+
     function updateDashboard() {
         const filteredHistory = rentalHistory.filter(r => currentDashFilter === 'all' || r.ownerType === currentDashFilter);
-        const carGroups = {};
+        
+        renderTimeSummary(filteredHistory);
 
+        const carGroups = {};
         filteredHistory.forEach(r => {
             if(!carGroups[r.plate]) {
                 carGroups[r.plate] = { carName: r.carName, count: 0, income: 0, logs: [] };
