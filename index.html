@@ -384,6 +384,9 @@
         let isFirstLoad = true;
         let isUpdating = false;
         
+        let monthlySummaryData = new Array(12).fill(0);
+        let grandTotalData = 0;
+        
         const customCategoryOrder = ["ประมูล", "Topdo", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
         let defaultCategories = ["ประมูล", "Topdo", "ไฟฟ้า", "น้ำมัน", "รถบิน", "480โล", "300โล"];
         let cars = [];
@@ -416,6 +419,9 @@
                     if (document.getElementById('managePage').classList.contains('active')) renderManageCars();
                     if (document.getElementById('capturePage').classList.contains('active')) renderCaptureCars();
                 }
+                
+                if (data.monthlySummary) monthlySummaryData = data.monthlySummary;
+                if (data.grandTotal !== undefined) grandTotalData = data.grandTotal;
 
                 if (data.history && Array.isArray(data.history)) {
                     rentalHistory = data.history.map(row => {
@@ -442,7 +448,7 @@
                             plate: plate,
                             carName: carName,
                             price: row.price || row.income || 0,
-                            expense: row.expense || 0 // ดึงค่าเงินออกมาเก็บไว้เพื่อหักลบ
+                            expense: row.expense || 0 
                         };
                     });
 
@@ -1266,7 +1272,6 @@
         function renderTimeSummary(history) {
             const container = document.getElementById('timeSummaryContainer');
             if(!container) return;
-            // หักลบรายจ่ายออกจากรายรับ
             const getInc = (r) => { return (r.price || 0) - (r.expense || 0); }; 
 
             const now = new Date();
@@ -1290,17 +1295,6 @@
                 weeklyData.push({ label: i === 0 ? "สัปดาห์นี้" : `${i} วีคที่แล้ว`, sum });
             }
 
-            let monthlyData = [], maxMonthly = 0;
-            let currentYear = now.getFullYear();
-            let monthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
-            for(let i = 0; i < 12; i++) {
-                let startM = new Date(currentYear, i, 1);
-                let endM = new Date(currentYear, i+1, 1);
-                let sum = history.filter(r => r.dateTimestamp >= startM.getTime() && r.dateTimestamp < endM.getTime()).reduce((a, b) => a + getInc(b), 0);
-                if(sum > maxMonthly) maxMonthly = sum;
-                monthlyData.push({ label: monthNames[i], sum });
-            }
-
             const renderChart = (data, maxVal, color) => {
                 if(maxVal === 0) maxVal = 1;
                 return data.map(d => {
@@ -1315,8 +1309,16 @@
                     </div>`;
                 }).join("");
             };
-
-            const grandTotal = history.reduce((sum, record) => sum + (record.price || 0) - (record.expense || 0), 0);
+            
+            // ดึงรายเดือน และยอดรวมมาจากแดชบอร์ด
+            let monthlyData = [], maxMonthly = 0;
+            let monthNames = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+            for(let i = 0; i < 12; i++) {
+                let sum = monthlySummaryData[i] || 0; 
+                if(sum > maxMonthly) maxMonthly = sum;
+                monthlyData.push({ label: monthNames[i], sum });
+            }
+            const grandTotal = grandTotalData;
 
             container.innerHTML = `
             <div class="summary-grid">
